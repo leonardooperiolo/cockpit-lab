@@ -501,13 +501,16 @@ def construir_dados(df: pd.DataFrame, medicos: dict, excl: dict, arquivos: list,
 PASTA_APOIO = PASTA_DADOS / "apoio"
 # papel -> como o nome do arquivo começa (sem acento, minúsculas, espaço = _)
 ARQ_APOIO = {
+    "materiais": ("lista_materiais", "materiais"),   # opcional: código -> nome do material
     "lista": ("lista",),
     "de_db": ("de_para_concent_db",),
     "de_hp": ("de_para_concent_hp",),
     "tab_db": ("tabela_db",),
     "tab_hp": ("tabela_pardini", "tabela_hp", "tabela_padini"),
 }
+APOIO_OPCIONAL = {"materiais"}
 NOME_PAPEL = {
+    "materiais": "Lista de materiais biológicos",
     "lista": "Lista de exames CONCENT (lab. apoio)", "de_db": "De-para CONCENT → DB",
     "de_hp": "De-para CONCENT → HP", "tab_db": "Tabela de preços DB", "tab_hp": "Tabela de preços HP (Pardini)",
 }
@@ -574,6 +577,7 @@ def achar_arquivos_apoio():
         for papel, inicios in ARQ_APOIO.items():
             if papel not in achados and nome.startswith(inicios):
                 achados[papel] = _abrir_enc(p)
+                break
     return achados
 
 
@@ -617,6 +621,15 @@ def _ler_depara(p: Path):
         out.append({"cod": _cel(r[ie]), "nome_c": _cel(r[inc]), "mat": _cel(r[im]) or "0",
                     "apo": _cel(r[ia]), "nome_ap": _cel(r[ina]) if ina != inc else "",
                     "desc": _cel(r[idesc]) if idesc is not None else ""})
+    return out
+
+
+def _ler_materiais(p: Path):
+    """Lista de materiais biológicos (código;nome) -> {código: nome}."""
+    out = {}
+    for r in _linhas_arquivo(p):
+        if len(r) >= 2 and _cel(r[0]).isdigit() and _cel(r[1]):
+            out[_cel(r[0])] = re.sub(r"\s+", " ", _cel(r[1]))
     return out
 
 
@@ -707,7 +720,7 @@ def _comparar(d, h):
 
 def carregar_apoio():
     arqs = achar_arquivos_apoio()
-    faltam = [NOME_PAPEL[k] for k in ARQ_APOIO if k not in arqs]
+    faltam = [NOME_PAPEL[k] for k in ARQ_APOIO if k not in arqs and k not in APOIO_OPCIONAL]
     if faltam:
         if arqs:
             print("AVISO: laboratório de apoio ignorado; faltam em data/apoio/: " + "; ".join(faltam))
@@ -717,8 +730,8 @@ def carregar_apoio():
     tab_db, tab_hp = _ler_precos(arqs["tab_db"]), _ler_precos(arqs["tab_hp"])
     op_db, op_hp = _opcoes_apoio(dep_db, tab_db), _opcoes_apoio(dep_hp, tab_hp)
 
-    mat_nome = {}
-    for r in dep_hp:
+    mat_nome = _ler_materiais(arqs["materiais"]) if "materiais" in arqs else {}
+    for r in dep_hp:   # reserva: descrição do material no de-para do HP
         if r["desc"] and r["mat"] not in mat_nome:
             mat_nome[r["mat"]] = r["desc"]
     nomes_c = {r["cod"]: r["nome_c"] for r in dep_db + dep_hp}
@@ -726,10 +739,6 @@ def carregar_apoio():
     exames = [(c, n, pz, 1) for c, n, pz in lista]
     extras = sorted((set(op_db) | set(op_hp)) - na_lista)
     exames += [(c, nomes_c.get(c, c), "", 0) for c in extras]
-
-    def prazo(t):
-        m = re.search(r"(\d+)\s*normal\s*(\d+)\s*urg", t, re.I)
-        return [int(m.group(1)), int(m.group(2))] if m else None
 
     def lado(o):
         if not o:
@@ -750,7 +759,7 @@ def carregar_apoio():
                 if rot and rot not in do_exame[chave]["m"].split(" · "):
                     do_exame[chave]["m"] = (do_exame[chave]["m"] + " · " + rot) if do_exame[chave]["m"] else rot
                 continue
-            do_exame[chave] = {"c": cod, "n": nome, "z": prazo(pz), "m": rot, "l": na, "d": lado(d), "h": lado(h), "w": w,
+            do_exame[chave] = {"c": cod, "n": nome, "m": rot, "l": na, "d": lado(d), "h": lado(h), "w": w,
                                "x": None if x is None else round(x, 2), "y": None if y is None else round(y, 1)}
         linhas += list(do_exame.values())
     linhas.sort(key=lambda r: (_sa(r["n"]), r["c"], r["m"]))
@@ -772,6 +781,8 @@ def carregar_apoio():
                       {o["apo"] for ops in op_hp.values() for o in ops if o["e"] == "z"})
     sem_preco = {"DB": sorted({o["apo"] for ops in op_db.values() for o in ops if o["e"] == "s"}),
                  "HP": sorted({o["apo"] for ops in op_hp.values() for o in ops if o["e"] == "s"})}
+    usados_m = {o["mat"] for op in (op_db, op_hp) for ops in op.values() for o in ops if o["mat"] != "0"}
+    mat_sem_nome = sorted((m for m in usados_m if m not in mat_nome), key=lambda x: (len(x), x))
     na_l = [r for r in linhas if r["l"]]
     cont = {k: sum(1 for r in na_l if r["w"] == k) for k in ("d", "h", "=", "?", "sd", "sh", "sp", "nm")}
     cods_l = {r["c"] for r in na_l}
@@ -779,11 +790,11 @@ def carregar_apoio():
     tem_hp = {r["c"] for r in na_l if r["h"] and r["h"]["p"]}
     return {
         "rows": linhas,
-        "arquivos": [{"papel": NOME_PAPEL[k], "nome": arqs[k].name} for k in ARQ_APOIO],
+        "arquivos": [{"papel": NOME_PAPEL[k], "nome": arqs[k].name} for k in ARQ_APOIO if k in arqs],
         "resumo": {"exames": len(cods_l), "extras": len(extras), "linhas": len(na_l), "com_db": len(tem_db), "com_hp": len(tem_hp),
                    "ambos": len(tem_db & tem_hp), "cont": cont},
         "atencao": {"sem_mapa": sem_mapa, "dup_hp": dup_hp, "mesmo_mat": mesmo_mat, "zero_map": zero_map, "sem_preco": sem_preco,
-                    "extras": [{"c": c, "n": nomes_c.get(c, c)} for c in extras]},
+                    "extras": [{"c": c, "n": nomes_c.get(c, c)} for c in extras], "mat_sem_nome": mat_sem_nome},
     }
 
 
