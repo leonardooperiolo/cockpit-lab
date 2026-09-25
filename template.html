@@ -497,7 +497,7 @@ function viewGeral(){
   h+=`<div class="card" style="margin-bottom:14px"><h3>Faturamento, exames e pacientes por unidade<small style="font-weight:400;color:var(--muted);margin-left:8px">hoje, ${ddmm(ULT)}</small></h3><div class="tw"><table><thead><tr><th>Unidade</th><th>Faturamento líquido</th><th>% do dia</th><th>Exames</th><th>Pacientes</th></tr></thead><tbody>`;
   ul.forEach(([k,o])=>{h+=`<tr><td>${esc(D.unidades[k].nome)}</td><td>${fBRL.format(o.f)}</td><td>${fD1.format(hoje.f?o.f/hoje.f*100:0)}%</td><td>${fNum.format(o.e)}</td><td>${fNum.format(o.r)}</td></tr>`;});
   h+='</tbody></table></div></div>';
-  h+=`<h2>Faturamento líquido por mês<small>últimos 12 meses · não muda com os filtros de unidade, convênio ou médico</small></h2><div class="card">${chartBarsX({w:Wv,h:320,slot:60,labels:ym12.map(k=>ymLabel(k)+(PARCIAL&&k===ULTYM?'*':'')),series:[{name:'Faturamento líquido',color:'#2563eb',values:ym12.map(k=>mon12.get(k).f)}],axis:v=>'R$ '+fCmp.format(v),tip:v=>fBRL.format(v),fmtVal:v=>fCmp.format(v),aria:'Faturamento líquido por mês'})}${PARCIAL&&ym12.includes(ULTYM)?`<p class="hint" style="margin:8px 0 0">O último mês está em andamento: tem dados só até ${isoBR(ULT).slice(0,5)}.</p>`:''}</div>`;
+  h+=`<h2>Faturamento líquido por mês<small>últimos 12 meses · não muda com os filtros de unidade, convênio ou médico</small></h2><div class="card">${chartLine({labels:ym12.map(k=>ymLabel(k)+(PARCIAL&&k===ULTYM?'*':'')),series:[{name:'Faturamento líquido',color:'#2563eb',values:ym12.map(k=>mon12.get(k).f)}],area:true,vals:true,axis:v=>'R$ '+fCmp.format(v),tip:v=>fBRL.format(v),fmtVal:v=>fCmp.format(v),aria:'Faturamento líquido por mês'})}${PARCIAL&&ym12.includes(ULTYM)?`<p class="hint" style="margin:8px 0 0">O último mês está em andamento: tem dados só até ${isoBR(ULT).slice(0,5)}.</p>`:''}</div>`;
   return h;
 }
 
@@ -546,10 +546,7 @@ function viewAnual(){
     const vA=groups.map(g=>ok(g.a)?m.g(g.a):null),vB=groups.map(g=>ok(g.b)?m.g(g.b):null);
     const dl=groups.map((g,i)=>vA[i]!=null&&vB[i]!=null&&vA[i]>0?dlt(vA[i],vB[i]):null);
     const cA2={name:cA.name,color:m.cor[0]},cB2={name:cB.name,color:m.cor[1]};
-    const opts=m.k==='f'||m.t==='Faturamento líquido'
-      ?{big:true,scroll:false,w:W,h:420}
-      :{big:true,scroll:false,rot:false,oneVal:true,w:W,h:420};
-    h+=`<div class="card" style="margin-top:14px"><h3>${m.t}</h3>${legend([cA2,cB2])}${chartBarsX({...opts,labels:groups.map(g=>g.sub?[g.label,g.sub]:g.label),series:[{...cA2,values:vA},{...cB2,values:vB}],axis:m.ax,tip:m.fmt,fmtVal:m.lb,deltas:dl,aria:m.t+', '+cA.name+' contra '+cB.name})}</div>`;});
+    h+=`<div class="card" style="margin-top:14px"><h3>${m.t}</h3>${legend([cA2,cB2])}${chartBarsX({big:true,scroll:false,w:W,h:420,labels:groups.map(g=>g.sub?[g.label,g.sub]:g.label),series:[{...cA2,values:vA},{...cB2,values:vB}],axis:m.ax,tip:m.fmt,fmtVal:m.lb,deltas:dl,aria:m.t+', '+cA.name+' contra '+cB.name})}</div>`;});
   h+=`<h2>Tabela mês a mês<small>${m24?'anteriores = '+cA.name+' · recentes = '+cB.name:''}</small></h2><div class="card tw tsm"><table><thead><tr><th rowspan="2">Mês</th>${mets.map(m=>`<th colspan="3" style="text-align:center">${m.t}</th>`).join('')}</tr><tr>${mets.map(()=>`<th>${m24?'Anteriores':cA.name}</th><th>${m24?'Recentes':cB.name}</th><th>Var.</th>`).join('')}</tr></thead><tbody>`;
   groups.forEach(g=>{h+=`<tr><td>${g.full}</td>`;mets.forEach(x=>{const a=ok(g.a)?x.g(g.a):null,b=ok(g.b)?x.g(g.b):null;
     const tf=x.tf||x.fmt;h+=`<td>${a==null?'—':tf(a)}</td><td>${b==null?'—':tf(b)}</td><td>${a!=null&&b!=null?delta(a,b):'—'}</td>`;});h+='</tr>';});
