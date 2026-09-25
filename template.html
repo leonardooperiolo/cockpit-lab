@@ -790,7 +790,7 @@ function pcRows(){
 }
 function viewPrecosConv(){
   const PC=D.precosConv;
-  if(!PC)return `<div class="notice warn"><b>Ainda não há a lista de preços por convênio.</b> Envie o relatório "Convênios por Exame" (PDF) do CONCENT para a pasta <code>data/apoio</code> do repositório. O passo a passo explica como.</div>`;
+  if(!PC)return `<div class="notice warn"><b>Ainda não há a lista de preços por convênio.</b> Exporte o <code>precos_convenio.csv</code> direto do banco (rode o <code>extrair_precos_convenio.bat</code>), criptografe e envie para a pasta <code>data/apoio</code> do repositório.</div>`;
   const comCusto=PC.exames.filter((_,i)=>PC.custoDB[i]!=null||PC.custoHP[i]!=null).length;
   const convs=[...PC.convenios].sort((a,b)=>normTxt(a.n)<normTxt(b.n)?-1:1);
   const particular=PC.convenios.find(c=>normTxt(c.n)==='particular');
