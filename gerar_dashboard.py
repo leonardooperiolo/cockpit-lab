@@ -293,16 +293,28 @@ def _datas(ent: pd.Series) -> pd.Series:
         (r"^\d{2}/\d{2}/\d{4}", ["%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%d/%m/%Y"]),
         (r"^\d{2}/\d{2}/\d{2}(?!\d)", ["%d/%m/%y %H:%M:%S", "%d/%m/%y %H:%M", "%d/%m/%y"]),
     )
+    def _atribuir(mask, valores):
+        """Como res[mask] = valores, mas uma data absurda (ex.: ano 0001, vinda de
+        registro antigo com campo em branco no sistema de origem) vira NaT em vez
+        de travar a leitura do arquivo inteiro."""
+        try:
+            res[mask] = valores
+        except (pd.errors.OutOfBoundsDatetime, OverflowError, ValueError):
+            valores = pd.to_datetime(valores, errors="coerce")
+            dentro = valores.notna() & (valores >= pd.Timestamp.min + pd.Timedelta(days=1)) & (valores <= pd.Timestamp.max - pd.Timedelta(days=1))
+            valores = valores.where(dentro)
+            res[mask] = valores
+
     for rx, formatos in regras:
         casa = s.str.match(rx)
         for f in formatos:
             falta = casa & res.isna()
             if not falta.any():
                 break
-            res[falta] = pd.to_datetime(s[falta], format=f, errors="coerce")
+            _atribuir(falta, pd.to_datetime(s[falta], format=f, errors="coerce"))
     resto = res.isna() & s.ne("") & s.ne("nan")
     if resto.any():
-        res[resto] = pd.to_datetime(s[resto], errors="coerce", format="mixed", dayfirst=True)
+        _atribuir(resto, pd.to_datetime(s[resto], errors="coerce", format="mixed", dayfirst=True))
     return res
 
 
