@@ -87,13 +87,22 @@ body.locked>*:not(.gate){display:none}
 .gate-err{color:#c53030;font-size:13.5px;min-height:18px}
 .apbar{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin:20px 0 8px}
 .apck{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--text);height:40px}
-.aptb td,.aptb th{padding-left:10px;padding-right:10px}
-.aptb td{white-space:normal}.aptb td b{white-space:nowrap}
-.aptb td.pc,.aptb th.pc{text-align:left;min-width:150px;max-width:210px;vertical-align:top}
-.aptb td.nm{min-width:190px}
-.aptb td small{display:block;color:var(--muted);font-size:11.5px;line-height:1.3;max-width:200px;font-weight:400;margin-top:2px}
-.aptb td.best{background:#e6f6ee;box-shadow:inset 3px 0 0 #1f9d6b}
-.aptb td.best b{color:#0f6b44}
+.aptb{border-collapse:separate;border-spacing:0}
+.aptb th{padding:12px 14px;background:#f6f9ff;text-align:left;font-size:12.5px;color:#475569;border-bottom:1px solid #dfe8f6}
+.aptb td{padding:13px 14px;border-bottom:1px solid #edf2f9;vertical-align:middle;white-space:normal;text-align:left}
+.aptb tbody tr:last-child td{border-bottom:0}
+.aptb td.cd,.aptb th.cd{width:64px;color:#64748b;font-size:13px}
+.aptb td.nm{min-width:230px;font-weight:600;color:var(--ink);font-size:14.5px}
+.aptb td.nm .mt{display:block;margin-top:3px;font-weight:400;font-size:12px;color:var(--muted)}
+.aptb td.pc,.aptb th.pc{min-width:140px;width:150px}
+.aptb td.st,.aptb th.st{min-width:190px}
+.aptb .pv{display:block;font-size:16px;font-weight:700;color:var(--ink);white-space:nowrap}
+.aptb .cdg{display:block;margin-top:1px;font-size:11.5px;color:#94a3b8}
+.aptb td small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:3px;font-weight:400}
+.aptb td small.aviso{color:#8a5a00}
+.aptb td.best{background:#eaf7f0}
+.aptb td.best .pv{color:#0f6b44}
+.aptb .ck{color:#1f9d6b}
 .aptb .mut{color:#94a3b8;font-size:13px}
 .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:700;background:#eef2f7;color:#334155}
 .pill.ok{background:#d4f0e1;color:#0f6b44}.pill.warn{background:#fff1d6;color:#8a5a00}.pill.mut{background:#f1f5f9;color:#64748b}
@@ -102,11 +111,10 @@ body.locked>*:not(.gate){display:none}
  .aptb thead{display:none}
  .aptb,.aptb tbody,.aptb tr,.aptb td{display:block;width:100%}
  .aptb tr{padding:12px 4px;border-bottom:1px solid #e3eaf6}
- .aptb td{padding:3px 10px;text-align:left!important;max-width:none!important;min-width:0!important;border:0}
+ .aptb td{padding:4px 12px;border:0!important;min-width:0!important;width:auto!important}
  .aptb td::before{content:attr(data-l);display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
- .aptb td.nm{font-weight:700;font-size:15px}.aptb td.nm::before{display:none}
- .aptb td.pc small{max-width:none}
- .aptb td.best{box-shadow:inset 3px 0 0 #1f9d6b}
+ .aptb td.nm{font-size:15px}.aptb td.nm::before{display:none}
+ .aptb td.cd{font-size:12.5px}
 }
 .tsm table{font-size:13px}.tsm th,.tsm td{padding-left:8px;padding-right:8px}
 .wdl{margin:8px 0 0;font-size:13.5px;color:var(--ink);font-weight:600}
@@ -164,6 +172,7 @@ td.nm,th.nm{white-space:normal;min-width:220px;text-align:left}
     <button role="tab" data-tab="rank">Convênios, Médicos &amp; Unidades</button>
     <button role="tab" data-tab="exames">Exames &amp; Setores</button>
     <button role="tab" data-tab="apoio">Laboratório de Apoio</button>
+    <button role="tab" data-tab="precosconv">Preços por Convênio</button>
     <button role="tab" data-tab="qualidade">Qualidade dos Dados</button>
   </nav>
 
@@ -655,6 +664,8 @@ function viewQualidade(){
 const normTxt=s=>String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 S.ap={q:'',f:'todos',ord:null,dir:1,pg:0,ex:false};
 const AP_PAGE=50;
+S.pc={q:'',conv:'1',ativos:true,ord:null,dir:1,pg:0};  /* conv 1 = Particular */
+const PC_PAGE=50;
 const AP_F=[['todos','Todos os exames'],['ambos','Com os dois preços'],['d','DB mais em conta'],['h','HP mais em conta'],['=','Preços iguais'],['?','Conferir (mais de um preço)'],['sd','Só o DB tem preço'],['sh','Só o HP tem preço'],['sp','Mapeado, sem preço na tabela'],['nm','Sem mapeamento']];
 const apHay=r=>r._h||(r._h=normTxt([r.c,r.n,r.m,r.d&&r.d.c,r.d&&r.d.n,r.h&&r.h.c,r.h&&r.h.n].join(' ')));
 const apPreco=o=>o&&o.p?o.p[0]:null;
@@ -679,13 +690,13 @@ function apRows(){
 }
 function apCel(o,melhor){
   if(!o)return '<span class="mut">não mapeado</span>';
-  const nm=`<small>${esc(o.c)}${o.n?' · '+esc(o.n):''}</small>`;
-  if(!o.p)return `<span class="mut">${o.e==='z'?'R$ 0,00 na tabela':'sem preço na tabela'}</span>${nm}`;
+  const cd=`<span class="cdg"${o.n?` title="${esc(o.n)}"`:''}>${esc(o.c)}</span>`;
+  if(!o.p)return `<span class="mut">${o.e==='z'?'R$ 0,00 na tabela':'sem preço na tabela'}</span>${cd}`;
   const [a,b]=o.p,rng=a!==b;
-  return `<b>${melhor?'✔ ':''}${rng?fBRL.format(a)+' a '+fBRL.format(b)+' <span title="A tabela tem mais de um preço para este código" style="cursor:help">⚠</span>':fBRL.format(a)}</b>${nm}`;
+  return `<span class="pv">${melhor?'<span class="ck">✔</span> ':''}${rng?fBRL.format(a)+' a '+fBRL.format(b)+' <span title="A tabela tem mais de um preço para este código" style="cursor:help">⚠</span>':fBRL.format(a)}</span>${cd}`;
 }
 function apStatus(r){
-  const eco=r.x!=null&&r.x>0?`<small>economia de ${fBRL.format(r.x)} (${fD1.format(r.y)}%)</small>${r.y>=50?'<small style="color:#8a5a00">diferença grande: confira se os dois nomes são o mesmo exame</small>':''}`:'';
+  const eco=r.x!=null&&r.x>0?`<small>economia de ${fBRL.format(r.x)} (${fD1.format(r.y)}%)</small>${r.y>=50?'<small class="aviso">diferença grande: confira se é o mesmo exame</small>':''}`:'';
   return {d:`<span class="pill ok">DB mais em conta</span>${eco}`,h:`<span class="pill ok">HP mais em conta</span>${eco}`,
     '=':'<span class="pill">Preços iguais</span>','?':'<span class="pill warn">Conferir</span><small>a tabela tem mais de um preço para o mesmo código</small>',
     sd:'<span class="pill mut">Só o DB tem preço</span>',sh:'<span class="pill mut">Só o HP tem preço</span>',
@@ -697,12 +708,13 @@ function renderApoio(){
   const ord=S.ap.ord||(normTxt(S.ap.q).trim()?'rel':'n'),seta=k=>ord===k?(S.ap.dir>0?' ▲':' ▼'):'';
   const th=(k,t,cls='')=>`<th class="${cls}" data-ap-ord="${k}" style="cursor:pointer" aria-sort="${ord===k?(S.ap.dir>0?'ascending':'descending'):'none'}">${t}${seta(k)}</th>`;
   const ini=S.ap.pg*AP_PAGE,vis=rows.slice(ini,ini+AP_PAGE);
-  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.ap.q.trim()?` para “${esc(S.ap.q.trim())}”`:''} · clique no título de uma coluna para ordenar · ✔ e fundo verde = mais em conta</p>`;
+  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.ap.q.trim()?` para “${esc(S.ap.q.trim())}”`:''} · fundo verde e ✔ = preço mais em conta · clique no título de uma coluna para ordenar</p>`;
   if(!n){$('#apRes').innerHTML=h+'<div class="empty">Nenhum exame encontrado. Tente outra parte do nome ou o código.</div>';return;}
-  h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('c','Cód. CONCENT','')}${th('n','Exame no CONCENT','nm')}<th title="Prazo de entrega no CONCENT, em dias">Prazo (dias)<br><span style="font-weight:400">normal / urgente</span></th>${th('pd','DB (Diagnósticos do Brasil)','pc')}${th('ph','HP (Hermes Pardini)','pc')}${th('x','Mais em conta','pc')}</tr></thead><tbody>`;
+  h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('c','Cód.','cd')}${th('n','Exame','nm')}${th('pd','Preço DB','pc')}${th('ph','Preço HP','pc')}${th('x','Mais em conta','pc st')}</tr></thead><tbody>`;
   vis.forEach(r=>{
-    h+=`<tr><td data-l="Cód. CONCENT">${esc(r.c)}</td><td class="nm">${esc(r.n)}${r.m?` <span class="tag">${esc(r.m)}</span>`:''}${r.l?'':' <span class="tag w" title="Este exame não está na lista de apoio do CONCENT">fora da lista de apoio</span>'}</td>
-     <td data-l="Prazo (dias) normal / urgente">${r.z?r.z[0]+' / '+r.z[1]:'—'}</td><td data-l="DB" class="pc${r.w==='d'?' best':''}">${apCel(r.d,r.w==='d')}</td><td data-l="HP" class="pc${r.w==='h'?' best':''}">${apCel(r.h,r.w==='h')}</td><td data-l="Mais em conta" class="pc st">${apStatus(r)}</td></tr>`;
+    const mt=(r.m?'Material: '+esc(r.m):'')+(r.l?'':(r.m?' · ':'')+'<span class="tag w" style="margin-left:0" title="Este exame não está na lista de apoio do CONCENT">fora da lista de apoio</span>');
+    h+=`<tr><td class="cd" data-l="Cód.">${esc(r.c)}</td><td class="nm">${esc(r.n)}${mt?`<span class="mt">${mt}</span>`:''}</td>
+     <td data-l="Preço DB" class="pc${r.w==='d'?' best':''}">${apCel(r.d,r.w==='d')}</td><td data-l="Preço HP" class="pc${r.w==='h'?' best':''}">${apCel(r.h,r.w==='h')}</td><td data-l="Mais em conta" class="pc st">${apStatus(r)}</td></tr>`;
   });
   h+='</tbody></table></div>';
   if(pgs>1)h+=`<div class="row" style="margin:10px 0 0"><button class="btn" data-ap-pg="-1" ${S.ap.pg?'':'disabled'}>← Anterior</button><span class="sub" style="margin:0">Página ${S.ap.pg+1} de ${pgs} · exames ${fNum.format(ini+1)} a ${fNum.format(Math.min(n,ini+AP_PAGE))}</span><button class="btn" data-ap-pg="1" ${S.ap.pg<pgs-1?'':'disabled'}>Próxima →</button></div>`;
@@ -730,6 +742,7 @@ function viewApoio(){
    ${A.mesmo_mat.length?`<li><b>Exames ligados a mais de um código do apoio com o mesmo material</b> (confira se o de-para está certo).${ul(A.mesmo_mat,x=>`<code>${esc(x.c)}</code> ${esc(x.n)} → ${esc(x.l)}: ${x.a.map(esc).join(' e ')}`)}</li>`:''}
    ${(A.sem_preco.DB.length||A.sem_preco.HP.length)?`<li><b>Códigos do de-para que não estão na tabela de preços:</b> ${fNum.format(A.sem_preco.DB.length)} no DB e ${fNum.format(A.sem_preco.HP.length)} no HP.${ul([...A.sem_preco.DB.map(x=>'DB '+x),...A.sem_preco.HP.map(x=>'HP '+x)],x=>`<code>${esc(x)}</code>`,40)}</li>`:''}
    ${A.zero_map.length?`<li><b>Códigos com preço R$ 0,00 na tabela:</b> ${A.zero_map.map(esc).join(', ')}. Não entram na comparação.</li>`:''}
+   ${(A.mat_sem_nome&&A.mat_sem_nome.length)?`<li><b>Códigos de material sem nome na lista de materiais:</b> ${A.mat_sem_nome.map(esc).join(', ')}. Aparecem como “Material N”.</li>`:''}
    ${A.extras.length?`<li><b>${fNum.format(A.extras.length)} exames têm de-para, mas não estão na lista de apoio do CONCENT</b> (em geral são exames feitos internamente). Ficam ocultos, a não ser que você marque “Incluir…”.</li>`:''}
    <li>Arquivos usados: ${AP.arquivos.map(a=>`${esc(a.papel)} (<code>${esc(a.nome)}</code>)`).join('; ')}.</li></ul></div>`;
   return h;
@@ -743,20 +756,101 @@ function bindApoio(){
   $('#apCsv').onclick=()=>{
     const cel=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',pr=o=>!o||!o.p?'':o.p[0]===o.p[1]?String(o.p[0]).replace('.',','):`${String(o.p[0]).replace('.',',')} a ${String(o.p[1]).replace('.',',')}`;
     const rot={d:'DB',h:'HP','=':'Iguais','?':'Conferir',sd:'Só DB tem preço',sh:'Só HP tem preço',sp:'Sem preço na tabela',nm:'Sem mapeamento'};
-    const linhas=[['Cód. CONCENT','Exame no CONCENT','Material','Prazo normal (dias)','Prazo urgente (dias)','Cód. DB','Nome no DB','Preço DB','Cód. HP','Nome no HP','Preço HP','Mais em conta','Economia R$','Economia %'].map(cel).join(';')];
-    apRows().forEach(r=>linhas.push([r.c,r.n,r.m,r.z?r.z[0]:'',r.z?r.z[1]:'',r.d?r.d.c:'',r.d?r.d.n:'',pr(r.d),r.h?r.h.c:'',r.h?r.h.n:'',pr(r.h),rot[r.w],r.x==null?'':String(r.x).replace('.',','),r.y==null?'':String(r.y).replace('.',',')].map(cel).join(';')));
+    const linhas=[['Cód. CONCENT','Exame no CONCENT','Material','Cód. DB','Nome no DB','Preço DB','Cód. HP','Nome no HP','Preço HP','Mais em conta','Economia R$','Economia %'].map(cel).join(';')];
+    apRows().forEach(r=>linhas.push([r.c,r.n,r.m,r.d?r.d.c:'',r.d?r.d.n:'',pr(r.d),r.h?r.h.c:'',r.h?r.h.n:'',pr(r.h),rot[r.w],r.x==null?'':String(r.x).replace('.',','),r.y==null?'':String(r.y).replace('.',',')].map(cel).join(';')));
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+linhas.join('\r\n')],{type:'text/csv;charset=utf-8'}));a.download='laboratorio_apoio_precos.csv';a.click();
   };
   renderApoio();
 }
 
+function pcRows(){
+  const PC=D.precosConv; if(!PC)return [];
+  const q=normTxt(S.pc.q).trim(), conv=S.pc.conv;
+  const out=[];
+  for(const [ei,ci,ativo,valor] of PC.linhas){
+    if(S.pc.ativos && !ativo) continue;
+    const cv=PC.convenios[ci];
+    if(conv && String(cv.c)!==conv) continue;
+    const nome=PC.exames[ei];
+    if(q && !normTxt(nome).includes(q)) continue;
+    const cDB=PC.custoDB[ei], cHP=PC.custoHP[ei];
+    const custo=[cDB,cHP].filter(v=>v!=null).length?Math.min(...[cDB,cHP].filter(v=>v!=null)):null;
+    let dif=null,marg=null;
+    if(custo!=null && valor>0){ dif=valor-custo; marg=dif/valor*100; }
+    out.push({ei,nome,cv,ativo,valor,cDB,cHP,dif,marg});
+  }
+  const ord=S.pc.ord,dir=S.pc.dir||1;
+  if(ord){
+    const key={exame:r=>normTxt(r.nome),conv:r=>normTxt(r.cv.n),valor:r=>r.valor,db:r=>r.cDB==null?-1:r.cDB,hp:r=>r.cHP==null?-1:r.cHP,marg:r=>r.marg==null?-1e9:r.marg}[ord];
+    if(key) out.sort((a,b)=>{const x=key(a),y=key(b);return x<y?-dir:x>y?dir:0;});
+  } else {
+    out.sort((a,b)=>normTxt(a.nome)<normTxt(b.nome)?-1:normTxt(a.nome)>normTxt(b.nome)?1:(a.marg==null?1:0)-(b.marg==null?1:0));
+  }
+  return out;
+}
+function viewPrecosConv(){
+  const PC=D.precosConv;
+  if(!PC)return `<div class="notice warn"><b>Ainda não há a lista de preços por convênio.</b> Envie o relatório "Convênios por Exame" (PDF) do CONCENT para a pasta <code>data/apoio</code> do repositório. O passo a passo explica como.</div>`;
+  const comCusto=PC.exames.filter((_,i)=>PC.custoDB[i]!=null||PC.custoHP[i]!=null).length;
+  const convs=[...PC.convenios].sort((a,b)=>normTxt(a.n)<normTxt(b.n)?-1:1);
+  const particular=PC.convenios.find(c=>normTxt(c.n)==='particular');
+  const k=(l,v,s2,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:28px;color:${cor||'var(--ink)'}">${v}</div><div class="s">${s2||''}</div></div>`;
+  let h=`<div class="kpis">${k('Exames no relatório',fNum.format(PC.exames.length),'do CONCENT')}${k('Com custo de apoio para comparar',fNum.format(comCusto),'DB ou HP cadastrado','var(--blue)')}${k('Convênios',fNum.format(PC.convenios.length),'na tabela de preços')}${k('Preços no total',fNum.format(PC.linhas.length),'exame × convênio, melhor plano')}</div>`;
+  h+=`<div class="apbar" id="pcBar"><label class="fld" style="flex:1 1 320px">Buscar exame<input type="search" id="pcQ" placeholder="Nome do exame..." autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
+    <label class="fld">Convênio<select id="pcConv" style="max-width:260px">${convs.map(c=>`<option value="${esc(c.c)}">${esc(c.n)}</option>`).join('')}<option value="">Todos os convênios</option></select></label>
+    <label class="apck"><input type="checkbox" id="pcAtivos"> Somente convênios ativos</label>
+    <button class="btn" id="pcCsv" type="button">Baixar CSV</button></div>
+    <p class="sub">Um convênio pode ter mais de um plano cadastrado para o mesmo exame; aqui sempre aparece o de maior valor. Custo de apoio = menor preço entre DB e HP (aba Laboratório de Apoio). Margem = quanto sobra do valor pago pelo convênio depois de descontar esse custo.</p><div id="pcRes"></div>`;
+  return h;
+}
+function pcCel(v){return v==null?`<span class="mut">—</span>`:fBRL.format(v);}
+function renderPrecosConv(){
+  const rows=pcRows(),n=rows.length,pgs=Math.max(1,Math.ceil(n/PC_PAGE));
+  S.pc.pg=Math.min(S.pc.pg,pgs-1);
+  const ord=S.pc.ord||'exame',seta=k=>ord===k?(S.pc.dir>0?' ▲':' ▼'):'';
+  const th=(k,t,cls='')=>`<th class="${cls}" data-pc-ord="${k}" style="cursor:pointer" aria-sort="${ord===k?(S.pc.dir>0?'ascending':'descending'):'none'}">${t}${seta(k)}</th>`;
+  const ini=S.pc.pg*PC_PAGE,vis=rows.slice(ini,ini+PC_PAGE);
+  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.pc.q.trim()?` para “${esc(S.pc.q.trim())}”`:''} · clique no título de uma coluna para ordenar · verde = sobra dinheiro sobre o custo de apoio, vermelho = fica no prejuízo</p>`;
+  if(!n){$('#pcRes').innerHTML=h+'<div class="empty">Nenhum preço encontrado. Tente outro nome, ou troque o convênio.</div>';return;}
+  h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('exame','Exame','nm')}${th('conv','Convênio','nm')}${th('valor','Preço pago','pc')}${th('db','Preço DB','pc')}${th('hp','Preço HP','pc')}${th('marg','Margem','pc st')}</tr></thead><tbody>`;
+  vis.forEach(r=>{
+    const boa=r.marg!=null&&r.marg>=0, ruim=r.marg!=null&&r.marg<0;
+    h+=`<tr><td class="nm" data-l="Exame">${esc(r.nome)}${r.ativo?'':' <span class="tag w" title="Convênio marcado como inativo no CONCENT para este exame">inativo</span>'}</td>
+     <td class="nm" data-l="Convênio">${esc(r.cv.n)}</td>
+     <td data-l="Preço pago" class="pc"><span class="pv">${pcCel(r.valor)}</span></td>
+     <td data-l="Preço DB" class="pc">${pcCel(r.cDB)}</td>
+     <td data-l="Preço HP" class="pc">${pcCel(r.cHP)}</td>
+     <td data-l="Margem" class="pc st${boa?' best':''}">${r.marg==null?'<span class="mut">sem custo para comparar</span>':`<span class="pv" style="color:${ruim?'#b3261e':'#0f6b44'}">${fD1.format(r.marg)}%</span><span class="cdg">${ruim?'prejuízo de ':'sobra '}${fBRL.format(Math.abs(r.dif))}</span>`}</td></tr>`;
+  });
+  h+='</tbody></table></div>';
+  if(pgs>1)h+=`<div class="row" style="margin:10px 0 0"><button class="btn" data-pc-pg="-1" ${S.pc.pg?'':'disabled'}>← Anterior</button><span class="sub" style="margin:0">Página ${S.pc.pg+1} de ${pgs} · resultados ${fNum.format(ini+1)} a ${fNum.format(Math.min(ini+PC_PAGE,n))} de ${fNum.format(n)}</span><button class="btn" data-pc-pg="1" ${S.pc.pg>=pgs-1?'':'disabled'}>Próxima →</button></div>`;
+  $('#pcRes').innerHTML=h;
+  $$('[data-pc-ord]').forEach(t=>t.onclick=()=>{const k=t.dataset.pcOrd;if(S.pc.ord===k)S.pc.dir*=-1;else{S.pc.ord=k;S.pc.dir=1;}S.pc.pg=0;renderPrecosConv();});
+  $$('[data-pc-pg]').forEach(b=>b.onclick=()=>{S.pc.pg+=+b.dataset.pcPg;renderPrecosConv();$('#pcBar').scrollIntoView({block:'start'});});
+}
+function bindPrecosConv(){
+  if(!D.precosConv)return;
+  const q=$('#pcQ'),conv=$('#pcConv'),ativos=$('#pcAtivos');
+  q.value=S.pc.q; conv.value=S.pc.conv; ativos.checked=S.pc.ativos;
+  let t=null; q.oninput=()=>{clearTimeout(t);t=setTimeout(()=>{S.pc.q=q.value;S.pc.pg=0;renderPrecosConv();},120);};
+  conv.onchange=()=>{S.pc.conv=conv.value;S.pc.pg=0;renderPrecosConv();};
+  ativos.onchange=()=>{S.pc.ativos=ativos.checked;S.pc.pg=0;renderPrecosConv();};
+  $('#pcCsv').onclick=()=>{
+    const cel=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+    const linhas=[['Exame','Convênio','Ativo','Preço pago','Preço DB','Preço HP','Diferença R$','Margem %'].map(cel).join(';')];
+    pcRows().forEach(r=>linhas.push([r.nome,r.cv.n,r.ativo?'Sim':'Não',String(r.valor).replace('.',','),r.cDB==null?'':String(r.cDB).replace('.',','),r.cHP==null?'':String(r.cHP).replace('.',','),r.dif==null?'':String(r.dif.toFixed(2)).replace('.',','),r.marg==null?'':String(r.marg.toFixed(1)).replace('.',',')].map(cel).join(';')));
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+linhas.join('\r\n')],{type:'text/csv;charset=utf-8'}));a.download='precos_por_convenio.csv';a.click();
+  };
+  renderPrecosConv();
+}
+
 /* ---------- roteamento ---------- */
-const VIEWS={geral:[viewGeral,null],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],apoio:[viewApoio,bindApoio],qualidade:[viewQualidade,null]};
+const VIEWS={geral:[viewGeral,null],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],apoio:[viewApoio,bindApoio],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null]};
 function go(){
   $$('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===S.tab));
   const per=['geral','rank','exames'].includes(S.tab);
   $('#fgPeriodo').style.display=per?'':'none';
-  $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio')?'none':'';
+  $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio'||S.tab==='precosconv')?'none':'';
   $('#fHint').textContent=per?'':(S.tab==='anual'?'Nesta aba os anos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.':'Nesta aba os períodos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.');
   syncFilters();
   const [v,b]=VIEWS[S.tab];
