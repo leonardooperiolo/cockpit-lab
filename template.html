@@ -70,7 +70,7 @@ h3{font-size:15px;color:var(--ink);margin:0 0 2px}
 .ax2{font-size:10.5px;opacity:.8}
 .vlb{font-size:12.5px}
 .axb{font-size:13px;font-weight:600;fill:#334155}
-.ax2.axb{font-size:11.5px;font-weight:500;fill:#64748b}
+.ax2.axb{font-size:9.5px;font-weight:500;fill:#64748b}
 .dlt{font-size:13px;font-weight:800}
 .dlt.up{fill:#1f9d6b}.dlt.dn{fill:#d64545}.dlt.eq{fill:#64748b}
 .perbar{margin:16px 0 0;padding:10px 14px;background:var(--info-bg);border:1px solid var(--info-line);border-radius:10px;font-size:14px;color:var(--ink)}
@@ -97,7 +97,8 @@ body.locked>*:not(.gate){display:none}
 .aptb td.pc,.aptb th.pc{min-width:140px;width:150px}
 .aptb td.st,.aptb th.st{min-width:190px}
 .aptb .pv{display:block;font-size:16px;font-weight:700;color:var(--ink);white-space:nowrap}
-.aptb .cdg{display:block;margin-top:1px;font-size:11.5px;color:#94a3b8}
+.aptb .cdg{display:block;margin-top:1px;font-size:11.5px;color:#94a3b8;text-decoration:none}
+a.cdg:hover{text-decoration:underline;color:#2563eb}
 .aptb td small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:3px;font-weight:400}
 .aptb td small.aviso{color:#8a5a00}
 .aptb td.best{background:#eaf7f0}
@@ -400,14 +401,14 @@ function chartBars(o){
 function chartBarsX(o){
   const n=o.labels.length,ns=o.series.length,mx=maxOf(o.series);
   if(!n||!(mx>0))return '<div class="empty">Sem dados para o filtro selecionado.</div>';
-  const big=!!o.big,H=o.h||300,mt=o.deltas?(big?52:40):24,lines=Array.isArray(o.labels[0])?o.labels[0].length:1,mb=(big?20:14)+(big?16:14)*lines,rot=o.rot!=null?o.rot:ns>1;
-  const top=niceCeil(mx*(rot?(big?1.45:1.34):1.12)),ih=H-mt-mb,Y=v=>mt+ih-(v/top)*ih;
+  const big=!!o.big,H=o.h||300,rot=o.rot!=null?o.rot:ns>1,mt=o.deltas?(big?52:40):24,lp=rot&&big?60:0,lines=Array.isArray(o.labels[0])?o.labels[0].length:1,mb=(big?20:14)+(big?16:14)*lines;
+  const top=niceCeil(mx*1.12),ih=H-mt-lp-mb,Y=v=>mt+lp+ih-(v/top)*ih;
   const tx=[0,1,2,3,4].map(t=>o.axis?o.axis(top*t/4):fCmp.format(top*t/4));
   const ml=Math.max(48,Math.max(...tx.map(x=>x.length))*(big?8:7)+18),scroll=!!o.scroll,W=o.w||900,pad=scroll?5:0;
   const gw=scroll?(o.slot||(ns>1?ns*(big?44:20)+(big?16:18):46)):(W-ml-14)/n,plotW=scroll?n*gw+10:W-ml-14;
   const bw=Math.min(ns>1?(big?38:20):30,(gw-(ns>1?(big?10:6):10))/ns),x0=scroll?0:ml;
-  const axT=tx.map((t,k)=>`<text class="ax${big?' axb':''}" x="${ml-8}" y="${mt+ih-(k/4)*ih+4}" text-anchor="end">${esc(t)}</text>`).join('');
-  const grid=tx.map((_,k)=>{const y=mt+ih-(k/4)*ih;return `<line class="gr" x1="${x0}" x2="${x0+plotW}" y1="${y}" y2="${y}"/>`;}).join('');
+  const axT=tx.map((t,k)=>`<text class="ax${big?' axb':''}" x="${ml-8}" y="${mt+lp+ih-(k/4)*ih+4}" text-anchor="end">${esc(t)}</text>`).join('');
+  const grid=tx.map((_,k)=>{const y=mt+lp+ih-(k/4)*ih;return `<line class="gr" x1="${x0}" x2="${x0+plotW}" y1="${y}" y2="${y}"/>`;}).join('');
   const fv=o.fmtVal||fNum.format;let b='';
   for(let i=0;i<n;i++){
     const gx=x0+pad+i*gw;
@@ -472,7 +473,7 @@ function viewGeral(){
   const hoje=agg(maskRange(ULT,ULT),dd,null).tot;
   const day=agg(dm,dd,i=>A.d[i]).g;
   const uniHoje=agg(maskRange(ULT,ULT),dd,i=>A.u[i]).g;
-  const r12=range12(),mon12=agg(maskRange(r12.ini,r12.fim),dd,i=>diaYM[A.d[i]]).g,ym12=[...mon12.keys()].sort((a,b)=>a-b);
+  const mon12=agg(PER.def?maskRange(range12().ini,range12().fim):PER.mask,dd,i=>diaYM[A.d[i]]).g,ym12=[...mon12.keys()].sort((a,b)=>a-b);
   let h=perBar(PER);
   if(Q.pct_linhas_medico_sem_nome>0)h+=`<div class="notice warn"><b>Aviso de qualidade de dados:</b> ${fD1.format(Q.pct_linhas_medico_sem_nome)}% dos exames (${fD1.format(Q.pct_fat_medico_sem_nome)}% do faturamento) têm médico solicitante sem nome na lista de médicos; o filtro e o ranking por médico mostram o código nesses casos. <button class="lnk" data-go="qualidade">Ver detalhes</button></div>`;
   h+=`<h2 style="margin-bottom:4px">Hoje<small>${WDL[wdOf(ULT)]}, ${isoBR(ULT)}</small></h2>
@@ -485,39 +486,39 @@ function viewGeral(){
   const dk=[...day.keys()].sort((a,b)=>a-b);
   const dtsAll=PER.def?Array.from({length:daysBetween(PER.ini,PER.fim)+1},(_,n)=>isoAdd(PER.ini,n)):dk.map(i=>D.dias[i]);
   const dts=dtsAll.filter(d=>wdOf(d)!==0);
-  const dl=dts.map(d=>[ddmm(d),WD[wdOf(d)]]);
+  const dl=dts.map(d=>[d.slice(8,10),WD[wdOf(d)]]);
   const dOf=d=>{const i=DIDX.get(d);return i===undefined?undefined:day.get(i);};
   const dmet=[{t:'Faturamento líquido por dia',n:'Faturamento líquido do dia',c:'#2563eb',g:o=>o.f,ax:v=>'R$ '+fCmp.format(v),tip:v=>fBRL.format(v),fv:v=>fNum.format(Math.round(v))},
     {t:'Exames realizados por dia',n:'Exames do dia',c:'#c9791f',g:o=>o.e,ax:v=>fNum.format(v),tip:v=>fNum.format(v)+' exames',fv:v=>fNum.format(v)},
     {t:'Pacientes atendidos por dia',n:'Pacientes do dia',c:'#1f9d6b',g:o=>o.r,ax:v=>fNum.format(v),tip:v=>fNum.format(v)+' pacientes',fv:v=>fNum.format(v)}];
   h+=`<h2>Evolução diária<small>${PER.def?MESL[um-1]+' de '+uy+', até '+ddmm(ULT):fNum.format(dk.length)+' dias com atendimento'}</small></h2><p class="hint">Domingos (sempre 0) ficam fora do gráfico. ${PER.def?'Cada barra é um dia, com o valor escrito em cima e o dia da semana embaixo. Para outro período, use os filtros de ano, mês ou data.':'Cada barra é um dia, com o valor escrito em cima.'}</p>`;
   const Wv=Math.max(300,($('#view').clientWidth||1100)-44),cabe=(Wv-70)/dts.length>=30;
-  dmet.forEach(m=>{h+=`<div class="card" style="margin-bottom:14px"><h3>${m.t}</h3>${legend([{name:m.n,color:m.c}])}${chartBarsX({scroll:!cabe,end:true,w:Wv,h:300,slot:30,labels:dl,series:[{name:m.n,color:m.c,values:dts.map(d=>{const o=dOf(d);return o?m.g(o):0;})}],axis:m.ax,tip:m.tip,fmtVal:m.fv,aria:m.t})}</div>`;});
+  dmet.forEach(m=>{h+=`<div class="card" style="margin-bottom:14px"><h3>${m.t}<small style="font-weight:400;color:var(--muted);margin-left:8px">${PER.def?MESL[um-1]+' de '+uy:'período escolhido'}</small></h3>${legend([{name:m.n,color:m.c}])}${chartBarsX({scroll:!cabe,end:true,w:Wv,h:300,slot:30,labels:dl,series:[{name:m.n,color:m.c,values:dts.map(d=>{const o=dOf(d);return o?m.g(o):0;})}],axis:m.ax,tip:m.tip,fmtVal:m.fv,aria:m.t})}</div>`;});
   const ul=[...uniHoje.entries()].sort((a,b)=>b[1].f-a[1].f);
   h+=`<div class="card" style="margin-bottom:14px"><h3>Faturamento, exames e pacientes por unidade<small style="font-weight:400;color:var(--muted);margin-left:8px">hoje, ${ddmm(ULT)}</small></h3><div class="tw"><table><thead><tr><th>Unidade</th><th>Faturamento líquido</th><th>% do dia</th><th>Exames</th><th>Pacientes</th></tr></thead><tbody>`;
   ul.forEach(([k,o])=>{h+=`<tr><td>${esc(D.unidades[k].nome)}</td><td>${fBRL.format(o.f)}</td><td>${fD1.format(hoje.f?o.f/hoje.f*100:0)}%</td><td>${fNum.format(o.e)}</td><td>${fNum.format(o.r)}</td></tr>`;});
   h+='</tbody></table></div></div>';
-  h+=`<h2>Faturamento líquido por mês<small>últimos 12 meses · não muda com os filtros de unidade, convênio ou médico</small></h2><div class="card">${chartLine({labels:ym12.map(k=>ymLabel(k)+(PARCIAL&&k===ULTYM?'*':'')),series:[{name:'Faturamento líquido',color:'#2563eb',values:ym12.map(k=>mon12.get(k).f)}],area:true,vals:true,axis:v=>'R$ '+fCmp.format(v),tip:v=>fBRL.format(v),fmtVal:v=>fCmp.format(v),aria:'Faturamento líquido por mês'})}${PARCIAL&&ym12.includes(ULTYM)?`<p class="hint" style="margin:8px 0 0">O último mês está em andamento: tem dados só até ${isoBR(ULT).slice(0,5)}.</p>`:''}</div>`;
+  h+=`<h2>Faturamento líquido por mês<small>${PER.def?'últimos 12 meses':'período escolhido'}</small></h2><div class="card">${chartLine({labels:ym12.map(k=>ymLabel(k)+(PARCIAL&&k===ULTYM?'*':'')),series:[{name:'Faturamento líquido',color:'#2563eb',values:ym12.map(k=>mon12.get(k).f)}],area:true,vals:true,axis:v=>'R$ '+fCmp.format(v),tip:v=>fBRL.format(v),fmtVal:v=>fCmp.format(v),aria:'Faturamento líquido por mês'})}${PARCIAL&&ym12.includes(ULTYM)?`<p class="hint" style="margin:8px 0 0">O último mês está em andamento: tem dados só até ${isoBR(ULT).slice(0,5)}.</p>`:''}</div>`;
   return h;
 }
 
 /* ---------- comparativo anual ---------- */
 function viewAnual(){
-  const dd=dims(),m24=S.anMode==='m24',r12=range12();
+  const dd=dims(),m24=S.anMode==='m24',r12=range12(),PER=periodo(),pm=PER.def?null:PER.mask;
   const ymL=ym=>MES[ym%12]+'/'+String(Math.floor(ym/12)).slice(2);
   const cA={name:'',color:'#8aa4d6'},cB={name:'',color:'#2563eb'};
   const groups=[];let intro='',ctrl='',fnote='',aviso='';
   if(m24){
     const lastA=ULTYM-12;
-    const g=agg(dayMask(i=>diaYM[i]>=ULTYM-23&&diaYM[i]<=ULTYM&&!(PARCIAL&&(diaYM[i]===ULTYM||diaYM[i]===lastA)&&diaDom[i]>ULTDOM)),dd,i=>diaYM[A.d[i]]).g;
+    const g=agg(dayMask(i=>diaYM[i]>=ULTYM-23&&diaYM[i]<=ULTYM&&!(PARCIAL&&(diaYM[i]===ULTYM||diaYM[i]===lastA)&&diaDom[i]>ULTDOM)&&(!pm||pm[i])),dd,i=>diaYM[A.d[i]]).g;
     for(let k=0;k<12;k++){const yb=ULTYM-11+k,ya=yb-12,mo=yb%12,part=PARCIAL&&yb===ULTYM;
       groups.push({label:MES[mo]+(part?'*':''),sub:String(Math.floor(ya/12))+' × '+String(Math.floor(yb/12)),full:`${MESL[mo]}${part?'*':''} (${Math.floor(ya/12)} × ${Math.floor(yb/12)})`,a:g.get(ya)||null,b:g.get(yb)||null});}
     cA.name=`${ymL(ULTYM-23)} a ${ymL(ULTYM-12)}`;cB.name=`${ymL(ULTYM-11)} a ${ymL(ULTYM)}`;
-    intro=`Os 12 meses mais recentes (<b>${cB.name}</b>) contra os 12 meses anteriores (<b>${cA.name}</b>), mês a mês. Atualiza sozinho com o dia mais recente dos dados.`;
+    intro=`Os 12 meses mais recentes (<b>${cB.name}</b>) contra os 12 meses anteriores (<b>${cA.name}</b>), mês a mês. Atualiza sozinho com o dia mais recente dos dados.${pm?' Só dentro do período escolhido no filtro de Ano/Mês/Data.':''}`;
     if(PARCIAL)fnote=`* ${MESL[um-1]}: os dados vão até o dia ${ULTDOM}, então os dois anos são comparados só nos dias 1 a ${ULTDOM}, para a comparação ser justa.`;
   }else{
     const lim=PARCIAL&&(S.anoA===uy||S.anoB===uy);
-    const per=y=>agg(dayMask(i=>diaAno[i]===y&&!(lim&&diaMes[i]===um&&diaDom[i]>ULTDOM)),dd,i=>diaMes[A.d[i]]).g;
+    const per=y=>agg(dayMask(i=>diaAno[i]===y&&!(lim&&diaMes[i]===um&&diaDom[i]>ULTDOM)&&(!pm||pm[i])),dd,i=>diaMes[A.d[i]]).g;
     const gA=per(S.anoA),gB=per(S.anoB);
     for(let m=1;m<=12;m++)groups.push({label:MES[m-1]+(lim&&m===um?'*':''),sub:'',full:MESL[m-1]+(lim&&m===um?'*':''),a:gA.get(m)||null,b:gB.get(m)||null});
     cA.name=String(S.anoA);cB.name=String(S.anoB);
@@ -533,7 +534,7 @@ function viewAnual(){
     {t:'Pacientes atendidos',fmt:v=>fNum.format(v),ax:v=>fNum.format(v),lb:v=>fNum.format(v),g:o=>o.r,cor:['#8fcab0','#1f9d6b']},
     {t:'Exames realizados',fmt:v=>fNum.format(v),ax:v=>fNum.format(v),lb:v=>fNum.format(v),g:o=>o.e,cor:['#e3bd8e','#c9791f']},
     {t:'Ticket médio',fmt:v=>fBRL.format(v),ax:v=>'R$ '+fD1.format(v),lb:v=>fBRL0.format(v),g:o=>tk(o),cor:['#c6aee6','#7c3aed']}];
-  let h=`<div class="pick"><div class="card"><h3>Comparativo anual</h3><div class="row" style="margin:6px 0 8px"><div class="seg" role="group" aria-label="Modo"><button data-am="m24" aria-pressed="${m24}">Últimos 24 meses</button><button data-am="ano" aria-pressed="${!m24}">Comparar dois anos</button></div></div><p class="sub">${intro} Unidade, convênio e médico dos filtros acima continuam valendo.</p>${ctrl}</div></div>${aviso}`;
+  let h=`<div class="pick"><div class="card"><h3>Comparativo anual</h3><div class="row" style="margin:6px 0 8px"><div class="seg" role="group" aria-label="Modo"><button data-am="m24" aria-pressed="${m24}">Últimos 24 meses</button><button data-am="ano" aria-pressed="${!m24}">Comparar dois anos</button></div></div><p class="sub">${intro} Unidade, convênio e médico dos filtros acima continuam valendo. Se você escolher um Ano, Mês ou intervalo de datas no filtro do topo, ele soma com a comparação escolhida aqui em cima (só entram os dias dentro desse período).</p>${ctrl}</div></div>${aviso}`;
   if(!comuns.length&&!aviso)h+=`<div class="notice warn"><b>Não há meses em comum entre ${cA.name} e ${cB.name}.</b> A base vai de ${isoBR(PRI)} a ${isoBR(ULT)}. Escolha outros anos.</div>`;
   if(comuns.length){
     const sa=Z(),sb=Z();comuns.forEach(g=>['f','b','x','e','r'].forEach(k=>{sa[k]+=g.a[k];sb[k]+=g.b[k];}));
@@ -554,16 +555,17 @@ function viewAnual(){
     h+=`<tr class="tot"><td>Total dos meses comparados</td>${mets.map(x=>`<td>${(x.tf||x.fmt)(x.g(sa))}</td><td>${(x.tf||x.fmt)(x.g(sb))}</td><td>${delta(x.g(sa),x.g(sb))}</td>`).join('')}</tr>`;}
   h+='</tbody></table></div>';
   if(fnote)h+=`<p class="sub" style="margin-top:10px">${fnote}</p>`;
-  const mon12=agg(maskRange(r12.ini,r12.fim),dd,i=>diaYM[A.d[i]]).g,ym12=[...mon12.keys()].sort((a,b)=>a-b);
-  const tot12=agg(maskRange(r12.ini,r12.fim),dd,null).tot;
-  h+=`<h2>Relatório mensal<small>últimos 12 meses</small></h2><div class="card tw"><table><thead><tr><th>Mês</th><th>Faturamento líquido</th><th>Variação</th><th>Bruto</th><th>Descontos</th><th>Exames</th><th>Pacientes</th><th>Ticket médio</th></tr></thead><tbody>`;
+  const dmFiltro=PER.def?maskRange(r12.ini,r12.fim):PER.mask,periodoLbl=PER.def?'últimos 12 meses':'período escolhido';
+  const mon12=agg(dmFiltro,dd,i=>diaYM[A.d[i]]).g,ym12=[...mon12.keys()].sort((a,b)=>a-b);
+  const tot12=agg(dmFiltro,dd,null).tot;
+  h+=`<h2>Relatório mensal<small>${periodoLbl}</small></h2><div class="card tw"><table><thead><tr><th>Mês</th><th>Faturamento líquido</th><th>Variação</th><th>Bruto</th><th>Descontos</th><th>Exames</th><th>Pacientes</th><th>Ticket médio</th></tr></thead><tbody>`;
   const pm0=ym12.length?agg(dayMask(i=>diaYM[i]===ym12[0]-1),dd,null).tot:null;
   ym12.forEach((k,i)=>{const o=mon12.get(k),p=i?mon12.get(ym12[i-1]):(pm0&&pm0.r>0?pm0:null);
     h+=`<tr><td>${MESL[k%12]} de ${Math.floor(k/12)}${PARCIAL&&k===ULTYM?` <span class="tag w">até ${isoBR(ULT).slice(0,5)}</span>`:''}</td><td>${fBRL.format(o.f)}</td><td>${PARCIAL&&k===ULTYM?'<span class="dl na">parcial</span>':p?delta(p.f,o.f):'<span class="dl na">—</span>'}</td><td>${fBRL.format(o.b)}</td><td>${fBRL.format(o.x)}</td><td>${fNum.format(o.e)}</td><td>${fNum.format(o.r)}</td><td>${fBRL.format(tk(o))}</td></tr>`;});
   h+=`<tr class="tot"><td>Total</td><td>${fBRL.format(tot12.f)}</td><td></td><td>${fBRL.format(tot12.b)}</td><td>${fBRL.format(tot12.x)}</td><td>${fNum.format(tot12.e)}</td><td>${fNum.format(tot12.r)}</td><td>${fBRL.format(tk(tot12))}</td></tr></tbody></table></div>`;
-  const uni12=agg(maskRange(r12.ini,r12.fim),dd,i=>A.u[i]).g;
+  const uni12=agg(dmFiltro,dd,i=>A.u[i]).g;
   const ul12=[...uni12.entries()].sort((a,b)=>b[1].f-a[1].f),mxu12=ul12.length?ul12[0][1].f:1;
-  h+=`<h2>Por unidade<small>últimos 12 meses</small></h2><div class="card tw"><table><thead><tr><th>Unidade</th><th>Faturamento líquido</th><th>% do total</th><th>Exames</th><th>Pacientes</th><th>Ticket médio</th></tr></thead><tbody>`;
+  h+=`<h2>Por unidade<small>${periodoLbl}</small></h2><div class="card tw"><table><thead><tr><th>Unidade</th><th>Faturamento líquido</th><th>% do total</th><th>Exames</th><th>Pacientes</th><th>Ticket médio</th></tr></thead><tbody>`;
   ul12.forEach(([k,o])=>{h+=`<tr><td>${esc(D.unidades[k].nome)}</td><td class="bar" style="--w:${(o.f/mxu12*100).toFixed(1)}%">${fBRL.format(o.f)}</td><td>${fD1.format(tot12.f?o.f/tot12.f*100:0)}%</td><td>${fNum.format(o.e)}</td><td>${fNum.format(o.r)}</td><td>${fBRL.format(tk(o))}</td></tr>`;});
   h+='</tbody></table></div>';
   return h;
@@ -723,9 +725,11 @@ function apRows(){
   });
   return rows;
 }
-function apCel(o,melhor){
+function apCel(o,melhor,lado){
   if(!o)return '<span class="mut">não mapeado</span>';
-  const cd=`<span class="cdg"${o.n?` title="${esc(o.n)}"`:''}>${esc(o.c)}</span>`;
+  const cd=lado==='d'
+    ?`<a class="cdg" href="https://gde.diagnosticosdobrasil.com.br/exam/${encodeURIComponent(o.c)}" target="_blank" rel="noopener"${o.n?` title="${esc(o.n)} · abrir no Guia de Exames DB"`:' title="Abrir no Guia de Exames DB"'}>${esc(o.c)}</a>`
+    :`<span class="cdg"${o.n?` title="${esc(o.n)}"`:''}>${esc(o.c)}</span>`;
   if(!o.p)return `<span class="mut">${o.e==='z'?'R$ 0,00 na tabela':'sem preço na tabela'}</span>${cd}`;
   const [a,b]=o.p,rng=a!==b;
   return `<span class="pv">${melhor?'<span class="ck">✔</span> ':''}${rng?fBRL.format(a)+' a '+fBRL.format(b)+' <span title="A tabela tem mais de um preço para este código" style="cursor:help">⚠</span>':fBRL.format(a)}</span>${cd}`;
@@ -749,7 +753,7 @@ function renderApoio(){
   vis.forEach(r=>{
     const mt=(r.m?'Material: '+esc(r.m):'')+(r.l?'':(r.m?' · ':'')+'<span class="tag w" style="margin-left:0" title="Este exame não está na lista de apoio do CONCENT">fora da lista de apoio</span>');
     h+=`<tr><td class="cd" data-l="Cód.">${esc(r.c)}</td><td class="nm">${esc(r.n)}${mt?`<span class="mt">${mt}</span>`:''}</td>
-     <td data-l="Preço DB" class="pc${r.w==='d'?' best':''}">${apCel(r.d,r.w==='d')}</td><td data-l="Preço HP" class="pc${r.w==='h'?' best':''}">${apCel(r.h,r.w==='h')}</td><td data-l="Mais em conta" class="pc st">${apStatus(r)}</td></tr>`;
+     <td data-l="Preço DB" class="pc${r.w==='d'?' best':''}">${apCel(r.d,r.w==='d','d')}</td><td data-l="Preço HP" class="pc${r.w==='h'?' best':''}">${apCel(r.h,r.w==='h','h')}</td><td data-l="Mais em conta" class="pc st">${apStatus(r)}</td></tr>`;
   });
   h+='</tbody></table></div>';
   if(pgs>1)h+=`<div class="row" style="margin:10px 0 0"><button class="btn" data-ap-pg="-1" ${S.ap.pg?'':'disabled'}>← Anterior</button><span class="sub" style="margin:0">Página ${S.ap.pg+1} de ${pgs} · exames ${fNum.format(ini+1)} a ${fNum.format(Math.min(n,ini+AP_PAGE))}</span><button class="btn" data-ap-pg="1" ${S.ap.pg<pgs-1?'':'disabled'}>Próxima →</button></div>`;
@@ -812,11 +816,11 @@ function pcRows(){
     const custo=[cDB,cHP].filter(v=>v!=null).length?Math.min(...[cDB,cHP].filter(v=>v!=null)):null;
     let dif=null,marg=null;
     if(custo!=null && valor>0){ dif=valor-custo; marg=dif/valor*100; }
-    out.push({ei,nome,cv,ativo,valor,cDB,cHP,dif,marg});
+    out.push({ei,cod:PC.exameCod[ei],nome,cv,ativo,valor,cDB,cHP,dif,marg});
   }
   const ord=S.pc.ord,dir=S.pc.dir||1,vol=volumeAnoExame();
   if(ord){
-    const key={exame:r=>normTxt(r.nome),conv:r=>normTxt(r.cv.n),valor:r=>r.valor,db:r=>r.cDB==null?-1:r.cDB,hp:r=>r.cHP==null?-1:r.cHP,marg:r=>r.marg==null?-1e9:r.marg}[ord];
+    const key={cod:r=>r.cod,exame:r=>normTxt(r.nome),conv:r=>normTxt(r.cv.n),valor:r=>r.valor,db:r=>r.cDB==null?-1:r.cDB,hp:r=>r.cHP==null?-1:r.cHP,marg:r=>r.marg==null?-1e9:r.marg}[ord];
     if(key) out.sort((a,b)=>{const x=key(a),y=key(b);return x<y?-dir:x>y?dir:0;});
     return out;
   }
@@ -854,10 +858,10 @@ function renderPrecosConv(){
   let h=`<p class="sub" style="margin:10px 0 6px">${padraoTop50?`Top ${fNum.format(n)} exames mais feitos no ano`:`${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.pc.q.trim()?` para “${esc(S.pc.q.trim())}”`:''}`} · clique no título de uma coluna para ordenar · verde = sobra dinheiro sobre o custo de apoio, vermelho = fica no prejuízo</p>`;
   if(padraoTop50)h+=`<p class="sub" style="margin:0 0 10px"><button class="lnk" id="pcVerTodos">Ver todos os exames deste convênio →</button></p>`;
   if(!n){$('#pcRes').innerHTML=h+'<div class="empty">Nenhum preço encontrado. Tente outro nome, ou troque o convênio.</div>';return;}
-  h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('exame','Exame','nm')}${th('conv','Convênio','nm')}${th('valor','Preço pago','pc')}${th('db','Preço DB','pc')}${th('hp','Preço HP','pc')}${th('marg','Margem','pc st')}</tr></thead><tbody>`;
+  h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('cod','Cód.','cd')}${th('exame','Exame','nm')}${th('conv','Convênio','nm')}${th('valor','Preço pago','pc')}${th('db','Preço DB','pc')}${th('hp','Preço HP','pc')}${th('marg','Margem','pc st')}</tr></thead><tbody>`;
   vis.forEach(r=>{
     const boa=r.marg!=null&&r.marg>=0, ruim=r.marg!=null&&r.marg<0;
-    h+=`<tr><td class="nm" data-l="Exame">${esc(r.nome)}${r.ativo?'':' <span class="tag w" title="Convênio marcado como inativo no CONCENT para este exame">inativo</span>'}</td>
+    h+=`<tr><td class="cd" data-l="Cód.">${esc(r.cod)}</td><td class="nm" data-l="Exame">${esc(r.nome)}${r.ativo?'':' <span class="tag w" title="Convênio marcado como inativo no CONCENT para este exame">inativo</span>'}</td>
      <td class="nm" data-l="Convênio">${esc(r.cv.n)}</td>
      <td data-l="Preço pago" class="pc"><span class="pv">${pcCel(r.valor)}</span></td>
      <td data-l="Preço DB" class="pc">${pcCel(r.cDB)}</td>
@@ -880,8 +884,8 @@ function bindPrecosConv(){
   ativos.onchange=()=>{S.pc.ativos=ativos.checked;S.pc.pg=0;renderPrecosConv();};
   $('#pcCsv').onclick=()=>{
     const cel=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-    const linhas=[['Exame','Convênio','Ativo','Preço pago','Preço DB','Preço HP','Diferença R$','Margem %'].map(cel).join(';')];
-    pcRows().forEach(r=>linhas.push([r.nome,r.cv.n,r.ativo?'Sim':'Não',String(r.valor).replace('.',','),r.cDB==null?'':String(r.cDB).replace('.',','),r.cHP==null?'':String(r.cHP).replace('.',','),r.dif==null?'':String(r.dif.toFixed(2)).replace('.',','),r.marg==null?'':String(r.marg.toFixed(1)).replace('.',',')].map(cel).join(';')));
+    const linhas=[['Cód. CONCENT','Exame','Convênio','Ativo','Preço pago','Preço DB','Preço HP','Diferença R$','Margem %'].map(cel).join(';')];
+    pcRows().forEach(r=>linhas.push([r.cod,r.nome,r.cv.n,r.ativo?'Sim':'Não',String(r.valor).replace('.',','),r.cDB==null?'':String(r.cDB).replace('.',','),r.cHP==null?'':String(r.cHP).replace('.',','),r.dif==null?'':String(r.dif.toFixed(2)).replace('.',','),r.marg==null?'':String(r.marg.toFixed(1)).replace('.',',')].map(cel).join(';')));
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+linhas.join('\r\n')],{type:'text/csv;charset=utf-8'}));a.download='precos_por_convenio.csv';a.click();
   };
   renderPrecosConv();
@@ -891,7 +895,7 @@ function bindPrecosConv(){
 const VIEWS={geral:[viewGeral,null],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],apoio:[viewApoio,bindApoio],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null]};
 function go(){
   $$('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===S.tab));
-  const per=['geral','rank','exames'].includes(S.tab);
+  const per=['geral','rank','exames','anual'].includes(S.tab);
   $('#fgPeriodo').style.display=per?'':'none';
   $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio'||S.tab==='precosconv')?'none':'';
   $('#fHint').textContent=per?'':(S.tab==='anual'?'Nesta aba os anos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.':'Nesta aba os períodos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.');
