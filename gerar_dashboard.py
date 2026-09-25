@@ -246,22 +246,28 @@ def _ler_lista_medicos_xml(caminho):
 
 def carregar_medicos():
     """Devolve dict codigo -> [nomes distintos]. Códigos com mais de um nome ficam ambíguos."""
-    p = PASTA_DADOS / "lista_medico.xlsx"
-    if not p.exists() and (PASTA_DADOS / "lista_medico.xlsx.enc").exists():
-        p = _abrir_enc(PASTA_DADOS / "lista_medico.xlsx.enc")
-    if not p.exists():
-        print("AVISO: data/lista_medico.xlsx não encontrado - médicos aparecerão só pelo código.")
-        return {}
     pares = None
-    try:
-        from openpyxl import load_workbook
-        wb = load_workbook(p, read_only=True)
-        if wb.worksheets:
-            pares = [(r[0], r[1]) for r in wb.worksheets[0].iter_rows(min_row=2, values_only=True)]
-    except Exception:
-        pares = None
-    if not pares:
-        pares = _ler_lista_medicos_xml(p)
+    pc = PASTA_DADOS / "lista_medico.csv"
+    if not pc.exists() and (PASTA_DADOS / "lista_medico.csv.enc").exists():
+        pc = _abrir_enc(PASTA_DADOS / "lista_medico.csv.enc")
+    if pc.exists():
+        pares = [(r[0], r[1]) for r in _linhas_arquivo(pc) if len(r) >= 2 and _cel(r[0]).strip()]
+    else:
+        p = PASTA_DADOS / "lista_medico.xlsx"
+        if not p.exists() and (PASTA_DADOS / "lista_medico.xlsx.enc").exists():
+            p = _abrir_enc(PASTA_DADOS / "lista_medico.xlsx.enc")
+        if not p.exists():
+            print("AVISO: data/lista_medico não encontrado - médicos aparecerão só pelo código.")
+            return {}
+        try:
+            from openpyxl import load_workbook
+            wb = load_workbook(p, read_only=True)
+            if wb.worksheets:
+                pares = [(r[0], r[1]) for r in wb.worksheets[0].iter_rows(min_row=2, values_only=True)]
+        except Exception:
+            pares = None
+        if not pares:
+            pares = _ler_lista_medicos_xml(p)
     mapa = {}
     for cod, nome in pares:
         try:
