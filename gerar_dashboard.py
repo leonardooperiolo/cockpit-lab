@@ -867,7 +867,7 @@ def carregar_precos_convenio(apoio):
         if troca:
             atual["ativo"], atual["valor"] = ativo, valor
 
-    exames, ex_idx = [], {}
+    exames, exames_cod, ex_idx = [], [], {}
     custo_apoio_db, custo_apoio_hp = [], []
     convenios, cv_idx = [], {}
     linhas_out = []
@@ -875,6 +875,7 @@ def carregar_precos_convenio(apoio):
         if cod_ex not in ex_idx:
             ex_idx[cod_ex] = len(exames)
             exames.append(g["nome"])
+            exames_cod.append(cod_ex)
             custo_apoio_db.append(custo_db.get(cod_ex))
             custo_apoio_hp.append(custo_hp.get(cod_ex))
         if cod_conv not in cv_idx:
@@ -889,6 +890,7 @@ def carregar_precos_convenio(apoio):
           f"({com_apoio:,} exames com custo de apoio para comparar)".replace(",", "."))
     return {
         "exames": exames,
+        "exameCod": exames_cod,
         "custoDB": custo_apoio_db,
         "custoHP": custo_apoio_hp,
         "convenios": convenios,
