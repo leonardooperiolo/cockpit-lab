@@ -514,15 +514,17 @@ PASTA_APOIO = PASTA_DADOS / "apoio"
 # papel -> como o nome do arquivo começa (sem acento, minúsculas, espaço = _)
 ARQ_APOIO = {
     "materiais": ("lista_materiais", "materiais"),   # opcional: código -> nome do material
+    "precos_conv": ("preco_de_exame_por_convenio", "precos_convenio", "preco_convenio", "precos_por_convenio"),  # opcional
     "lista": ("lista",),
     "de_db": ("de_para_concent_db",),
     "de_hp": ("de_para_concent_hp",),
     "tab_db": ("tabela_db",),
     "tab_hp": ("tabela_pardini", "tabela_hp", "tabela_padini"),
 }
-APOIO_OPCIONAL = {"materiais"}
+APOIO_OPCIONAL = {"materiais", "precos_conv"}
 NOME_PAPEL = {
     "materiais": "Lista de materiais biológicos",
+    "precos_conv": "Relatório de convênios por exame (preços)",
     "lista": "Lista de exames CONCENT (lab. apoio)", "de_db": "De-para CONCENT → DB",
     "de_hp": "De-para CONCENT → HP", "tab_db": "Tabela de preços DB", "tab_hp": "Tabela de preços HP (Pardini)",
 }
@@ -583,7 +585,7 @@ def achar_arquivos_apoio():
     if not PASTA_APOIO.is_dir():
         return achados
     for p in sorted(PASTA_APOIO.iterdir()):
-        if not p.is_file() or p.name.startswith(".") or not p.name.lower().endswith((".xlsx", ".csv", ".gz", ".enc")):
+        if not p.is_file() or p.name.startswith(".") or not p.name.lower().endswith((".xlsx", ".csv", ".gz", ".pdf", ".enc")):
             continue
         nome = _sa(p.name).replace(" ", "_")
         for papel, inicios in ARQ_APOIO.items():
@@ -634,6 +636,26 @@ def _ler_depara(p: Path):
                     "apo": _cel(r[ia]), "nome_ap": _cel(r[ina]) if ina != inc else "",
                     "desc": _cel(r[idesc]) if idesc is not None else ""})
     return out
+
+
+def _ler_precos_convenio(p: Path):
+    """CSV exportado direto do banco do CONCENT (convênio, plano, exame, valor, ativo).
+    Devolve uma lista de (cod_exame_concent, nome_exame, cod_convenio, nome_convenio,
+    ativo_bool, valor)."""
+    saida = []
+    for r in _linhas_arquivo(p):
+        if len(r) < 8:
+            continue
+        cod_conv = _cel(r[0]).rstrip(".").strip()
+        nome_conv = _cel(r[1]).strip()
+        cod_exame = _cel(r[4]).strip()
+        nome_exame = _cel(r[5]).strip()
+        valor = _preco(_cel(r[6]))
+        ativo = _cel(r[7]).strip().upper() == "S"
+        if not cod_conv.isdigit() or not cod_exame or not nome_exame:
+            continue
+        saida.append((cod_exame, nome_exame, int(cod_conv), nome_conv, ativo, valor or 0.0))
+    return saida
 
 
 def _ler_materiais(p: Path):
@@ -811,6 +833,70 @@ def carregar_apoio():
 
 
 # --------------------------------------------------------------------------- main
+def carregar_precos_convenio(apoio):
+    """Preços por convênio, exportados direto do banco do CONCENT, cruzados com o
+    custo do laboratório de apoio pelo código do exame. Quando um convênio tem mais
+    de um plano para o mesmo exame, fica só o de maior valor (o plano em si não é
+    mostrado no painel). Devolve None se o arquivo não foi enviado."""
+    arqs = achar_arquivos_apoio()
+    if "precos_conv" not in arqs:
+        return None
+    print(f"Lendo {arqs['precos_conv'].name}...")
+    linhas = _ler_precos_convenio(arqs["precos_conv"])
+
+    custo_db, custo_hp = {}, {}
+    if apoio:
+        for r in apoio["rows"]:
+            for lado, alvo in (("d", custo_db), ("h", custo_hp)):
+                o = r[lado]
+                if o and o["p"]:
+                    v = min(o["p"])
+                    alvo[r["c"]] = min(alvo.get(r["c"], v), v)
+
+    # agrupa por (exame, convênio): entre os planos do mesmo convênio, fica o de maior
+    # valor - preferindo um plano ativo quando existir algum ativo nesse convênio.
+    grupos = {}  # (cod_exame, cod_conv) -> {"nome":..., "convn":..., "ativo":bool, "valor":float}
+    for cod_ex, nome_ex, cod_conv, convn, ativo, valor in linhas:
+        chave = (cod_ex, cod_conv)
+        atual = grupos.get(chave)
+        if atual is None:
+            grupos[chave] = {"nome": nome_ex, "convn": convn, "ativo": ativo, "valor": valor}
+            continue
+        # um plano ativo sempre vence um inativo; dentro do mesmo status, fica o maior valor
+        troca = ativo if ativo != atual["ativo"] else valor > atual["valor"]
+        if troca:
+            atual["ativo"], atual["valor"] = ativo, valor
+
+    exames, ex_idx = [], {}
+    custo_apoio_db, custo_apoio_hp = [], []
+    convenios, cv_idx = [], {}
+    linhas_out = []
+    for (cod_ex, cod_conv), g in grupos.items():
+        if cod_ex not in ex_idx:
+            ex_idx[cod_ex] = len(exames)
+            exames.append(g["nome"])
+            custo_apoio_db.append(custo_db.get(cod_ex))
+            custo_apoio_hp.append(custo_hp.get(cod_ex))
+        if cod_conv not in cv_idx:
+            cv_idx[cod_conv] = len(convenios)
+            convenios.append({"c": cod_conv, "n": g["convn"]})
+        linhas_out.append([ex_idx[cod_ex], cv_idx[cod_conv], 1 if g["ativo"] else 0, round(g["valor"], 2)])
+    linhas_out.sort(key=lambda r: (r[0], r[1]))
+
+    com_apoio = sum(1 for i in range(len(exames)) if custo_apoio_db[i] is not None or custo_apoio_hp[i] is not None)
+    print(f"  {len(exames):,} exames, {len(convenios):,} convênios, {len(linhas_out):,} preços "
+          f"(veio de {len(linhas):,} linhas do banco, antes de juntar planos) "
+          f"({com_apoio:,} exames com custo de apoio para comparar)".replace(",", "."))
+    return {
+        "exames": exames,
+        "custoDB": custo_apoio_db,
+        "custoHP": custo_apoio_hp,
+        "convenios": convenios,
+        "linhas": linhas_out,
+        "arquivo": arqs["precos_conv"].name,
+    }
+
+
 def main():
     arquivos = achar_arquivos_dados()
     partes, resumo = [], []
@@ -834,6 +920,7 @@ def main():
     if dados["apoio"]:
         r = dados["apoio"]["resumo"]
         print(f"Laboratório de apoio: {r['exames']} exames da lista, {r['com_db']} com preço DB, {r['com_hp']} com preço HP, {r['ambos']} nos dois")
+    dados["precosConv"] = carregar_precos_convenio(dados["apoio"])
     payload = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     html = TEMPLATE.read_text(encoding="utf-8")
     if "/*__DATA__*/null" not in html:
