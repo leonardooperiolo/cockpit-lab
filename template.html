@@ -852,6 +852,7 @@ function renderPrecosConv(){
   const ini=S.pc.pg*PC_PAGE,vis=rows.slice(ini,ini+PC_PAGE);
   const padraoTop50=!S.pc.ord&&!S.pc.q.trim();
   let h=`<p class="sub" style="margin:10px 0 6px">${padraoTop50?`Top ${fNum.format(n)} exames mais feitos no ano`:`${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.pc.q.trim()?` para “${esc(S.pc.q.trim())}”`:''}`} · clique no título de uma coluna para ordenar · verde = sobra dinheiro sobre o custo de apoio, vermelho = fica no prejuízo</p>`;
+  if(padraoTop50)h+=`<p class="sub" style="margin:0 0 10px"><button class="lnk" id="pcVerTodos">Ver todos os exames deste convênio →</button></p>`;
   if(!n){$('#pcRes').innerHTML=h+'<div class="empty">Nenhum preço encontrado. Tente outro nome, ou troque o convênio.</div>';return;}
   h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('exame','Exame','nm')}${th('conv','Convênio','nm')}${th('valor','Preço pago','pc')}${th('db','Preço DB','pc')}${th('hp','Preço HP','pc')}${th('marg','Margem','pc st')}</tr></thead><tbody>`;
   vis.forEach(r=>{
@@ -868,6 +869,7 @@ function renderPrecosConv(){
   $('#pcRes').innerHTML=h;
   $$('[data-pc-ord]').forEach(t=>t.onclick=()=>{const k=t.dataset.pcOrd;if(S.pc.ord===k)S.pc.dir*=-1;else{S.pc.ord=k;S.pc.dir=1;}S.pc.pg=0;renderPrecosConv();});
   $$('[data-pc-pg]').forEach(b=>b.onclick=()=>{S.pc.pg+=+b.dataset.pcPg;renderPrecosConv();$('#pcBar').scrollIntoView({block:'start'});});
+  const vt=$('#pcVerTodos');if(vt)vt.onclick=()=>{S.pc.ord='exame';S.pc.dir=1;S.pc.pg=0;renderPrecosConv();};
 }
 function bindPrecosConv(){
   if(!D.precosConv)return;
