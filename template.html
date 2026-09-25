@@ -613,8 +613,9 @@ function viewPeriodos(){
 }
 function bindPeriodos(){const pr=$('#pReset');if(pr)pr.onclick=()=>{S.pa={ini:isoAdd(ULT,-14),fim:ULT};S.pb={ini:monthBack(isoAdd(ULT,-14)),fim:monthBack(ULT)};go();};$$('[data-c]').forEach(b=>b.onclick=()=>{S.cmpCum=+b.dataset.c;go();});$$('[data-p]').forEach(i=>i.onchange=e=>{
   const v=e.target.value;
-  // ignora datas com ano implausível (ex.: digitado pela metade, tipo "0020") em vez de travar a tela
-  if(v){const y=+v.slice(0,4); if(!/^\d{4}-\d{2}-\d{2}$/.test(v)||y<2000||y>2100){e.target.value=(+e.target.dataset.p?S.pb:S.pa)[e.target.dataset.e];return;}}
+  // enquanto o ano não tem 4 dígitos plausíveis, não faz nada - deixa o campo em paz,
+  // sem redesenhar a tela (é isso que travava a digitação no meio do ano)
+  if(v){const y=+v.slice(0,4); if(!/^\d{4}-\d{2}-\d{2}$/.test(v)||y<2000||y>2100)return;}
   (+e.target.dataset.p?S.pb:S.pa)[e.target.dataset.e]=v;
   const fp=e.target.dataset.p,fe=e.target.dataset.e;
   go();
