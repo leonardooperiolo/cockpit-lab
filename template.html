@@ -98,6 +98,7 @@ body.locked>*:not(.gate){display:none}
 .aptb td.st,.aptb th.st{min-width:190px}
 .aptb .pv{display:block;font-size:16px;font-weight:700;color:var(--ink);white-space:nowrap}
 .aptb .cdg{display:block;margin-top:1px;font-size:11.5px;color:#94a3b8;text-decoration:none}
+.aptb .pz{display:block;margin-top:1px;font-size:11px;color:#94a3b8}
 a.cdg:hover{text-decoration:underline;color:#2563eb}
 .aptb td small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:3px;font-weight:400}
 .aptb td small.aviso{color:#8a5a00}
@@ -740,9 +741,10 @@ function apCel(o,melhor,lado){
   const cd=lado==='d'
     ?`<a class="cdg" href="https://gde.diagnosticosdobrasil.com.br/exam/${encodeURIComponent(o.c)}" target="_blank" rel="noopener"${o.n?` title="${esc(o.n)} · abrir no Guia de Exames DB"`:' title="Abrir no Guia de Exames DB"'}>${esc(o.c)}</a>`
     :`<span class="cdg"${o.n?` title="${esc(o.n)}"`:''}>${esc(o.c)}</span>`;
-  if(!o.p)return `<span class="mut">${o.e==='z'?'R$ 0,00 na tabela':'sem preço na tabela'}</span>${cd}`;
+  const pz=lado==='d'&&o.pz?`<span class="pz" title="Prazo de entrega no DB">⏱ ${esc(o.pz)}</span>`:'';
+  if(!o.p)return `<span class="mut">${o.e==='z'?'R$ 0,00 na tabela':'sem preço na tabela'}</span>${cd}${pz}`;
   const [a,b]=o.p,rng=a!==b;
-  return `<span class="pv">${melhor?'<span class="ck">✔</span> ':''}${rng?fBRL.format(a)+' a '+fBRL.format(b)+' <span title="A tabela tem mais de um preço para este código" style="cursor:help">⚠</span>':fBRL.format(a)}</span>${cd}`;
+  return `<span class="pv">${melhor?'<span class="ck">✔</span> ':''}${rng?fBRL.format(a)+' a '+fBRL.format(b)+' <span title="A tabela tem mais de um preço para este código" style="cursor:help">⚠</span>':fBRL.format(a)}</span>${cd}${pz}`;
 }
 function apStatus(r){
   const eco=r.x!=null&&r.x>0?`<small>economia de ${fBRL.format(r.x)} (${fD1.format(r.y)}%)</small>${r.y>=50?'<small class="aviso">diferença grande: confira se é o mesmo exame</small>':''}`:'';
@@ -805,8 +807,8 @@ function bindApoio(){
   $('#apCsv').onclick=()=>{
     const cel=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',pr=o=>!o||!o.p?'':o.p[0]===o.p[1]?String(o.p[0]).replace('.',','):`${String(o.p[0]).replace('.',',')} a ${String(o.p[1]).replace('.',',')}`;
     const rot={d:'DB',h:'HP','=':'Iguais','?':'Conferir',sd:'Só DB tem preço',sh:'Só HP tem preço',sp:'Sem preço na tabela',nm:'Sem mapeamento'};
-    const linhas=[['Cód. CONCENT','Exame no CONCENT','Material','Cód. DB','Nome no DB','Preço DB','Cód. HP','Nome no HP','Preço HP','Mais em conta','Economia R$','Economia %'].map(cel).join(';')];
-    apRows().forEach(r=>linhas.push([r.c,r.n,r.m,r.d?r.d.c:'',r.d?r.d.n:'',pr(r.d),r.h?r.h.c:'',r.h?r.h.n:'',pr(r.h),rot[r.w],r.x==null?'':String(r.x).replace('.',','),r.y==null?'':String(r.y).replace('.',',')].map(cel).join(';')));
+    const linhas=[['Cód. CONCENT','Exame no CONCENT','Material','Cód. DB','Nome no DB','Preço DB','Prazo DB','Cód. HP','Nome no HP','Preço HP','Mais em conta','Economia R$','Economia %'].map(cel).join(';')];
+    apRows().forEach(r=>linhas.push([r.c,r.n,r.m,r.d?r.d.c:'',r.d?r.d.n:'',pr(r.d),r.d&&r.d.pz?r.d.pz:'',r.h?r.h.c:'',r.h?r.h.n:'',pr(r.h),rot[r.w],r.x==null?'':String(r.x).replace('.',','),r.y==null?'':String(r.y).replace('.',',')].map(cel).join(';')));
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+linhas.join('\r\n')],{type:'text/csv;charset=utf-8'}));a.download='laboratorio_apoio_precos.csv';a.click();
   };
   renderApoio();

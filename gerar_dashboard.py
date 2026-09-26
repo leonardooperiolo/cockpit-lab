@@ -521,16 +521,18 @@ PASTA_APOIO = PASTA_DADOS / "apoio"
 ARQ_APOIO = {
     "materiais": ("lista_materiais", "materiais"),   # opcional: código -> nome do material
     "precos_conv": ("preco_de_exame_por_convenio", "precos_convenio", "preco_convenio", "precos_por_convenio"),  # opcional
+    "prazos_db": ("amostra_do_portf", "portfolio_de_exames", "portfolio_exames", "prazo_db", "prazos_db"),  # opcional
     "lista": ("lista",),
     "de_db": ("de_para_concent_db",),
     "de_hp": ("de_para_concent_hp",),
     "tab_db": ("tabela_db",),
     "tab_hp": ("tabela_pardini", "tabela_hp", "tabela_padini"),
 }
-APOIO_OPCIONAL = {"materiais", "precos_conv"}
+APOIO_OPCIONAL = {"materiais", "precos_conv", "prazos_db"}
 NOME_PAPEL = {
     "materiais": "Lista de materiais biológicos",
     "precos_conv": "Relatório de convênios por exame (preços)",
+    "prazos_db": "Portfólio de exames e prazos do DB",
     "lista": "Lista de exames CONCENT (lab. apoio)", "de_db": "De-para CONCENT → DB",
     "de_hp": "De-para CONCENT → HP", "tab_db": "Tabela de preços DB", "tab_hp": "Tabela de preços HP (Pardini)",
 }
@@ -673,6 +675,16 @@ def _ler_materiais(p: Path):
     return out
 
 
+def _ler_prazos_db(p: Path):
+    """Portfólio de exames do DB (código/mnemônico -> prazo de entrega, ex.: '2 dias úteis')."""
+    out = {}
+    linhas = _linhas_arquivo(p)
+    for r in linhas[1:] if linhas else []:
+        if len(r) >= 4 and _cel(r[0]) and _cel(r[3]):
+            out[_cel(r[0])] = re.sub(r"\s+", " ", _cel(r[3]))
+    return out
+
+
 def _ler_precos(p: Path):
     """Tabela de preços: devolve {código: {'precos': [..], 'nome': ..}} e a lista de códigos repetidos."""
     linhas = _linhas_arquivo(p)
@@ -771,6 +783,7 @@ def carregar_apoio():
     op_db, op_hp = _opcoes_apoio(dep_db, tab_db), _opcoes_apoio(dep_hp, tab_hp)
 
     mat_nome = _ler_materiais(arqs["materiais"]) if "materiais" in arqs else {}
+    prazos_db = _ler_prazos_db(arqs["prazos_db"]) if "prazos_db" in arqs else {}
     for r in dep_hp:   # reserva: descrição do material no de-para do HP
         if r["desc"] and r["mat"] not in mat_nome:
             mat_nome[r["mat"]] = r["desc"]
@@ -780,12 +793,16 @@ def carregar_apoio():
     extras = sorted((set(op_db) | set(op_hp)) - na_lista)
     exames += [(c, nomes_c.get(c, c), "", 0) for c in extras]
 
-    def lado(o):
+    def lado(o, pz_map=None):
         if not o:
             return None
         d = {"c": o["apo"], "n": o["nome"], "p": o["p"]}
         if o["e"]:
             d["e"] = o["e"]
+        if pz_map:
+            pz = pz_map.get(o["apo"])
+            if pz:
+                d["pz"] = pz
         return d
 
     linhas = []
@@ -799,7 +816,7 @@ def carregar_apoio():
                 if rot and rot not in do_exame[chave]["m"].split(" · "):
                     do_exame[chave]["m"] = (do_exame[chave]["m"] + " · " + rot) if do_exame[chave]["m"] else rot
                 continue
-            do_exame[chave] = {"c": cod, "n": nome, "m": rot, "l": na, "d": lado(d), "h": lado(h), "w": w,
+            do_exame[chave] = {"c": cod, "n": nome, "m": rot, "l": na, "d": lado(d, prazos_db), "h": lado(h), "w": w,
                                "x": None if x is None else round(x, 2), "y": None if y is None else round(y, 1)}
         linhas += list(do_exame.values())
     linhas.sort(key=lambda r: (_sa(r["n"]), r["c"], r["m"]))
