@@ -53,6 +53,10 @@ h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(2
 .notice button.lnk{font-size:14px}
 
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:18px 0 0}
+.saude-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.saude-grid table{font-size:12px}
+.saude-grid th,.saude-grid td{padding:7px 4px}
+@media (max-width:820px){.saude-grid{grid-template-columns:1fr}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
 .kpi .l{font-size:12.5px;color:var(--muted);font-weight:600}
 .kpi .v{font-size:clamp(22px,2.3vw,30px);font-weight:800;line-height:1.15;margin:6px 0 4px;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -169,6 +173,7 @@ td.nm,th.nm{white-space:normal;min-width:220px;text-align:left}
 
   <nav class="tabs" id="tabs" role="tablist">
     <button role="tab" data-tab="geral">Visão Geral</button>
+    <button role="tab" data-tab="saude">Saúde do Negócio</button>
     <button role="tab" data-tab="anual">Comparativo Anual</button>
     <button role="tab" data-tab="periodos">Comparar Períodos</button>
     <button role="tab" data-tab="rank">Convênios, Médicos &amp; Unidades</button>
@@ -469,9 +474,27 @@ $$('#tabs button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;go();});
 $('#stDados').textContent=isoBR(ULT);$('#stGerado').textContent=D.meta.geradoEm;
 
 /* ---------- visão geral ---------- */
+function previsaoFechamentoMes(dd){
+  // olha os últimos 3 anos (mesmo mês) e vê que fração do faturamento do mês inteiro já
+  // costumava estar dentro até o mesmo dia em que estamos hoje; usa a média disso pra
+  // projetar o total do mês a partir do que já entrou até agora.
+  const fracoes=[];
+  for(let k=1;k<=3;k++){
+    const anoRef=uy-k;
+    const totalMes=agg(dayMask(i=>diaAno[i]===anoRef&&diaMes[i]===um),dd,null).tot.f;
+    if(!totalMes)continue;
+    const diasMesRef=new Date(anoRef,um,0).getDate(),diaEq=Math.min(ULTDOM,diasMesRef);
+    const parcial=agg(dayMask(i=>diaAno[i]===anoRef&&diaMes[i]===um&&diaDom[i]<=diaEq),dd,null).tot.f;
+    fracoes.push(parcial/totalMes);
+  }
+  if(!fracoes.length)return null;
+  return {fracaoMedia:fracoes.reduce((a,b)=>a+b,0)/fracoes.length,anos:fracoes.length};
+}
 function viewGeral(){
   const PER=periodo(),dm=PER.mask,dd=dims(),Q=D.qualidade;
   const hoje=agg(maskRange(ULT,ULT),dd,null).tot;
+  const mesIni=`${uy}-${pad(um)}-01`,mesAcum=agg(maskRange(mesIni,ULT),dd,null).tot;
+  const prev=previsaoFechamentoMes(dd),previsto=prev?mesAcum.f/prev.fracaoMedia:null;
   const day=agg(dm,dd,i=>A.d[i]).g;
   const uniHoje=agg(maskRange(ULT,ULT),dd,i=>A.u[i]).g;
   const mon12=agg(PER.def?maskRange(range12().ini,range12().fim):PER.mask,dd,i=>diaYM[A.d[i]]).g,ym12=[...mon12.keys()].sort((a,b)=>a-b);
@@ -483,6 +506,8 @@ function viewGeral(){
    <div class="card kpi"><div class="l">Pacientes atendidos</div><div class="v" style="color:var(--green)">${fNum.format(hoje.r)}</div><div class="s">atendimentos (requisições únicas)</div></div>
    <div class="card kpi"><div class="l">Exames realizados</div><div class="v" style="color:var(--ink)">${fNum.format(hoje.e)}</div><div class="s">${fD1.format(hoje.r?hoje.e/hoje.r:0)} exames por paciente</div></div>
    <div class="card kpi"><div class="l">Ticket médio</div><div class="v" style="color:var(--amber)">${fBRL.format(tk(hoje))}</div><div class="s">faturamento líquido ÷ pacientes</div></div>
+   <div class="card kpi"><div class="l">Acumulado em ${MESL[um-1].toLowerCase()}</div><div class="v" style="color:var(--blue);${fitTxt(fBRL0.format(mesAcum.f))}">${fBRL0.format(mesAcum.f)}</div><div class="s">faturamento líquido, de 01/${pad(um)} até hoje</div></div>
+   <div class="card kpi"><div class="l">Previsão de fechamento<span title="Compara quanto do faturamento do mês, nos últimos anos, já tinha entrado até este mesmo dia, e projeta o total do mês a partir disso." style="cursor:help">ⓘ</span></div>${previsto?`<div class="v" style="color:var(--ink);${fitTxt(fBRL0.format(previsto))}">${fBRL0.format(previsto)}</div><div class="s">com base nos últimos ${prev.anos} anos neste mês (${fD1.format(prev.fracaoMedia*100)}% já costuma ter entrado até hoje)</div>`:'<div class="v mut" style="font-size:20px">sem histórico suficiente</div><div class="s">precisa de pelo menos 1 ano anterior com dados neste mês</div>'}</div>
   </div>`;
   const dk=[...day.keys()].sort((a,b)=>a-b);
   const dtsAll=PER.def?Array.from({length:daysBetween(PER.ini,PER.fim)+1},(_,n)=>isoAdd(PER.ini,n)):dk.map(i=>D.dias[i]);
@@ -677,6 +702,81 @@ function viewExames(){
   return h+'</tbody></table></div>';
 }
 function bindExames(){$$('[data-o]').forEach(b=>b.onclick=()=>{S.exOrd=b.dataset.o;go();});}
+
+/* ---------- saúde do negócio ---------- */
+function ytdMask(y){return dayMask(i=>diaAno[i]===y&&(diaMes[i]<um||(diaMes[i]===um&&diaDom[i]<=ULTDOM)));}
+function variacaoGrupo(keyFn,dim,quality,topN=20){
+  // olha só os "principais" (maiores em faturamento OU em exames no ano anterior) e,
+  // dentro desse grupo, ordena pela variação - assim o top não fica dominado por quem
+  // tinha uma base pequena e deu um salto sem relevância real.
+  const anos=[uy,uy-1,uy-2];
+  const porAno=anos.map(y=>agg(ytdMask(y),{},keyFn).g);
+  const ant=porAno[1];
+  const porFat=[...ant.entries()].sort((a,b)=>b[1].f-a[1].f).slice(0,topN).map(([k])=>k);
+  const porExa=[...ant.entries()].sort((a,b)=>b[1].e-a[1].e).slice(0,topN).map(([k])=>k);
+  const principais=new Set([...porFat,...porExa]);
+  const linhas=[];
+  principais.forEach(k=>{
+    const antV=ant.get(k);
+    if(!antV||!(antV.f>0))return;
+    const atualV=porAno[0].get(k)||Z(),ant2V=porAno[2].get(k)||null;
+    linhas.push({k,nome:dim[k]?dim[k].nome:('Cód. '+k),q:quality?quality(k):0,atual:atualV,ant:antV,ant2:ant2V,pct:(atualV.f-antV.f)/antV.f*100});
+  });
+  linhas.sort((a,b)=>b.pct-a.pct);
+  return {linhas,pool:principais.size};
+}
+function saudeLinhaCompacta(r){
+  return `<tr><td class="nm">${esc(r.nome)}${r.q===1?'<span class="tag">sem nome</span>':''}${r.q===2?'<span class="tag w">ambíguo</span>':''}</td>
+   <td>${delta(r.ant.f,r.atual.f)}</td><td>${delta(r.ant.r,r.atual.r)}</td><td>${delta(r.ant.e,r.atual.e)}</td></tr>`;
+}
+function saudeCabecalhoCompacto(){
+  return `<tr><th class="nm">Nome</th><th>Faturamento</th><th>Atendimentos</th><th>Exames</th></tr>`;
+}
+function saudeLinha(r){
+  const cel=(atual,ant,fmt)=>`<td>${fmt(atual)}<small style="display:block;color:var(--muted);font-weight:400">era ${fmt(ant)}</small><small style="display:block;margin-top:1px">${delta(ant,atual)}</small></td>`;
+  return `<tr><td class="nm">${esc(r.nome)}${r.q===1?'<span class="tag">sem nome</span>':''}${r.q===2?'<span class="tag w">ambíguo</span>':''}</td>
+   ${cel(r.atual.f,r.ant.f,fBRL.format)}${cel(r.atual.r,r.ant.r,fNum.format)}${cel(r.atual.e,r.ant.e,fNum.format)}</tr>`;
+}
+function saudeCabecalho(){
+  return `<tr><th class="nm">Nome</th><th>Faturamento líquido</th><th>Atendimentos</th><th>Exames</th></tr>`;
+}
+function saudeTabelaCompacta(titulo,linhas,cor){
+  if(!linhas.length)return `<div class="card"><h3 style="margin-top:0">${titulo}</h3><div class="empty">Nada para comparar.</div></div>`;
+  return `<div class="card tw"><h3 style="margin:0 0 10px;color:${cor}">${titulo}</h3><table><thead>${saudeCabecalhoCompacto()}</thead><tbody>${linhas.map(saudeLinhaCompacta).join('')}</tbody></table></div>`;
+}
+function saudeTabela(titulo,linhas,cor){
+  if(!linhas.length)return `<div class="card"><h3 style="margin-top:0">${titulo}</h3><div class="empty">Nada para comparar.</div></div>`;
+  return `<div class="card tw"><h3 style="margin:0 0 10px;color:${cor}">${titulo}</h3><table><thead>${saudeCabecalho()}</thead><tbody>${linhas.map(saudeLinha).join('')}</tbody></table></div>`;
+}
+function saudePar(tituloGrupo,v){
+  return `<h3 style="margin:16px 0 8px">${tituloGrupo}<small style="font-weight:400;color:var(--muted);margin-left:8px">considerando os ${v.pool} maiores em faturamento ou em exames no ano anterior</small></h3>
+   <div class="saude-grid">${saudeTabelaCompacta('Top 5 em alta',v.linhas.slice(0,5),'#0f6b44')}${saudeTabelaCompacta('Top 5 em queda',v.linhas.slice(-5).reverse(),'#b3261e')}</div>`;
+}
+function viewSaude(){
+  const dimGrp={convenios:D.convenios,medicos:D.medicos};
+  const keyGrp={convenios:i=>A.c[i],medicos:i=>A.m[i]};
+  const qGrp={medicos:k=>D.medicos[k]?D.medicos[k].q:0};
+  const vConv=variacaoGrupo(keyGrp.convenios,dimGrp.convenios),
+        vMed=variacaoGrupo(keyGrp.medicos,dimGrp.medicos,qGrp.medicos);
+  const per3=(y)=>agg(ytdMask(y),{},null).tot;
+  const t0=per3(uy),t1=per3(uy-1);
+  const rotuloPeriodo=`01/01 até ${ddmm(ULT)}`;
+  let h=`<div class="card"><h3 style="margin-top:0">Saúde do negócio</h3>
+   <p class="sub">Compara o acumulado de <b>${rotuloPeriodo} de ${uy}</b> com o mesmo período de <b>${uy-1}</b> - sempre até o mesmo dia, para não comparar um ano inteiro com um ano ainda em andamento.</p>
+   <div class="kpis">
+    <div class="card kpi"><div class="l">Faturamento líquido · ${rotuloPeriodo}</div><div class="v" style="color:var(--blue)">${fBRL0.format(t0.f)}</div><div class="s">${uy-1}: ${fBRL0.format(t1.f)} · ${delta(t1.f,t0.f)}</div></div>
+    <div class="card kpi"><div class="l">Atendimentos</div><div class="v" style="color:var(--green)">${fNum.format(t0.r)}</div><div class="s">${uy-1}: ${fNum.format(t1.r)} · ${delta(t1.r,t0.r)}</div></div>
+    <div class="card kpi"><div class="l">Ticket médio</div><div class="v" style="color:var(--amber)">${fBRL.format(tk(t0))}</div><div class="s">${uy-1}: ${fBRL.format(tk(t1))} · ${delta(tk(t1),tk(t0))}</div></div>
+    <div class="card kpi"><div class="l">Exames</div><div class="v" style="color:var(--ink)">${fNum.format(t0.e)}</div><div class="s">${uy-1}: ${fNum.format(t1.e)} · ${delta(t1.e,t0.e)}</div></div>
+   </div></div>`;
+  h+=`<h2>Diagnóstico por grupo<small>top 5 de maior alta e maior queda, entre os principais convênios e médicos</small></h2>`;
+  h+=saudePar('Convênios',vConv);
+  h+=saudePar('Médicos',vMed);
+  h+=`<h2>Detalhamento<small>top 10 de convênios e médicos, alta e queda</small></h2>`;
+  h+=`<h3 style="margin:16px 0 8px">Convênios</h3><div class="saude-grid">${saudeTabela('Top 10 em alta',vConv.linhas.slice(0,10),'#0f6b44')}${saudeTabela('Top 10 em queda',vConv.linhas.slice(-10).reverse(),'#b3261e')}</div>`;
+  h+=`<h3 style="margin:16px 0 8px">Médicos</h3><div class="saude-grid">${saudeTabela('Top 10 em alta',vMed.linhas.slice(0,10),'#0f6b44')}${saudeTabela('Top 10 em queda',vMed.linhas.slice(-10).reverse(),'#b3261e')}</div>`;
+  return h;
+}
 
 /* ---------- qualidade ---------- */
 function viewQualidade(){
@@ -903,12 +1003,12 @@ function bindPrecosConv(){
 }
 
 /* ---------- roteamento ---------- */
-const VIEWS={geral:[viewGeral,null],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],apoio:[viewApoio,bindApoio],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null]};
+const VIEWS={geral:[viewGeral,null],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],saude:[viewSaude,null],apoio:[viewApoio,bindApoio],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null]};
 function go(){
   $$('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===S.tab));
   const per=['geral','rank','exames','anual'].includes(S.tab);
   $('#fgPeriodo').style.display=per?'':'none';
-  $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio'||S.tab==='precosconv')?'none':'';
+  $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio'||S.tab==='precosconv'||S.tab==='saude')?'none':'';
   $('#fHint').textContent=per?'':(S.tab==='anual'?'Nesta aba os anos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.':'Nesta aba os períodos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.');
   syncFilters();
   const [v,b]=VIEWS[S.tab];
