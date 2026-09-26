@@ -837,9 +837,10 @@ function pcRows(){
     return out;
   }
   if(!q.trim()){
-    // padrão: top 50 exames mais feitos no ano (clique em "Exame" pra ver todos, em ordem alfabética)
+    // padrão: ordenado pelos exames mais feitos no ano (clique em "Exame" pra ir para ordem alfabética);
+    // sem limite de 50 - a paginação normal já deixa ver o restante, página a página
     out.sort((a,b)=>(vol.get(PC.exameCod[b.ei])||0)-(vol.get(PC.exameCod[a.ei])||0));
-    return out.slice(0,50);
+    return out;
   }
   out.sort((a,b)=>normTxt(a.nome)<normTxt(b.nome)?-1:normTxt(a.nome)>normTxt(b.nome)?1:(a.marg==null?1:0)-(b.marg==null?1:0));
   return out;
@@ -856,7 +857,7 @@ function viewPrecosConv(){
     <label class="fld">Convênio<select id="pcConv" style="max-width:260px">${convs.map(c=>`<option value="${esc(c.c)}">${esc(c.n)}</option>`).join('')}<option value="">Todos os convênios</option></select></label>
     <label class="apck"><input type="checkbox" id="pcAtivos"> Somente convênios ativos</label>
     <button class="btn" id="pcCsv" type="button">Baixar CSV</button></div>
-    <p class="sub">Um convênio pode ter mais de um plano cadastrado para o mesmo exame; aqui sempre aparece o de maior valor. Custo de apoio = menor preço entre DB e HP (aba Laboratório de Apoio). Margem = quanto sobra do valor pago pelo convênio depois de descontar esse custo. Sem busca, mostra os 50 exames mais feitos no ano — clique em "Exame" para ver todos, em ordem alfabética.</p><div id="pcRes"></div>`;
+    <p class="sub">Um convênio pode ter mais de um plano cadastrado para o mesmo exame; aqui sempre aparece o de maior valor. Custo de apoio = menor preço entre DB e HP (aba Laboratório de Apoio). Margem = quanto sobra do valor pago pelo convênio depois de descontar esse custo. Sem busca, a ordem padrão é pelos exames mais feitos no ano; use as páginas abaixo da tabela para ver o restante, ou clique em "Exame" para ir em ordem alfabética.</p><div id="pcRes"></div>`;
   return h;
 }
 function pcCel(v){return v==null?`<span class="mut">—</span>`:fBRL.format(v);}
@@ -867,8 +868,7 @@ function renderPrecosConv(){
   const th=(k,t,cls='')=>`<th class="${cls}" data-pc-ord="${k}" style="cursor:pointer" aria-sort="${ord===k?(S.pc.dir>0?'ascending':'descending'):'none'}">${t}${seta(k)}</th>`;
   const ini=S.pc.pg*PC_PAGE,vis=rows.slice(ini,ini+PC_PAGE);
   const padraoTop50=!S.pc.ord&&!S.pc.q.trim();
-  let h=`<p class="sub" style="margin:10px 0 6px">${padraoTop50?`Top ${fNum.format(n)} exames mais feitos no ano`:`${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.pc.q.trim()?` para “${esc(S.pc.q.trim())}”`:''}`} · clique no título de uma coluna para ordenar · verde = sobra dinheiro sobre o custo de apoio, vermelho = fica no prejuízo</p>`;
-  if(padraoTop50)h+=`<p class="sub" style="margin:0 0 10px"><button class="lnk" id="pcVerTodos">Ver todos os exames deste convênio →</button></p>`;
+  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.pc.q.trim()?` para “${esc(S.pc.q.trim())}”`:''}${padraoTop50?' · ordenado pelos exames mais feitos no ano':''} · clique no título de uma coluna para ordenar · verde = sobra dinheiro sobre o custo de apoio, vermelho = fica no prejuízo</p>`;
   if(!n){$('#pcRes').innerHTML=h+'<div class="empty">Nenhum preço encontrado. Tente outro nome, ou troque o convênio.</div>';return;}
   h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('cod','Cód.','cd')}${th('exame','Exame','nm')}${th('conv','Convênio','nm')}${th('valor','Preço pago','pc')}${th('db','Preço DB','pc')}${th('hp','Preço HP','pc')}${th('marg','Margem','pc st')}</tr></thead><tbody>`;
   vis.forEach(r=>{
@@ -881,11 +881,10 @@ function renderPrecosConv(){
      <td data-l="Margem" class="pc st${boa?' best':''}">${r.marg==null?'<span class="mut">sem custo para comparar</span>':`<span class="pv" style="color:${ruim?'#b3261e':'#0f6b44'}">${fD1.format(r.marg)}%</span><span class="cdg">${ruim?'prejuízo de ':'sobra '}${fBRL.format(Math.abs(r.dif))}</span>`}</td></tr>`;
   });
   h+='</tbody></table></div>';
-  if(pgs>1)h+=`<div class="row" style="margin:10px 0 0"><button class="btn" data-pc-pg="-1" ${S.pc.pg?'':'disabled'}>← Anterior</button><span class="sub" style="margin:0">Página ${S.pc.pg+1} de ${pgs} · resultados ${fNum.format(ini+1)} a ${fNum.format(Math.min(ini+PC_PAGE,n))} de ${fNum.format(n)}</span><button class="btn" data-pc-pg="1" ${S.pc.pg>=pgs-1?'':'disabled'}>Próxima →</button></div>`;
+  if(pgs>1)h+=`<div class="row" style="margin:10px 0 0"><button class="btn" data-pc-pg="-1" ${S.pc.pg?'':'disabled'}>← Anterior</button><span class="sub" style="margin:0">Página ${S.pc.pg+1} de ${pgs} · resultados ${fNum.format(ini+1)} a ${fNum.format(Math.min(ini+PC_PAGE,n))} de ${fNum.format(n)}</span><button class="btn" data-pc-pg="1" ${S.pc.pg<pgs-1?'':'disabled'}>Próxima →</button></div>`;
   $('#pcRes').innerHTML=h;
   $$('[data-pc-ord]').forEach(t=>t.onclick=()=>{const k=t.dataset.pcOrd;if(S.pc.ord===k)S.pc.dir*=-1;else{S.pc.ord=k;S.pc.dir=1;}S.pc.pg=0;renderPrecosConv();});
   $$('[data-pc-pg]').forEach(b=>b.onclick=()=>{S.pc.pg+=+b.dataset.pcPg;renderPrecosConv();$('#pcBar').scrollIntoView({block:'start'});});
-  const vt=$('#pcVerTodos');if(vt)vt.onclick=()=>{S.pc.ord='exame';S.pc.dir=1;S.pc.pg=0;renderPrecosConv();};
 }
 function bindPrecosConv(){
   if(!D.precosConv)return;
