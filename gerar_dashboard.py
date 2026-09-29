@@ -1061,6 +1061,10 @@ def carregar_financeiro():
         if len(row) < 10:
             continue
         _modulo, filcod, titnr, _serie, fornecedor, parcela, dtvencto, _vlr, saldo, _hist = row[:10]
+        # o DB2 exporta FILCOD (coluna decimal) às vezes com um ponto sobrando no final
+        # quando não tem casas decimais (ex.: "100." em vez de "100") - sem isso o
+        # cruzamento com data/filiais não batia e mostrava só o número (com o ponto).
+        filcod = filcod.strip().rstrip(".")
         d = _data_aaaammdd(dtvencto)
         aberto.append({"titulo": titnr, "fornecedor": fornecedor, "parcela": parcela,
                         "vencimento": d, "saldo": _preco(saldo) or 0.0, "filial": filcod})
