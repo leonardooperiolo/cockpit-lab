@@ -250,6 +250,11 @@ table tr:hover td{background:#F8FAFC}
 .kpi-proj .meta-input-sm{width:100%;font:inherit;font-size:12.5px;border:1px solid #cfdaee;border-radius:8px;padding:5px 8px;margin-top:8px}
 .kpi-proj .meta-bar-sm{height:7px;border-radius:5px;background:#e3eaf5;margin-top:7px;overflow:hidden}
 .kpi-proj .meta-bar-sm b{display:block;height:100%;background:var(--green);border-radius:5px}
+
+.aptb .rdbline{display:block;margin-top:2px;font-size:11px;font-weight:600}
+
+.pill.venc{background:#fee2e2;color:#b91c1c}
+.fin-tab table td.num,.fin-tab table th.num{text-align:right}
 </style>
 </head>
 <body>
@@ -268,6 +273,7 @@ table tr:hover td{background:#F8FAFC}
     <button role="tab" data-group="apoio">Laboratório de Apoio</button>
     <button role="tab" data-group="fat">Faturamento e Exames</button>
     <button role="tab" data-group="custos">Tabelas por Exame</button>
+    <button role="tab" data-group="financeiro">Financeiro</button>
   </nav>
   <nav class="subtabs" id="subtabs" role="tablist"></nav>
 
@@ -921,6 +927,40 @@ function viewSaude(){
 }
 
 /* ---------- qualidade ---------- */
+function mesLabelDe(iso){
+  const [y,m]=iso.split('-').map(Number);
+  return `${MESL[m-1]}/${y}`;
+}
+function viewFinanceiro(){
+  const F=D.financeiro;
+  if(!F)return `<div class="notice warn"><b>Ainda não há dados financeiros.</b> Envie os arquivos de contas a pagar (aberto.csv e categoria.csv) para a pasta <code>data/financeiro</code> do repositório.</div>`;
+  const R=F.resumo;
+  const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
+  let h=`<div class="secao-topo fin-tab">
+   <div class="secao-head"><h2 style="margin:0">Contas a pagar — visão geral</h2><span class="sub">${WDL[wdOf(F.hoje)]}, ${isoBR(F.hoje)}</span></div>
+   <div class="kpis-dia" style="grid-template-columns:repeat(3,1fr)">
+    ${k('Vencidas',fBRL0.format(R.vencidas.v),`${fNum.format(R.vencidas.n)} conta(s) em atraso`,'var(--red)')}
+    ${k('Vencendo hoje',fBRL0.format(R.hoje.v),`${fNum.format(R.hoje.n)} conta(s)`,'var(--amber)')}
+    ${k('Próximos pagamentos',fBRL0.format(R.restoMes.v),`${fNum.format(R.restoMes.n)} conta(s) · resto de ${mesLabelDe(F.hoje)}`)}
+   </div>
+  </div>`;
+  h+=`<h2 style="margin-top:24px">Vencidas e vencendo hoje<small>ordem cronológica</small></h2>`;
+  if(!F.tabela.length){
+    h+='<div class="empty">Nenhuma conta vencida ou vencendo hoje.</div>';
+  }else{
+    h+=`<div class="card tw fin-tab"><table><thead><tr><th>Fornecedor</th><th>Título / Parcela</th><th>Vencimento</th><th>Situação</th><th class="num">Saldo</th></tr></thead><tbody>
+    ${F.tabela.map(r=>`<tr><td>${esc(r.f)}</td><td>${esc(r.t)} / ${esc(r.p)}</td><td>${isoBR(r.v)}</td><td>${r.st==='hoje'?'<span class="pill warn">Vence hoje</span>':`<span class="pill venc">${fNum.format(r.d)} dia(s) em atraso</span>`}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  }
+  h+=`<h2 style="margin-top:28px">Fechamento de ${mesLabelDe(F.hoje)}</h2>
+   <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+    ${k('A pagar até fim do mês',fBRL0.format(R.aPagarMes.v),`${fNum.format(R.aPagarMes.n)} conta(s) · inclui as já vencidas`,'var(--blue)')}
+    ${R.recebimentosMes==null?`<div class="card kpi"><div class="l">Recebimentos até fim do mês</div><div class="v" style="color:var(--muted);font-size:17px">Sem dados ainda</div><div class="s">aguardando extração de contas a receber</div></div>`:k('Recebimentos até fim do mês',fBRL0.format(R.recebimentosMes.v),`${fNum.format(R.recebimentosMes.n)} recebimento(s)`,'var(--green)')}
+    ${k('Recorrentes sem lançamento',fNum.format(F.recorrencia.n),'fornecedor/categoria que sempre aparece e ainda não tem lançamento neste mês','var(--amber)')}
+   </div>`;
+  return h;
+}
+
 function viewQualidade(){
   const Q=D.qualidade;
   const k=(l,v,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:26px;color:var(--ink)">${v}</div><div class="s">${s||''}</div></div>`;
@@ -978,6 +1018,17 @@ function apRows(){
   });
   return rows;
 }
+let _rdbMap=null;
+function reajusteMap(){
+  if(_rdbMap)return _rdbMap;
+  _rdbMap={};
+  const H=D.reajustesDB||[];
+  if(H.length){
+    H[H.length-1].linhas.forEach(r=>{_rdbMap[r.c]={pa:r.pa,pn:r.pn,d:r.d,p:r.p};});
+  }
+  return _rdbMap;
+}
+
 function apCel(o,melhor,lado){
   if(!o)return '<span class="mut">não mapeado</span>';
   const cd=lado==='d'
@@ -986,7 +1037,9 @@ function apCel(o,melhor,lado){
   const pz=lado==='d'&&o.pz?`<span class="pz" title="Prazo de entrega no DB">⏱ ${esc(o.pz)}</span>`:'';
   if(!o.p)return `<span class="mut">${o.e==='z'?'R$ 0,00 na tabela':'sem preço na tabela'}</span>${cd}${pz}`;
   const [a,b]=o.p,rng=a!==b;
-  return `<span class="pv">${melhor?'<span class="ck">✔</span> ':''}${rng?fBRL.format(a)+' a '+fBRL.format(b)+' <span title="A tabela tem mais de um preço para este código" style="cursor:help">⚠</span>':fBRL.format(a)}</span>${cd}${pz}`;
+  const rdb=lado==='d'?reajusteMap()[o.c]:null;
+  const rdbLine=rdb?`<span class="rdbline" style="color:${rdb.d>0?'var(--red)':rdb.d<0?'var(--green)':'var(--muted)'}">antes ${fBRL.format(rdb.pa)} · ${rdb.d>0?'▲':rdb.d<0?'▼':''}${rdb.p==null?'—':(rdb.p>0?'+':'')+fD1.format(rdb.p)+'%'}</span>`:'';
+  return `<span class="pv">${melhor?'<span class="ck">✔</span> ':''}${rng?fBRL.format(a)+' a '+fBRL.format(b)+' <span title="A tabela tem mais de um preço para este código" style="cursor:help">⚠</span>':fBRL.format(a)}</span>${rdbLine}${cd}${pz}`;
 }
 function apStatus(r){
   const eco=r.x!=null&&r.x>0?`<small>economia de ${fBRL.format(r.x)} (${fD1.format(r.y)}%)</small>${r.y>=50?'<small class="aviso">diferença grande: confira se é o mesmo exame</small>':''}`:'';
@@ -1027,7 +1080,7 @@ function viewApoio(){
     <label class="fld">Mostrar<select id="apF">${AP_F.map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></label>
     <label class="apck"><input type="checkbox" id="apEx"> Incluir os ${fNum.format(R.extras)} exames fora da lista de apoio</label>
     <button class="btn" id="apCsv" type="button">Baixar CSV</button></div>
-    <p class="sub">A busca acha pelo nome ou código no CONCENT e também pelo nome ou código usado no DB e no HP. Exames com mais de um material aparecem em mais de uma linha.</p><div id="apRes"></div>`;
+    <p class="sub">A busca acha pelo nome ou código no CONCENT e também pelo nome ou código usado no DB e no HP. Exames com mais de um material aparecem em mais de uma linha. O preço do DB já é o mais recente; quando o exame mudou de preço no último reajuste, aparece embaixo o preço antigo e a variação.</p><div id="apRes"></div>`;
   const ul=(arr,f,max=12)=>`<details style="margin-top:4px"><summary style="cursor:pointer;color:var(--blue)">ver a lista</summary><div style="margin-top:4px;line-height:1.5">${arr.slice(0,max).map(f).join('<br>')}${arr.length>max?`<br>… e mais ${fNum.format(arr.length-max)}`:''}</div></details>`;
   h+=`<h2>Pontos de atenção nos cadastros</h2><div class="card"><ul class="notes">
    <li><b>${fNum.format(A.sem_mapa.length)} exames da lista não têm de-para</b> com o DB nem com o HP; por isso não têm preço aqui.${ul(A.sem_mapa,x=>`<code>${esc(x.c)}</code> ${esc(x.n)}`)}</li>
@@ -1145,12 +1198,13 @@ function bindPrecosConv(){
 }
 
 /* ---------- roteamento ---------- */
-const VIEWS={geral:[viewGeral,bindGeral],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],saude:[viewSaude,null],apoio:[viewApoio,bindApoio],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null]};
+const VIEWS={geral:[viewGeral,bindGeral],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],saude:[viewSaude,null],apoio:[viewApoio,bindApoio],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null],finGeral:[viewFinanceiro,null]};
 const GROUPS={geral:{tabs:['geral'],lbl:{geral:'Visão Diária'}},
   saude:{tabs:['saude'],lbl:{saude:'Saúde do Negócio'}},
   apoio:{tabs:['apoio'],lbl:{apoio:'Laboratório de Apoio'}},
   fat:{tabs:['anual','periodos','exames','rank'],lbl:{anual:'Comparativo Anual',periodos:'Comparar Períodos',exames:'Setores',rank:'Convênios e Médicos'}},
-  custos:{tabs:['precosconv','qualidade'],lbl:{precosconv:'Preços por Convênio',qualidade:'Qualidade dos Dados'}}};
+  custos:{tabs:['precosconv','qualidade'],lbl:{precosconv:'Preços por Convênio',qualidade:'Qualidade dos Dados'}},
+  financeiro:{tabs:['finGeral'],lbl:{finGeral:'Visão Geral'}}};
 const tabToGroup=Object.fromEntries(Object.entries(GROUPS).flatMap(([g,o])=>o.tabs.map(t=>[t,g])));
 function go(){
   const curGroup=tabToGroup[S.tab]||'fat';
@@ -1167,7 +1221,7 @@ function go(){
   $('#fgPeriodo').style.display=(per&&S.tab!=='geral')?'':'none';
   $('#fgAtalhos').style.display=S.tab==='geral'?'none':'';
   $('#fgMedico').style.display=S.tab==='geral'?'none':'';
-  $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio'||S.tab==='precosconv'||S.tab==='saude')?'none':'';
+  $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio'||S.tab==='precosconv'||S.tab==='saude'||S.tab==='finGeral')?'none':'';
   $('#fHint').textContent=per?'':(S.tab==='anual'?'Nesta aba os anos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.':'Nesta aba os períodos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.');
   syncFilters();
   const [v,b]=VIEWS[S.tab];

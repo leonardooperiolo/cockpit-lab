@@ -42,7 +42,8 @@ import unicodedata
 import sys
 import zipfile
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from collections import defaultdict
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -855,6 +856,231 @@ def carregar_apoio():
     }
 
 
+# --------------------------------------------------------------------------- reajustes de preço do DB
+# Estes 2 arquivos são gerados automaticamente pelo próprio script (não são
+# planilhas que você envia), e como o repositório é público, ficam
+# criptografados com a mesma senha do painel (DASHBOARD_SENHA) sempre que ela
+# estiver definida — nome termina em .json.enc nesse caso. Sem senha (uso
+# local/teste), ficam em .json normal, sem criptografia.
+CACHE_PRECOS_DB = PASTA_APOIO / ("_cache_precos_db.json.enc" if SENHA else "_cache_precos_db.json")
+HIST_REAJUSTES_DB = PASTA_APOIO / ("_historico_reajustes_db.json.enc" if SENHA else "_historico_reajustes_db.json")
+MAX_EVENTOS_REAJUSTE_DB = 30
+
+
+def _carregar_json(p: Path, padrao):
+    """Lê um .json (ou .json.enc, se SENHA estiver definida) gerado por nós mesmos."""
+    if not p.exists():
+        return padrao
+    try:
+        dados = p.read_bytes()
+        if p.name.endswith(".enc"):
+            if not SENHA:
+                return padrao
+            from cripto_arquivos import abrir_arquivo
+            dados = abrir_arquivo(dados, SENHA)
+            if dados is None:
+                return padrao
+        return json.loads(dados.decode("utf-8"))
+    except Exception:
+        return padrao
+
+
+def _salvar_json(p: Path, obj):
+    """Grava um .json (ou .json.enc, se SENHA estiver definida)."""
+    dados = json.dumps(obj, ensure_ascii=False).encode("utf-8")
+    if p.name.endswith(".enc"):
+        from cripto_arquivos import criptografar_arquivo
+        dados = criptografar_arquivo(dados, SENHA)
+    p.write_bytes(dados)
+
+
+def carregar_reajustes_db():
+    """Compara a tabela_db de hoje com a última tabela_db processada (guardada em
+    data/apoio/_cache_precos_db.json) e, se algo mudou, registra um "evento" de
+    reajuste em data/apoio/_historico_reajustes_db.json (código, nome, preço
+    antigo, preço novo, % de variação), além de códigos removidos/adicionados.
+    Sempre atualiza o cache para a tabela do dia, pronto para a próxima comparação.
+    Devolve o histórico completo de eventos (o mais recente por último), para o
+    painel mostrar "Reajuste de Preços DB"."""
+    arqs = achar_arquivos_apoio()
+    if "tab_db" not in arqs:
+        return _carregar_json(HIST_REAJUSTES_DB, [])
+    tab_db = _ler_precos(arqs["tab_db"])
+    atual = {cod: {"nome": t["nome"], "preco": min(t["precos"])} for cod, t in tab_db.items() if t["precos"]}
+
+    cache_anterior = _carregar_json(CACHE_PRECOS_DB, None)
+    if cache_anterior is None and SENHA:
+        # bootstrap: aceita tambem a "foto" semente ainda em .json puro (sem
+        # criptografia), pra nao obrigar a criptografar so pra subir 1 vez;
+        # da proxima rodada em diante ja salva criptografado (CACHE_PRECOS_DB)
+        cache_anterior = _carregar_json(PASTA_APOIO / "_cache_precos_db.json", None)
+    historico = _carregar_json(HIST_REAJUSTES_DB, [])
+
+    if cache_anterior is not None:
+        comuns = set(cache_anterior) & set(atual)
+        mudou = [c for c in comuns if round(cache_anterior[c]["preco"], 2) != round(atual[c]["preco"], 2)]
+        removidos = sorted(set(cache_anterior) - set(atual))
+        adicionados = sorted(set(atual) - set(cache_anterior))
+        if mudou or removidos or adicionados:
+            linhas = []
+            for c in mudou:
+                pa, pn = cache_anterior[c]["preco"], atual[c]["preco"]
+                linhas.append({"c": c, "n": atual[c]["nome"], "pa": round(pa, 2), "pn": round(pn, 2),
+                               "d": round(pn - pa, 2), "p": round((pn - pa) / pa * 100, 2) if pa else None})
+            linhas.sort(key=lambda r: -(r["p"] or 0))
+            evento = {
+                "data": datetime.now().strftime("%Y-%m-%d"),
+                "arquivo": arqs["tab_db"].name,
+                "linhas": linhas,
+                "removidos": [{"c": c, "n": cache_anterior[c]["nome"], "pa": round(cache_anterior[c]["preco"], 2)} for c in removidos],
+                "adicionados": [{"c": c, "n": atual[c]["nome"], "pn": round(atual[c]["preco"], 2)} for c in adicionados],
+            }
+            historico.append(evento)
+            historico = historico[-MAX_EVENTOS_REAJUSTE_DB:]
+            _salvar_json(HIST_REAJUSTES_DB, historico)
+            print(f"Reajuste de preços DB detectado: {len(mudou)} exames mudaram, "
+                  f"{len(removidos)} saíram, {len(adicionados)} entraram (evento de {evento['data']}).")
+
+    _salvar_json(CACHE_PRECOS_DB, atual)
+    return historico
+
+
+# --------------------------------------------------------------------------- financeiro (contas a pagar / DRE)
+PASTA_FINANCEIRO = PASTA_DADOS / "financeiro"
+ARQ_FINANCEIRO = {
+    "aberto": ("aberto", "contas_a_pagar_aberto", "contas_pagar_aberto"),
+    "categoria": ("categoria", "contas_a_pagar_categoria", "contas_pagar_categoria"),
+}
+APOIO_OPCIONAL_FIN = set()  # os dois arquivos abaixo sao obrigatorios para a aba Financeiro
+MESES_JANELA_RECORRENCIA = 12
+MIN_MESES_RECORRENTE = 10  # aparece em pelo menos 10 dos ultimos 12 meses = considerado recorrente
+
+
+def achar_arquivos_financeiro():
+    achados = {}
+    if not PASTA_FINANCEIRO.is_dir():
+        return achados
+    for p in sorted(PASTA_FINANCEIRO.iterdir()):
+        if not p.is_file() or p.name.startswith(".") or not p.name.lower().endswith((".xlsx", ".csv", ".gz", ".enc")):
+            continue
+        nome = _sa(p.name).replace(" ", "_")
+        for papel, inicios in ARQ_FINANCEIRO.items():
+            if papel not in achados and nome.startswith(inicios):
+                achados[papel] = _abrir_enc(p)
+                break
+    return achados
+
+
+def _data_aaaammdd(s):
+    """'20260930' -> date(2026,9,30); tolera lixo/vazio -> None."""
+    s = str(s).strip()
+    if not s or len(s) != 8 or not s.isdigit():
+        return None
+    ano, mes, dia = int(s[:4]), int(s[4:6]), int(s[6:8])
+    try:
+        d = date(ano, mes, dia)
+    except ValueError:
+        return None
+    if ano < 2015 or ano > 2035:
+        return None
+    return d
+
+
+def _fim_mes(d):
+    if d.month == 12:
+        return date(d.year, 12, 31)
+    return date(d.year, d.month + 1, 1) - timedelta(days=1)
+
+
+def _add_meses(ano, mes, k):
+    m = mes - 1 + k
+    return ano + m // 12, m % 12 + 1
+
+
+def carregar_financeiro():
+    """Contas a pagar (aberto.csv) + lançamentos por categoria (categoria.csv,
+    também usado no DRE) exportados do CONCENT. Monta o resumo da aba
+    Financeiro / Visão Geral: vencidas, vencendo hoje, resto do mês, total a
+    pagar até fim do mês, e a lista de fornecedores/categorias recorrentes
+    (aparecem em pelo menos 10 dos últimos 12 meses) que ainda não tiveram
+    nenhum lançamento no mês atual. Devolve None se os arquivos não foram
+    enviados para data/financeiro/."""
+    arqs = achar_arquivos_financeiro()
+    faltam = [k for k in ARQ_FINANCEIRO if k not in arqs]
+    if faltam:
+        if arqs:
+            print("AVISO: aba Financeiro ignorada; faltam em data/financeiro/: " + ", ".join(faltam))
+        return None
+
+    hoje = datetime.now().date()
+    fim_mes_atual = _fim_mes(hoje)
+
+    aberto = []
+    for row in _linhas_arquivo(arqs["aberto"]):
+        row = [_cel(c) for c in row]
+        if len(row) < 10:
+            continue
+        _modulo, _filcod, titnr, _serie, fornecedor, parcela, dtvencto, _vlr, saldo, _hist = row[:10]
+        d = _data_aaaammdd(dtvencto)
+        aberto.append({"titulo": titnr, "fornecedor": fornecedor, "parcela": parcela,
+                        "vencimento": d, "saldo": _preco(saldo) or 0.0})
+
+    vencidas = [a for a in aberto if a["vencimento"] and a["vencimento"] < hoje]
+    venc_hoje = [a for a in aberto if a["vencimento"] and a["vencimento"] == hoje]
+    resto_mes = [a for a in aberto if a["vencimento"] and hoje < a["vencimento"] <= fim_mes_atual]
+    ate_fim_mes = [a for a in aberto if a["vencimento"] and a["vencimento"] <= fim_mes_atual]
+
+    def resumo_grupo(lst):
+        return {"n": len(lst), "v": round(sum(x["saldo"] for x in lst), 2)}
+
+    tabela = []
+    for a in sorted(vencidas + venc_hoje, key=lambda x: x["vencimento"]):
+        dias = (hoje - a["vencimento"]).days
+        tabela.append({"f": a["fornecedor"], "t": a["titulo"], "p": a["parcela"],
+                        "v": a["vencimento"].strftime("%Y-%m-%d"), "d": dias, "s": round(a["saldo"], 2),
+                        "st": "vencido" if dias > 0 else "hoje"})
+
+    categoria = []
+    for row in _linhas_arquivo(arqs["categoria"]):
+        row = [_cel(c) for c in row]
+        if len(row) < 10:
+            continue
+        _filcod, _titnr, _serie, fornecedor, dtemissao, _centro, _tpcod, tipo, _tptipo, _valor = row[:10]
+        d = _data_aaaammdd(dtemissao)
+        if d:
+            categoria.append({"fornecedor": fornecedor, "tipo": tipo, "data": d})
+
+    mes_atual_str = hoje.strftime("%Y-%m")
+    meses_janela = set()
+    for k in range(1, MESES_JANELA_RECORRENCIA + 1):
+        ay, am = _add_meses(hoje.year, hoje.month, -k)
+        meses_janela.add(f"{ay:04d}-{am:02d}")
+
+    por_par_meses = defaultdict(set)
+    par_no_mes_atual = set()
+    for c in categoria:
+        chave = (c["fornecedor"], c["tipo"])
+        m = c["data"].strftime("%Y-%m")
+        if m in meses_janela:
+            por_par_meses[chave].add(m)
+        if m == mes_atual_str:
+            par_no_mes_atual.add(chave)
+
+    recorrentes = {par for par, meses in por_par_meses.items() if len(meses) >= MIN_MESES_RECORRENTE}
+    nao_lancadas = sorted(recorrentes - par_no_mes_atual)
+
+    return {
+        "hoje": hoje.strftime("%Y-%m-%d"),
+        "resumo": {
+            "vencidas": resumo_grupo(vencidas), "hoje": resumo_grupo(venc_hoje),
+            "restoMes": resumo_grupo(resto_mes), "aPagarMes": resumo_grupo(ate_fim_mes),
+            "recebimentosMes": None,
+        },
+        "tabela": tabela,
+        "recorrencia": {"naoLancadas": [{"f": f, "t": t} for f, t in nao_lancadas], "n": len(nao_lancadas)},
+    }
+
+
 # --------------------------------------------------------------------------- main
 def carregar_precos_convenio(apoio):
     """Preços por convênio, exportados direto do banco do CONCENT, cruzados com o
@@ -946,6 +1172,16 @@ def main():
         r = dados["apoio"]["resumo"]
         print(f"Laboratório de apoio: {r['exames']} exames da lista, {r['com_db']} com preço DB, {r['com_hp']} com preço HP, {r['ambos']} nos dois")
     dados["precosConv"] = carregar_precos_convenio(dados["apoio"])
+    dados["reajustesDB"] = carregar_reajustes_db()
+    if dados["reajustesDB"]:
+        ult = dados["reajustesDB"][-1]
+        print(f"Histórico de reajustes DB: {len(dados['reajustesDB'])} evento(s); último em {ult['data']} "
+              f"({len(ult['linhas'])} exames mudaram).")
+    dados["financeiro"] = carregar_financeiro()
+    if dados["financeiro"]:
+        rf = dados["financeiro"]["resumo"]
+        print(f"Financeiro: {rf['vencidas']['n']} contas vencidas (R$ {rf['vencidas']['v']:,.2f}), "
+              f"{rf['hoje']['n']} vencendo hoje, {dados['financeiro']['recorrencia']['n']} recorrentes sem lançamento no mês.".replace(",", "."))
     payload = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     html = TEMPLATE.read_text(encoding="utf-8")
     if "/*__DATA__*/null" not in html:
