@@ -245,6 +245,42 @@ def _ler_lista_medicos_xml(caminho):
     return linhas[1:]  # pula cabeçalho
 
 
+def carregar_filiais():
+    """Devolve dict código (como string) -> nome da filial, lido de data/filiais.csv (ou
+    .xlsx), col. A = FILCOD, col. B = nome. Cadastro simples e genérico: qualquer aba do
+    painel que precise mostrar o nome de uma filial (não só o Financeiro) usa esse mesmo
+    dicionário (dados["filiais"]) em vez de cada consulta ter que buscar/juntar isso
+    de novo em alguma tabela do CONCENT."""
+    pares = None
+    pc = PASTA_DADOS / "filiais.csv"
+    if not pc.exists() and (PASTA_DADOS / "filiais.csv.enc").exists():
+        pc = _abrir_enc(PASTA_DADOS / "filiais.csv.enc")
+    if pc.exists():
+        pares = [(r[0], r[1]) for r in _linhas_arquivo(pc) if len(r) >= 2 and _cel(r[0]).strip()]
+    else:
+        p = PASTA_DADOS / "filiais.xlsx"
+        if not p.exists() and (PASTA_DADOS / "filiais.xlsx.enc").exists():
+            p = _abrir_enc(PASTA_DADOS / "filiais.xlsx.enc")
+        if not p.exists():
+            print("AVISO: data/filiais não encontrado - filiais aparecerão só pelo número.")
+            return {}
+        try:
+            from openpyxl import load_workbook
+            wb = load_workbook(p, read_only=True)
+            if wb.worksheets:
+                pares = [(r[0], r[1]) for r in wb.worksheets[0].iter_rows(min_row=2, values_only=True)]
+        except Exception:
+            pares = None
+    mapa = {}
+    for cod, nome in pares or []:
+        cod = _cel(cod).strip()
+        nome = re.sub(r"\s+", " ", str(nome or "")).strip()
+        if not cod or not nome or not cod.isdigit():
+            continue  # pula linha de cabeçalho (ex.: "FILCOD,FILNOME"), se vier uma
+        mapa[cod] = nome
+    return mapa
+
+
 def carregar_medicos():
     """Devolve dict codigo -> [nomes distintos]. Códigos com mais de um nome ficam ambíguos."""
     pares = None
@@ -950,8 +986,12 @@ PASTA_FINANCEIRO = PASTA_DADOS / "financeiro"
 ARQ_FINANCEIRO = {
     "aberto": ("aberto", "contas_a_pagar_aberto", "contas_pagar_aberto"),
     "categoria": ("categoria", "contas_a_pagar_categoria", "contas_pagar_categoria"),
+    "aberto_receber": ("contas_a_receber_aberto", "contas_receber_aberto"),
+    "categoria_receber": ("contas_a_receber_categoria", "contas_receber_categoria"),
 }
-APOIO_OPCIONAL_FIN = set()  # os dois arquivos abaixo sao obrigatorios para a aba Financeiro
+# contas a pagar (aberto/categoria) sao obrigatorios; contas a receber sao opcionais -
+# enquanto nao forem enviados, o card de recebimentos fica "sem dados ainda"
+FINANCEIRO_OBRIGATORIOS = {"aberto", "categoria"}
 MESES_JANELA_RECORRENCIA = 12
 MIN_MESES_RECORRENTE = 10  # aparece em pelo menos 10 dos ultimos 12 meses = considerado recorrente
 
@@ -1006,7 +1046,7 @@ def carregar_financeiro():
     nenhum lançamento no mês atual. Devolve None se os arquivos não foram
     enviados para data/financeiro/."""
     arqs = achar_arquivos_financeiro()
-    faltam = [k for k in ARQ_FINANCEIRO if k not in arqs]
+    faltam = [k for k in FINANCEIRO_OBRIGATORIOS if k not in arqs]
     if faltam:
         if arqs:
             print("AVISO: aba Financeiro ignorada; faltam em data/financeiro/: " + ", ".join(faltam))
@@ -1020,10 +1060,10 @@ def carregar_financeiro():
         row = [_cel(c) for c in row]
         if len(row) < 10:
             continue
-        _modulo, _filcod, titnr, _serie, fornecedor, parcela, dtvencto, _vlr, saldo, _hist = row[:10]
+        _modulo, filcod, titnr, _serie, fornecedor, parcela, dtvencto, _vlr, saldo, _hist = row[:10]
         d = _data_aaaammdd(dtvencto)
         aberto.append({"titulo": titnr, "fornecedor": fornecedor, "parcela": parcela,
-                        "vencimento": d, "saldo": _preco(saldo) or 0.0})
+                        "vencimento": d, "saldo": _preco(saldo) or 0.0, "filial": filcod})
 
     vencidas = [a for a in aberto if a["vencimento"] and a["vencimento"] < hoje]
     venc_hoje = [a for a in aberto if a["vencimento"] and a["vencimento"] == hoje]
@@ -1036,7 +1076,7 @@ def carregar_financeiro():
     tabela = []
     for a in sorted(vencidas + venc_hoje, key=lambda x: x["vencimento"]):
         dias = (hoje - a["vencimento"]).days
-        tabela.append({"f": a["fornecedor"], "t": a["titulo"], "p": a["parcela"],
+        tabela.append({"f": a["fornecedor"], "t": a["titulo"], "p": a["parcela"], "fil": a["filial"],
                         "v": a["vencimento"].strftime("%Y-%m-%d"), "d": dias, "s": round(a["saldo"], 2),
                         "st": "vencido" if dias > 0 else "hoje"})
 
@@ -1069,12 +1109,25 @@ def carregar_financeiro():
     recorrentes = {par for par, meses in por_par_meses.items() if len(meses) >= MIN_MESES_RECORRENTE}
     nao_lancadas = sorted(recorrentes - par_no_mes_atual)
 
+    recebimentos_mes = None
+    if "aberto_receber" in arqs:
+        a_receber = []
+        for row in _linhas_arquivo(arqs["aberto_receber"]):
+            row = [_cel(c) for c in row]
+            if len(row) < 10:
+                continue
+            _modulo, _filcod, _titnr, _serie, _cliente, _parcela, dtvencto, _vlr, saldo, _hist = row[:10]
+            d = _data_aaaammdd(dtvencto)
+            if d and d <= fim_mes_atual:
+                a_receber.append(_preco(saldo) or 0.0)
+        recebimentos_mes = {"n": len(a_receber), "v": round(sum(a_receber), 2)}
+
     return {
         "hoje": hoje.strftime("%Y-%m-%d"),
         "resumo": {
             "vencidas": resumo_grupo(vencidas), "hoje": resumo_grupo(venc_hoje),
             "restoMes": resumo_grupo(resto_mes), "aPagarMes": resumo_grupo(ate_fim_mes),
-            "recebimentosMes": None,
+            "recebimentosMes": recebimentos_mes,
         },
         "tabela": tabela,
         "recorrencia": {"naoLancadas": [{"f": f, "t": t} for f, t in nao_lancadas], "n": len(nao_lancadas)},
@@ -1182,6 +1235,9 @@ def main():
         rf = dados["financeiro"]["resumo"]
         print(f"Financeiro: {rf['vencidas']['n']} contas vencidas (R$ {rf['vencidas']['v']:,.2f}), "
               f"{rf['hoje']['n']} vencendo hoje, {dados['financeiro']['recorrencia']['n']} recorrentes sem lançamento no mês.".replace(",", "."))
+    dados["filiais"] = carregar_filiais()
+    if dados["filiais"]:
+        print(f"Filiais: {len(dados['filiais'])} cadastradas em data/filiais.")
     payload = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     html = TEMPLATE.read_text(encoding="utf-8")
     if "/*__DATA__*/null" not in html:

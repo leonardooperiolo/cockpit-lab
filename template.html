@@ -261,6 +261,7 @@ table tr:hover td{background:#F8FAFC}
 .fin-tab table td.chk,.fin-tab table th.chk{width:32px;text-align:center}
 .fin-tab table th:nth-child(2){text-align:center}
 .fin-tab table td:nth-child(2){text-align:center;white-space:normal;max-width:260px;font-size:13.5px;font-family:'Manrope',system-ui,sans-serif;font-weight:800}
+.fin-fil{display:block;font-family:'Inter',system-ui,sans-serif;font-weight:500;font-size:11px;color:var(--muted);margin-top:2px}
 .fin-tab table td:nth-child(3),.fin-tab table th:nth-child(3),
 .fin-tab table td:nth-child(4),.fin-tab table th:nth-child(4),
 .fin-tab table td:nth-child(5),.fin-tab table th:nth-child(5){text-align:center}
@@ -948,6 +949,14 @@ function mesLabelDe(iso){
   const [y,m]=iso.split('-').map(Number);
   return `${MESL[m-1]}/${y}`;
 }
+function nomeFilial(cod){
+  // "código - nome" usando o cadastro genérico data/filiais (D.filiais); sem cadastro
+  // (ou código não encontrado), mostra só o número. Qualquer aba pode usar essa mesma
+  // função, não é exclusiva do Financeiro.
+  if(!cod)return'';
+  const nome=D.filiais&&D.filiais[String(cod)];
+  return nome?`${cod} - ${nome}`:String(cod);
+}
 function viewFinanceiro(){
   const F=D.financeiro;
   if(!F)return `<div class="notice warn"><b>Ainda não há dados financeiros.</b> Envie os arquivos de contas a pagar (aberto.csv e categoria.csv) para a pasta <code>data/financeiro</code> do repositório.</div>`;
@@ -966,7 +975,7 @@ function viewFinanceiro(){
     h+='<div class="empty">Nenhuma conta vencida ou vencendo hoje.</div>';
   }else{
     h+=`<div class="card tw fin-tab"><table><thead><tr><th class="chk"></th><th>Fornecedor</th><th>Título / Parcela</th><th>Vencimento</th><th>Situação</th><th class="num">Saldo</th></tr></thead><tbody>
-    ${F.tabela.map((r,i)=>`<tr><td class="chk"><input type="checkbox" class="finChk" data-i="${i}" data-v="${r.s}"></td><td>${esc(r.f)}</td><td>${esc(r.t)} / ${esc(r.p)}</td><td>${isoBR(r.v)}</td><td>${r.st==='hoje'?'<span class="pill warn">Vence hoje</span>':`<span class="pill venc">${fNum.format(r.d)} dia(s) em atraso</span>`}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
+    ${F.tabela.map((r,i)=>`<tr><td class="chk"><input type="checkbox" class="finChk" data-i="${i}" data-v="${r.s}"></td><td>${esc(r.f)}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)} / ${esc(r.p)}</td><td>${isoBR(r.v)}</td><td>${r.st==='hoje'?'<span class="pill warn">Vence hoje</span>':`<span class="pill venc">${fNum.format(r.d)} dia(s) em atraso</span>`}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
     </tbody></table></div>
     <div class="fin-selecao" id="finSelecao" style="display:none">
      <span>Selecionadas: <b id="finSelCount">0</b> conta(s)</span>
