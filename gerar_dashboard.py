@@ -991,6 +991,7 @@ ARQ_FINANCEIRO = {
     "categoria_receber": ("contas_a_receber_categoria", "contas_receber_categoria"),
     "baixas": ("contas_a_pagar_baixas", "contas_pagar_baixas"),
     "baixas_receber": ("contas_a_receber_baixas", "contas_receber_baixas"),
+    "nao_integrados": ("contas_a_receber_nao_integrados", "contas_receber_nao_integrados"),
 }
 # contas a pagar (aberto/categoria) sao obrigatorios; contas a receber e as baixas
 # (pagamentos ja efetivados, usados na sub-aba "Contas a Pagar") sao opcionais -
@@ -1182,17 +1183,126 @@ def carregar_financeiro():
     a_pagar_15d = [a for a in aberto if a["vencimento"] and a["vencimento"] <= janela_15d]
 
     recebimentos_mes = None
+    aberto_r = []
     if "aberto_receber" in arqs:
-        a_receber = []
         for row in _linhas_arquivo(arqs["aberto_receber"]):
             row = [_cel(c) for c in row]
             if len(row) < 10:
                 continue
-            _modulo, _filcod, _titnr, _serie, _cliente, _parcela, dtvencto, _vlr, saldo, _hist = row[:10]
+            _modulo, filcod_r, titnr_r, serie_r, cliente, parcela_r, dtvencto, _vlr, saldo, _hist = row[:10]
+            tipo_r = row[10].strip() if len(row) > 10 else ""
+            filcod_r = filcod_r.strip().rstrip(".")
             d = _data_aaaammdd(dtvencto)
-            if d and d <= fim_mes_atual:
-                a_receber.append(_preco(saldo) or 0.0)
-        recebimentos_mes = {"n": len(a_receber), "v": round(sum(a_receber), 2)}
+            aberto_r.append({"titulo": titnr_r, "cliente": cliente, "parcela": parcela_r,
+                              "vencimento": d, "saldo": _preco(saldo) or 0.0, "filial": filcod_r,
+                              "serie": serie_r.strip(), "tipo": "C" if tipo_r == "C" else "P"})
+        a_receber_fim_mes = [a["saldo"] for a in aberto_r if a["vencimento"] and a["vencimento"] <= fim_mes_atual]
+        recebimentos_mes = {"n": len(a_receber_fim_mes), "v": round(sum(a_receber_fim_mes), 2)}
+
+    # baixas de contas a receber (mesma tabela MOVTITULO, módulo CRE) - pra "recebido até
+    # hoje" e a projeção, espelhando exatamente a lógica que já existe pro contas a pagar
+    # acima. O nome do cliente por título vem do categoria_receber (segue existindo depois
+    # do título ser baixado, ao contrário do aberto_receber).
+    cliente_por_titulo = {}
+    if "categoria_receber" in arqs:
+        for row in _linhas_arquivo(arqs["categoria_receber"]):
+            row = [_cel(c) for c in row]
+            if len(row) < 10:
+                continue
+            filcod_c, titnr_c, serie_c, cliente_c = row[0], row[1], row[2], row[3]
+            cliente_por_titulo[(filcod_c.strip().rstrip("."), titnr_c, serie_c)] = cliente_c
+
+    baixas_r = []
+    if "baixas_receber" in arqs:
+        for row in _linhas_arquivo(arqs["baixas_receber"]):
+            row = [_cel(c) for c in row]
+            if len(row) < 6:
+                continue
+            filcod_b, titnr_b, serie_b, parcela_b, dtmov, valor = row[:6]
+            tipo_b = row[6].strip() if len(row) > 6 else ""
+            filcod_b = filcod_b.strip().rstrip(".")
+            d = _data_aaaammdd(dtmov)
+            if d:
+                baixas_r.append({
+                    "data": d, "valor": _preco(valor) or 0.0, "titulo": titnr_b, "parcela": parcela_b,
+                    "filial": filcod_b, "tipo": "C" if tipo_b == "C" else "P",
+                    "cliente": cliente_por_titulo.get((filcod_b, titnr_b, serie_b), ""),
+                })
+
+    recebido_mes = None
+    projecao_mes_r = None
+    if baixas_r:
+        recebido_mes = round(sum(b["valor"] for b in baixas_r
+                                  if b["data"].strftime("%Y-%m") == mes_atual_str and b["data"] <= hoje), 2)
+        totais_por_ano_r = defaultdict(float)
+        for b in baixas_r:
+            if b["data"].month == hoje.month and b["data"].year < hoje.year:
+                totais_por_ano_r[b["data"].year] += b["valor"]
+        anos_recentes_r = sorted(totais_por_ano_r)[-2:]
+        if anos_recentes_r:
+            projecao_mes_r = round(sum(totais_por_ano_r[a] for a in anos_recentes_r) / len(anos_recentes_r), 2)
+
+    def resumo_grupo_r(lst):
+        return {"n": len(lst), "v": round(sum(x["saldo"] for x in lst), 2)}
+
+    receber_7d = [a for a in aberto_r if a["vencimento"] and a["vencimento"] <= janela_7d]
+    receber_15d = [a for a in aberto_r if a["vencimento"] and a["vencimento"] <= janela_15d]
+
+    financeiro_receber = None
+    if aberto_r or baixas_r:
+        financeiro_receber = {
+            "resumo": {
+                "aReceberMes": recebimentos_mes or {"n": 0, "v": 0.0},
+                "recebidoMes": recebido_mes,
+                "projecaoMes": projecao_mes_r,
+                "aReceber7d": resumo_grupo_r(receber_7d),
+                "aReceber15d": resumo_grupo_r(receber_15d),
+            },
+            "abertos": [{"f": a["cliente"], "t": a["titulo"], "p": a["parcela"], "fil": a["filial"],
+                         "tp": a["tipo"],
+                         "v": a["vencimento"].strftime("%Y-%m-%d") if a["vencimento"] else None,
+                         "s": round(a["saldo"], 2)} for a in aberto_r],
+            "baixados": [{"f": b["cliente"], "t": b["titulo"], "p": b["parcela"], "fil": b["filial"],
+                          "tp": b["tipo"],
+                          "v": b["data"].strftime("%Y-%m-%d"), "s": round(b["valor"], 2)} for b in baixas_r],
+        }
+
+    # títulos "não integrados": exame já faturado (RQEXDTFATURA preenchida no CONCENT),
+    # não cancelado, sem NENHUM dos 3 títulos (convênio/particular/cartão) vinculado -
+    # dinheiro que já saiu pro convênio mas nunca virou conta a receber rastreável.
+    # Validado direto no CONCENT (ver comentário da SQL_NAO_INTEGRADOS no coletar) antes
+    # de virar número do painel.
+    nao_integrados = None
+    if "nao_integrados" in arqs:
+        linhas_ni = []
+        for row in _linhas_arquivo(arqs["nao_integrados"]):
+            row = [_cel(c) for c in row]
+            if len(row) < 8:
+                continue
+            filcod_n, reqnum_n, exaseq_n, exacod_n, _convcod_n, convnome_n, dtfat_n, valor_n = row[:8]
+            filcod_n = filcod_n.strip().rstrip(".")
+            reqnum_n = reqnum_n.strip().rstrip(".")
+            exaseq_n = exaseq_n.strip().rstrip(".")
+            d = _data_aaaammdd(dtfat_n)
+            linhas_ni.append({
+                "filial": filcod_n, "requisicao": reqnum_n, "seq": exaseq_n, "exame": exacod_n,
+                "convenio": convnome_n or "SEM CONVÊNIO CADASTRADO",
+                "faturado": d.strftime("%Y-%m-%d") if d else None,
+                "dias": (hoje - d).days if d else None,
+                "valor": _preco(valor_n) or 0.0,
+            })
+        por_convenio = defaultdict(lambda: {"n": 0, "v": 0.0})
+        for r in linhas_ni:
+            g = por_convenio[r["convenio"]]
+            g["n"] += 1
+            g["v"] += r["valor"]
+        nao_integrados = {
+            "resumo": {"n": len(linhas_ni), "v": round(sum(r["valor"] for r in linhas_ni), 2)},
+            "porConvenio": sorted(
+                [{"convenio": c, "n": g["n"], "v": round(g["v"], 2)} for c, g in por_convenio.items()],
+                key=lambda x: -x["v"]),
+            "linhas": sorted(linhas_ni, key=lambda r: -(r["dias"] or 0)),
+        }
 
     return {
         "hoje": hoje.strftime("%Y-%m-%d"),
@@ -1215,6 +1325,12 @@ def carregar_financeiro():
                      "s": round(a["saldo"], 2)} for a in aberto],
         "baixados": [{"f": b["fornecedor"], "t": b["titulo"], "p": b["parcela"], "fil": b["filial"],
                       "v": b["data"].strftime("%Y-%m-%d"), "s": round(b["valor"], 2)} for b in baixas],
+        # aba Contas a Receber (espelha a de Contas a Pagar acima) - None enquanto os
+        # arquivos de aberto_receber/baixas_receber não forem enviados
+        "receber": financeiro_receber,
+        # seção de destaque "títulos não integrados" - None enquanto
+        # contas_receber_nao_integrados.csv não for enviado
+        "naoIntegrados": nao_integrados,
     }
 
 

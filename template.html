@@ -53,6 +53,8 @@ h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(2
 .notice b{color:var(--blue)}
 .notice.warn{background:#fff3e2;border-color:#f0d5a8}
 .notice.warn b{color:var(--amber)}
+.notice.danger{background:#fdecec;border-color:#f2b8b8}
+.notice.danger b{color:var(--red)}
 .notice button.lnk{font-size:14px}
 
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:18px 0 0}
@@ -1166,6 +1168,117 @@ function bindFinPagar(){
   renderFpRes();
 }
 
+/* ---------- financeiro: contas a receber (sub-aba) ---------- */
+S.fr={todos:false,status:'aberto',tipo:'todos',de:'',ate:'',q:''};
+S.frOrd={key:null,dir:1};
+function frRows(){
+  const R=D.financeiro.receber,st=S.fr.status;
+  let rows=[];
+  if(st==='aberto'||st==='ambos')rows=rows.concat((R.abertos||[]).map(r=>({...r,st:'aberto'})));
+  if(st==='baixado'||st==='ambos')rows=rows.concat((R.baixados||[]).map(r=>({...r,st:'baixado'})));
+  rows=rows.filter(r=>r.v);
+  if(S.fr.tipo!=='todos')rows=rows.filter(r=>r.tp===S.fr.tipo);
+  const qs=normTxt(S.fr.q).trim();
+  if(qs)rows=rows.filter(r=>normTxt(r.f).includes(qs));
+  const de=S.fr.de||(S.fr.todos?null:D.financeiro.hoje);
+  const ate=S.fr.ate||(S.fr.todos?null:fpDefAte(D.financeiro.hoje,15));
+  if(de)rows=rows.filter(r=>r.v>=de);
+  if(ate)rows=rows.filter(r=>r.v<=ate);
+  const key=S.frOrd.key,dir=S.frOrd.dir;
+  const cmp={
+    f:(a,b)=>(a.f||'').localeCompare(b.f||'','pt-BR'),
+    t:(a,b)=>String(a.t).localeCompare(String(b.t),'pt-BR',{numeric:true}),
+    v:(a,b)=>a.v<b.v?-1:a.v>b.v?1:0,
+    st:(a,b)=>(a.st==='baixado'?1:0)-(b.st==='baixado'?1:0),
+    s:(a,b)=>a.s-b.s,
+  };
+  if(key&&cmp[key])rows.sort((a,b)=>cmp[key](a,b)*dir);
+  else rows.sort((a,b)=>a.v<b.v?-1:a.v>b.v?1:0);
+  return rows;
+}
+function frTh(key,label,cls){
+  const ord=S.frOrd.key,dir=S.frOrd.dir;
+  const seta=ord===key?(dir>0?' ▲':' ▼'):'';
+  return `<th class="${cls||''}" data-fr-ord="${key}" style="cursor:pointer" aria-sort="${ord===key?(dir>0?'ascending':'descending'):'none'}">${label}${seta}</th>`;
+}
+function viewFinReceber(){
+  const F=D.financeiro;
+  if(!F||!F.receber)return `<div class="notice warn"><b>Ainda não há dados de contas a receber.</b> Envie os arquivos <code>contas_receber_aberto</code> e <code>contas_receber_baixas</code> para a pasta <code>data/financeiro</code> do repositório.</div>`;
+  const R=F.receber.resumo,NI=F.naoIntegrados;
+  const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
+  const semDados=(l,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:var(--muted);font-size:17px">Sem dados ainda</div><div class="s">${s}</div></div>`;
+  let h='';
+  if(NI){
+    h+=`<div class="notice danger" style="margin-bottom:18px">
+     <b>⚠ ${fBRL0.format(NI.resumo.v)} em títulos não integrados</b> — ${fNum.format(NI.resumo.n)} exame(s) já faturado(s) ao convênio, mas que nunca geraram título de convênio, particular ou cartão. Esse dinheiro não aparece em nenhuma outra tela de contas a receber porque, tecnicamente, o título nem existe.
+     ${NI.porConvenio.length?`<div style="margin-top:10px"><table style="width:100%;border-collapse:collapse;font-size:14px">
+      <thead><tr style="text-align:left;border-bottom:1px solid #f2b8b8"><th style="padding:4px 8px 4px 0">Convênio</th><th style="padding:4px 8px;text-align:right">Exames</th><th style="padding:4px 0 4px 8px;text-align:right">Valor</th></tr></thead>
+      <tbody>${NI.porConvenio.slice(0,10).map(c=>`<tr><td style="padding:3px 8px 3px 0">${esc(c.convenio)}</td><td style="padding:3px 8px;text-align:right">${fNum.format(c.n)}</td><td style="padding:3px 0 3px 8px;text-align:right;font-weight:600">${fBRL.format(c.v)}</td></tr>`).join('')}</tbody>
+     </table>${NI.porConvenio.length>10?`<p class="sub" style="margin:6px 0 0">e mais ${fNum.format(NI.porConvenio.length-10)} convênio(s)</p>`:''}</div>`:''}
+     <details style="margin-top:10px"><summary style="cursor:pointer;color:var(--red);font-weight:600">ver os exames (${fNum.format(NI.linhas.length)})</summary>
+      <div class="card tw" style="margin-top:8px"><table><thead><tr><th>Convênio</th><th>Requisição</th><th>Exame</th><th>Faturado em</th><th>Dias</th><th class="num">Valor</th></tr></thead><tbody>
+      ${NI.linhas.slice(0,300).map(l=>`<tr><td>${esc(l.convenio)}</td><td>${esc(l.requisicao)}${l.filial?`<span class="fin-fil">${esc(nomeFilial(l.filial))}</span>`:''}</td><td>${esc(l.exame)}</td><td>${l.faturado?isoBR(l.faturado):'—'}</td><td>${l.dias==null?'—':fNum.format(l.dias)}</td><td class="num">${fBRL.format(l.valor)}</td></tr>`).join('')}
+      </tbody></table></div>${NI.linhas.length>300?`<p class="sub" style="margin-top:6px">mostrando os 300 mais antigos de ${fNum.format(NI.linhas.length)}</p>`:''}
+     </details>
+    </div>`;
+  }
+  h+=`<div class="kpis kpis-5">
+   ${k('Em aberto até fim do mês',fBRL0.format(R.aReceberMes.v),`${fNum.format(R.aReceberMes.n)} título(s) · inclui os já vencidos`,'var(--blue)')}
+   ${R.recebidoMes==null?semDados('Recebido até hoje','aguardando extração de baixas (MOVTITULO)'):k('Recebido até hoje',fBRL0.format(R.recebidoMes),`em ${mesLabelDe(F.hoje)}`,'var(--green)')}
+   ${k('A receber em 7 dias',fBRL0.format(R.aReceber7d.v),`${fNum.format(R.aReceber7d.n)} título(s) · inclui os já vencidos`,'var(--amber)')}
+   ${k('A receber em 15 dias',fBRL0.format(R.aReceber15d.v),`${fNum.format(R.aReceber15d.n)} título(s) · inclui os já vencidos`,'var(--amber)')}
+   ${R.projecaoMes==null?semDados('Projeção do mês','média dos últimos 2 anos · aguardando extração de baixas'):k('Projeção do mês',fBRL0.format(R.projecaoMes),'média dos últimos 2 anos (mesmo mês)','var(--ink)')}
+  </div>`;
+  h+=`<h2 style="margin-top:28px">Consultar títulos</h2>
+  <div class="apbar" id="frBar">
+   <label class="fld" style="flex:1 1 220px">Cliente/convênio<input type="search" id="frQ" placeholder="ex.: unimed" autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
+   <label class="fld">De<input type="date" id="frDe" style="font:inherit;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
+   <label class="fld">Até<input type="date" id="frAte" style="font:inherit;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
+   <label class="fld">Tipo<select id="frTipo"><option value="todos">Convênio + Particular</option><option value="C">Só convênio</option><option value="P">Só particular</option></select></label>
+   <label class="fld">Status<select id="frStatus"><option value="aberto">Aberto</option><option value="baixado">Baixado</option><option value="ambos">Ambos</option></select></label>
+   <label class="apck"><input type="checkbox" id="frTodos"> Buscar todos os títulos (sem limitar aos próximos 15 dias)</label>
+  </div>
+  <div id="frRes"></div>`;
+  return h;
+}
+function renderFrRes(){
+  const rows=frRows();
+  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(rows.length)} título(s) · clique num título da tabela pra ordenar por ele</p>`;
+  if(!rows.length){$('#frRes').innerHTML=h+'<div class="empty">Nenhum título encontrado com esses filtros.</div>';return;}
+  h+=`<div class="card tw cp-tab"><table><thead><tr>${frTh('f','Cliente / Convênio')}${frTh('t','Título / Parcela')}<th>Tipo</th>${frTh('v','Data')}${frTh('st','Situação')}${frTh('s','Valor','num')}</tr></thead><tbody>
+  ${rows.map(r=>`<tr><td>${esc(r.f||'—')}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)}${r.p?' / '+esc(r.p):''}</td><td>${r.tp==='C'?'<span class="pill">Convênio</span>':'<span class="pill mut">Particular</span>'}</td><td>${isoBR(r.v)}</td><td>${r.st==='baixado'?'<span class="pill ok">Baixado</span>':'<span class="pill">Aberto</span>'}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
+  </tbody></table></div>`;
+  $('#frRes').innerHTML=h;
+  $$('[data-fr-ord]').forEach(t=>t.onclick=()=>{
+    const k=t.dataset.frOrd;
+    if(S.frOrd.key===k)S.frOrd.dir*=-1;else{S.frOrd.key=k;S.frOrd.dir=1;}
+    renderFrRes();
+  });
+}
+function bindFinReceber(){
+  const F=D.financeiro;
+  if(!F||!F.receber)return;
+  const q=$('#frQ'),de=$('#frDe'),ate=$('#frAte'),status=$('#frStatus'),tipo=$('#frTipo'),todos=$('#frTodos');
+  q.value=S.fr.q;
+  de.value=S.fr.de||(S.fr.todos?'':F.hoje);
+  ate.value=S.fr.ate||(S.fr.todos?'':fpDefAte(F.hoje,15));
+  status.value=S.fr.status;
+  tipo.value=S.fr.tipo;
+  todos.checked=S.fr.todos;
+  let frT=null;q.oninput=()=>{clearTimeout(frT);frT=setTimeout(()=>{S.fr.q=q.value;renderFrRes();},120);};
+  de.onchange=()=>{S.fr.de=de.value;renderFrRes();};
+  ate.onchange=()=>{S.fr.ate=ate.value;renderFrRes();};
+  status.onchange=()=>{S.fr.status=status.value;renderFrRes();};
+  tipo.onchange=()=>{S.fr.tipo=tipo.value;renderFrRes();};
+  todos.onchange=()=>{
+    S.fr.todos=todos.checked;
+    if(todos.checked){S.fr.de='';S.fr.ate='';de.value='';ate.value='';}
+    else{S.fr.de=F.hoje;S.fr.ate=fpDefAte(F.hoje,15);de.value=S.fr.de;ate.value=S.fr.ate;}
+    renderFrRes();
+  };
+  renderFrRes();
+}
+
 function viewQualidade(){
   const Q=D.qualidade;
   const k=(l,v,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:26px;color:var(--ink)">${v}</div><div class="s">${s||''}</div></div>`;
@@ -1403,13 +1516,13 @@ function bindPrecosConv(){
 }
 
 /* ---------- roteamento ---------- */
-const VIEWS={geral:[viewGeral,bindGeral],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],saude:[viewSaude,null],apoio:[viewApoio,bindApoio],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null],finGeral:[viewFinanceiro,bindFinanceiro],finPagar:[viewFinPagar,bindFinPagar]};
+const VIEWS={geral:[viewGeral,bindGeral],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],saude:[viewSaude,null],apoio:[viewApoio,bindApoio],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null],finGeral:[viewFinanceiro,bindFinanceiro],finPagar:[viewFinPagar,bindFinPagar],finReceber:[viewFinReceber,bindFinReceber]};
 const GROUPS={geral:{tabs:['geral'],lbl:{geral:'Visão Diária'}},
   saude:{tabs:['saude'],lbl:{saude:'Saúde do Negócio'}},
   apoio:{tabs:['apoio'],lbl:{apoio:'Laboratório de Apoio'}},
   fat:{tabs:['anual','periodos','exames','rank'],lbl:{anual:'Comparativo Anual',periodos:'Comparar Períodos',exames:'Setores',rank:'Convênios e Médicos'}},
   custos:{tabs:['precosconv','qualidade'],lbl:{precosconv:'Preços por Convênio',qualidade:'Qualidade dos Dados'}},
-  financeiro:{tabs:['finGeral','finPagar'],lbl:{finGeral:'Visão Geral',finPagar:'Contas a Pagar'}}};
+  financeiro:{tabs:['finGeral','finPagar','finReceber'],lbl:{finGeral:'Visão Geral',finPagar:'Contas a Pagar',finReceber:'Contas a Receber'}}};
 const tabToGroup=Object.fromEntries(Object.entries(GROUPS).flatMap(([g,o])=>o.tabs.map(t=>[t,g])));
 function go(){
   const curGroup=tabToGroup[S.tab]||'fat';
@@ -1426,7 +1539,7 @@ function go(){
   $('#fgPeriodo').style.display=(per&&S.tab!=='geral')?'':'none';
   $('#fgAtalhos').style.display=S.tab==='geral'?'none':'';
   $('#fgMedico').style.display=S.tab==='geral'?'none':'';
-  $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio'||S.tab==='precosconv'||S.tab==='saude'||S.tab==='finGeral'||S.tab==='finPagar')?'none':'';
+  $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio'||S.tab==='precosconv'||S.tab==='saude'||S.tab==='finGeral'||S.tab==='finPagar'||S.tab==='finReceber')?'none':'';
   $('#fHint').textContent=per?'':(S.tab==='anual'?'Nesta aba os anos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.':'Nesta aba os períodos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.');
   syncFilters();
   const [v,b]=VIEWS[S.tab];
