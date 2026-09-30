@@ -170,6 +170,7 @@ body{font-family:'Inter',system-ui,-apple-system,Arial,sans-serif;color:#0b1220}
 .kpi .s{font-size:14px;color:#334155}
 .kpis-5{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
 .kpis-5 .v{font-size:clamp(17px,1.7vw,24px);white-space:nowrap}
+.cp-tab table td.num,.cp-tab table th.num{text-align:right}
 .tabs button{font-size:16px;padding:14px 20px}
 .tabs button[aria-selected=true]{color:#fff;background:var(--blue);border-radius:10px 10px 0 0;border-bottom-color:var(--blue)}
 .subtabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
@@ -972,18 +973,11 @@ function viewFinanceiro(){
     ${k('Próximos pagamentos',fBRL0.format(R.restoMes.v),`${fNum.format(R.restoMes.n)} conta(s) · resto de ${mesLabelDe(F.hoje)}`)}
    </div>
   </div>`;
-  h+=`<h2 style="margin-top:24px">Vencidas e vencendo hoje<small>ordem cronológica</small></h2>`;
+  h+=`<h2 style="margin-top:24px">Vencidas e vencendo hoje<small>vencendo hoje primeiro, depois as mais atrasadas · clique num título da tabela pra ordenar por ele</small></h2>`;
   if(!F.tabela.length){
     h+='<div class="empty">Nenhuma conta vencida ou vencendo hoje.</div>';
   }else{
-    h+=`<div class="card tw fin-tab"><table><thead><tr><th class="chk"></th><th>Fornecedor</th><th>Título / Parcela</th><th>Vencimento</th><th>Situação</th><th class="num">Saldo</th></tr></thead><tbody>
-    ${F.tabela.map((r,i)=>`<tr><td class="chk"><input type="checkbox" class="finChk" data-i="${i}" data-v="${r.s}"></td><td>${esc(r.f)}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)} / ${esc(r.p)}</td><td>${isoBR(r.v)}</td><td>${r.st==='hoje'?'<span class="pill warn">Vence hoje</span>':`<span class="pill venc">${fNum.format(r.d)} dia(s) em atraso</span>`}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
-    </tbody></table></div>
-    <div class="fin-selecao" id="finSelecao" style="display:none">
-     <span>Selecionadas: <b id="finSelCount">0</b> conta(s)</span>
-     <span class="fin-total">Total: <b id="finSelTotal">R$ 0,00</b></span>
-     <button type="button" id="finSelLimpar">Limpar seleção</button>
-    </div>`;
+    h+=`<div id="finTabWrap"></div>`;
   }
   h+=`<h2 style="margin-top:28px">Fechamento de ${mesLabelDe(F.hoje)}</h2>
    <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
@@ -994,7 +988,55 @@ function viewFinanceiro(){
   return h;
 }
 
-function bindFinanceiro(){
+S.finOrd={key:null,dir:1};
+function finTabRows(){
+  const F=D.financeiro;
+  const rows=F.tabela.map((r,i)=>({...r,_i:i}));
+  const key=S.finOrd.key,dir=S.finOrd.dir;
+  const cmp={
+    f:(a,b)=>(a.f||'').localeCompare(b.f||'','pt-BR'),
+    t:(a,b)=>String(a.t).localeCompare(String(b.t),'pt-BR',{numeric:true}),
+    v:(a,b)=>a.v<b.v?-1:a.v>b.v?1:0,
+    st:(a,b)=>a.d-b.d,
+    s:(a,b)=>a.s-b.s,
+  };
+  if(key&&cmp[key]){
+    rows.sort((a,b)=>cmp[key](a,b)*dir);
+  }else{
+    // padrão: vencendo hoje primeiro, depois as vencidas da maior pra menor quantidade de dias em atraso
+    rows.sort((a,b)=>{
+      const ga=a.st==='hoje'?0:1,gb=b.st==='hoje'?0:1;
+      return ga!==gb?ga-gb:b.d-a.d;
+    });
+  }
+  return rows;
+}
+function finTh(key,label,cls){
+  const ord=S.finOrd.key,dir=S.finOrd.dir;
+  const seta=ord===key?(dir>0?' ▲':' ▼'):'';
+  return `<th class="${cls||''}" data-fin-ord="${key}" style="cursor:pointer" aria-sort="${ord===key?(dir>0?'ascending':'descending'):'none'}">${label}${seta}</th>`;
+}
+function renderFinTab(){
+  const wrap=$('#finTabWrap');
+  if(!wrap)return;
+  const rows=finTabRows();
+  let h=`<div class="card tw fin-tab"><table><thead><tr><th class="chk"></th>${finTh('f','Fornecedor')}${finTh('t','Título / Parcela')}${finTh('v','Vencimento')}${finTh('st','Situação')}${finTh('s','Saldo','num')}</tr></thead><tbody>
+   ${rows.map(r=>`<tr><td class="chk"><input type="checkbox" class="finChk" data-i="${r._i}" data-v="${r.s}"></td><td>${esc(r.f)}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)} / ${esc(r.p)}</td><td>${isoBR(r.v)}</td><td>${r.st==='hoje'?'<span class="pill warn">Vence hoje</span>':`<span class="pill venc">${fNum.format(r.d)} dia(s) em atraso</span>`}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
+   </tbody></table></div>
+   <div class="fin-selecao" id="finSelecao" style="display:none">
+    <span>Selecionadas: <b id="finSelCount">0</b> conta(s)</span>
+    <span class="fin-total">Total: <b id="finSelTotal">R$ 0,00</b></span>
+    <button type="button" id="finSelLimpar">Limpar seleção</button>
+   </div>`;
+  wrap.innerHTML=h;
+  $$('[data-fin-ord]',wrap).forEach(t=>t.onclick=()=>{
+    const k=t.dataset.finOrd;
+    if(S.finOrd.key===k)S.finOrd.dir*=-1;else{S.finOrd.key=k;S.finOrd.dir=1;}
+    renderFinTab();
+  });
+  bindFinSelecao();
+}
+function bindFinSelecao(){
   const box=$('#finSelecao');
   if(!box)return;
   const chks=$$('.finChk');
@@ -1014,9 +1056,14 @@ function bindFinanceiro(){
   if(limpar)limpar.onclick=()=>{chks.forEach(c=>{c.checked=false;pintarLinha(c);});upd();};
   upd();
 }
+function bindFinanceiro(){
+  if(!D.financeiro||!D.financeiro.tabela.length)return;
+  renderFinTab();
+}
 
 /* ---------- financeiro: contas a pagar (sub-aba) ---------- */
 S.fp={todos:false,status:'aberto',de:'',ate:'',q:''};
+S.fpOrd={key:null,dir:1};
 function fpDefAte(hojeIso,dias){
   const d=new Date(hojeIso+'T00:00:00');
   d.setDate(d.getDate()+dias);
@@ -1034,8 +1081,22 @@ function fpRows(){
   const ate=S.fp.ate||(S.fp.todos?null:fpDefAte(F.hoje,15));
   if(de)rows=rows.filter(r=>r.v>=de);
   if(ate)rows=rows.filter(r=>r.v<=ate);
-  rows.sort((a,b)=>a.v<b.v?-1:a.v>b.v?1:0);
+  const key=S.fpOrd.key,dir=S.fpOrd.dir;
+  const cmp={
+    f:(a,b)=>(a.f||'').localeCompare(b.f||'','pt-BR'),
+    t:(a,b)=>String(a.t).localeCompare(String(b.t),'pt-BR',{numeric:true}),
+    v:(a,b)=>a.v<b.v?-1:a.v>b.v?1:0,
+    st:(a,b)=>(a.st==='baixado'?1:0)-(b.st==='baixado'?1:0),
+    s:(a,b)=>a.s-b.s,
+  };
+  if(key&&cmp[key])rows.sort((a,b)=>cmp[key](a,b)*dir);
+  else rows.sort((a,b)=>a.v<b.v?-1:a.v>b.v?1:0);
   return rows;
+}
+function fpTh(key,label,cls){
+  const ord=S.fpOrd.key,dir=S.fpOrd.dir;
+  const seta=ord===key?(dir>0?' ▲':' ▼'):'';
+  return `<th class="${cls||''}" data-fp-ord="${key}" style="cursor:pointer" aria-sort="${ord===key?(dir>0?'ascending':'descending'):'none'}">${label}${seta}</th>`;
 }
 function viewFinPagar(){
   const F=D.financeiro;
@@ -1071,12 +1132,17 @@ function viewFinPagar(){
 }
 function renderFpRes(){
   const rows=fpRows();
-  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(rows.length)} título(s)</p>`;
+  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(rows.length)} título(s) · clique num título da tabela pra ordenar por ele</p>`;
   if(!rows.length){$('#fpRes').innerHTML=h+'<div class="empty">Nenhum título encontrado com esses filtros.</div>';return;}
-  h+=`<div class="card tw fin-tab"><table><thead><tr><th>Fornecedor</th><th>Título / Parcela</th><th>Data</th><th>Situação</th><th class="num">Valor</th></tr></thead><tbody>
+  h+=`<div class="card tw cp-tab"><table><thead><tr>${fpTh('f','Fornecedor')}${fpTh('t','Título / Parcela')}${fpTh('v','Data')}${fpTh('st','Situação')}${fpTh('s','Valor','num')}</tr></thead><tbody>
   ${rows.map(r=>`<tr><td>${esc(r.f||'—')}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)}${r.p?' / '+esc(r.p):''}</td><td>${isoBR(r.v)}</td><td>${r.st==='baixado'?'<span class="pill ok">Baixado</span>':'<span class="pill">Aberto</span>'}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
   </tbody></table></div>`;
   $('#fpRes').innerHTML=h;
+  $$('[data-fp-ord]').forEach(t=>t.onclick=()=>{
+    const k=t.dataset.fpOrd;
+    if(S.fpOrd.key===k)S.fpOrd.dir*=-1;else{S.fpOrd.key=k;S.fpOrd.dir=1;}
+    renderFpRes();
+  });
 }
 function bindFinPagar(){
   const F=D.financeiro;
