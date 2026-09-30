@@ -444,7 +444,7 @@ def construir_dados(df: pd.DataFrame, medicos: dict, excl: dict, arquivos: list,
                 "ok": u in UNIDADES} for u in unis]
     uni_idx = {u: i for i, u in enumerate(unis)}
 
-    conv = (df.groupby("Convênio")["Nome Convênio"].first().sort_index())
+    conv = (df.groupby("Convênio")["Nome Convênio"].first().sort_index().map(_nome_curto))
     repetidos = conv.value_counts()
     repetidos = set(repetidos[repetidos > 1].index)
     conv_dim = [{"id": int(i), "nome": (f"{n} ({i})" if n in repetidos else n)} for i, n in conv.items()]
@@ -591,6 +591,19 @@ def _cel(v) -> str:
     return str(v).strip()
 
 
+def _nome_curto(s):
+    """Nomes de convênio/cliente/fornecedor às vezes vêm do sistema com um preenchimento
+    de pontos no final (campo de tamanho fixo do legado), tipo 'MEDPREV - ...................'
+    - corta tudo a partir do ' - ' quando o que sobra depois é só pontuação de
+    preenchimento, deixando só o nome de verdade. Nome sem esse padrão não é alterado."""
+    if not s:
+        return s
+    t = s.rstrip(". ")
+    if t.endswith("-"):
+        return t.rstrip("- ").strip() or s.strip()
+    return s.strip()
+
+
 def _preco(v):
     """'1.234,56', '14,52', 45.78 -> float; vazio/ruim -> None."""
     if v is None or v == "":
@@ -693,7 +706,7 @@ def _ler_precos_convenio(p: Path):
         if len(r) < 8:
             continue
         cod_conv = _cel(r[0]).rstrip(".").strip()
-        nome_conv = _cel(r[1]).strip()
+        nome_conv = _nome_curto(_cel(r[1]).strip())
         cod_exame = _cel(r[4]).strip()
         nome_exame = _cel(r[5]).strip()
         valor = _preco(_cel(r[6]))
@@ -1071,7 +1084,7 @@ def carregar_financeiro():
         # cruzamento com data/filiais não batia e mostrava só o número (com o ponto).
         filcod = filcod.strip().rstrip(".")
         d = _data_aaaammdd(dtvencto)
-        aberto.append({"titulo": titnr, "fornecedor": fornecedor, "parcela": parcela,
+        aberto.append({"titulo": titnr, "fornecedor": _nome_curto(fornecedor), "parcela": parcela,
                         "vencimento": d, "saldo": _preco(saldo) or 0.0, "filial": filcod})
 
     vencidas = [a for a in aberto if a["vencimento"] and a["vencimento"] < hoje]
@@ -1095,6 +1108,7 @@ def carregar_financeiro():
         if len(row) < 10:
             continue
         _filcod, _titnr, _serie, fornecedor, dtemissao, _centro, _tpcod, tipo, _tptipo, _valor = row[:10]
+        fornecedor = _nome_curto(fornecedor)
         d = _data_aaaammdd(dtemissao)
         if d:
             categoria.append({"fornecedor": fornecedor, "tipo": tipo, "data": d})
@@ -1146,7 +1160,7 @@ def carregar_financeiro():
         if len(row) < 10:
             continue
         filcod_c, titnr_c, serie_c, fornecedor_c = row[0], row[1], row[2], row[3]
-        fornecedor_por_titulo[(filcod_c.strip().rstrip("."), titnr_c, serie_c)] = fornecedor_c
+        fornecedor_por_titulo[(filcod_c.strip().rstrip("."), titnr_c, serie_c)] = _nome_curto(fornecedor_c)
 
     baixas = []
     if "baixas" in arqs:
@@ -1181,6 +1195,10 @@ def carregar_financeiro():
     janela_15d = hoje + timedelta(days=15)
     a_pagar_7d = [a for a in aberto if a["vencimento"] and a["vencimento"] <= janela_7d]
     a_pagar_15d = [a for a in aberto if a["vencimento"] and a["vencimento"] <= janela_15d]
+    # títulos de contas a receber vencidos há mais de 15 dias não entram mais nos KPIs de
+    # "a receber" (fim do mês / 7 dias / 15 dias) - atraso grande é outro tipo de problema,
+    # não "a receber" no sentido normal do card
+    janela_receber_desde = hoje - timedelta(days=15)
 
     recebimentos_mes = None
     aberto_r = []
@@ -1193,10 +1211,10 @@ def carregar_financeiro():
             tipo_r = row[10].strip() if len(row) > 10 else ""
             filcod_r = filcod_r.strip().rstrip(".")
             d = _data_aaaammdd(dtvencto)
-            aberto_r.append({"titulo": titnr_r, "cliente": cliente, "parcela": parcela_r,
+            aberto_r.append({"titulo": titnr_r, "cliente": _nome_curto(cliente), "parcela": parcela_r,
                               "vencimento": d, "saldo": _preco(saldo) or 0.0, "filial": filcod_r,
                               "serie": serie_r.strip(), "tipo": "C" if tipo_r == "C" else "P"})
-        a_receber_fim_mes = [a["saldo"] for a in aberto_r if a["vencimento"] and a["vencimento"] <= fim_mes_atual]
+        a_receber_fim_mes = [a["saldo"] for a in aberto_r if a["vencimento"] and janela_receber_desde <= a["vencimento"] <= fim_mes_atual]
         recebimentos_mes = {"n": len(a_receber_fim_mes), "v": round(sum(a_receber_fim_mes), 2)}
 
     # baixas de contas a receber (mesma tabela MOVTITULO, módulo CRE) - pra "recebido até
@@ -1210,7 +1228,7 @@ def carregar_financeiro():
             if len(row) < 10:
                 continue
             filcod_c, titnr_c, serie_c, cliente_c = row[0], row[1], row[2], row[3]
-            cliente_por_titulo[(filcod_c.strip().rstrip("."), titnr_c, serie_c)] = cliente_c
+            cliente_por_titulo[(filcod_c.strip().rstrip("."), titnr_c, serie_c)] = _nome_curto(cliente_c)
 
     baixas_r = []
     if "baixas_receber" in arqs:
@@ -1245,8 +1263,8 @@ def carregar_financeiro():
     def resumo_grupo_r(lst):
         return {"n": len(lst), "v": round(sum(x["saldo"] for x in lst), 2)}
 
-    receber_7d = [a for a in aberto_r if a["vencimento"] and a["vencimento"] <= janela_7d]
-    receber_15d = [a for a in aberto_r if a["vencimento"] and a["vencimento"] <= janela_15d]
+    receber_7d = [a for a in aberto_r if a["vencimento"] and janela_receber_desde <= a["vencimento"] <= janela_7d]
+    receber_15d = [a for a in aberto_r if a["vencimento"] and janela_receber_desde <= a["vencimento"] <= janela_15d]
 
     financeiro_receber = None
     if aberto_r or baixas_r:
@@ -1308,16 +1326,22 @@ def carregar_financeiro():
             valores = [round(sum(por_convenio_mes[c].get(m, 0.0) for c in lista_convs), 2) for m in meses]
             return {"convenio": nome, "valores": valores, "total": round(sum(valores), 2)}
 
-        matriz_linhas = [linha_matriz(c, [c]) for c in top_convs]
-        if outros_convs:
-            matriz_linhas.append(linha_matriz(f"Outros convênios ({len(outros_convs)})", outros_convs))
-        total_mes = [round(sum(l["valores"][i] for l in matriz_linhas), 2) for i in range(len(meses))]
+        # linhas dos top_n sempre aparecem; as dos "outros" convênios também são calculadas
+        # individualmente (não só agregadas) pra permitir expandir a tabela e ver cada uma -
+        # por padrão o painel mostra só o resumo agregado ("Outros convênios (28)") e o
+        # usuário decide se quer expandir.
+        linhas_top = [linha_matriz(c, [c]) for c in top_convs]
+        linhas_outros = [linha_matriz(c, [c]) for c in outros_convs]
+        outros_resumo = linha_matriz(f"Outros convênios ({len(outros_convs)})", outros_convs) if outros_convs else None
+        todas_linhas = linhas_top + linhas_outros
+        total_mes = [round(sum(l["valores"][i] for l in todas_linhas), 2) for i in range(len(meses))]
 
         return {
             "resumo": {"n": len(linhas), "v": round(sum(r["valor"] for r in linhas), 2)},
             "porConvenio": porConvenio,
             "linhas": sorted(linhas, key=lambda r: -(r["dias"] or 0)),
-            "evolucaoMensal": {"meses": meses, "linhas": matriz_linhas, "totalMes": total_mes,
+            "evolucaoMensal": {"meses": meses, "linhasTop": linhas_top, "linhasOutros": linhas_outros,
+                                "outrosResumo": outros_resumo, "totalMes": total_mes,
                                 "totalGeral": round(sum(total_mes), 2)},
         }
 
@@ -1335,7 +1359,7 @@ def carregar_financeiro():
             d = _data_aaaammdd(dtfat_n)
             linhas_ni.append({
                 "filial": filcod_n, "requisicao": reqnum_n, "seq": exaseq_n, "exame": exacod_n,
-                "convenio": convnome_n or "SEM CONVÊNIO CADASTRADO",
+                "convenio": _nome_curto(convnome_n) or "SEM CONVÊNIO CADASTRADO",
                 "faturado": d.strftime("%Y-%m-%d") if d else None,
                 "dias": (hoje - d).days if d else None,
                 "valor": _preco(valor_n) or 0.0,
