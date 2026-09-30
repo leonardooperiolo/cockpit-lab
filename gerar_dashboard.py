@@ -1272,10 +1272,12 @@ def carregar_financeiro():
     # dinheiro que já saiu pro convênio mas nunca virou conta a receber rastreável.
     # Validado direto no CONCENT (ver comentário da SQL_NAO_INTEGRADOS no coletar) antes
     # de virar número do painel.
+    # Por ora, a SQL_NAO_INTEGRADOS já desconsidera convênio tipo C (à vista/caixa) na
+    # origem - ver comentário no coletar_contas_pagar.py. O Leo vai confirmar mais coisas
+    # direto na CONCENT antes de decidir um critério mais fino (ex: taxa de integração por
+    # convênio); até lá, o que chega aqui já é só o que deve mesmo virar título de convênio.
     def _bloco_nao_integrados(linhas, top_n=12):
-        """Monta resumo + por-convênio + matriz mensal pra uma lista de linhas de não
-        integrados. Usado duas vezes: uma pro bloco F (alerta principal) e outra pro
-        bloco C (lista de observação) - ver comentário mais abaixo do porquê da separação."""
+        """Monta resumo + por-convênio + matriz mensal por não integrados."""
         por_convenio = defaultdict(lambda: {"n": 0, "v": 0.0})
         for r in linhas:
             g = por_convenio[r["convenio"]]
@@ -1320,38 +1322,25 @@ def carregar_financeiro():
         }
 
     nao_integrados = None
-    nao_integrados_caixa = None
     if "nao_integrados" in arqs:
-        linhas_f, linhas_c = [], []
+        linhas_ni = []
         for row in _linhas_arquivo(arqs["nao_integrados"]):
             row = [_cel(c) for c in row]
             if len(row) < 8:
                 continue
             filcod_n, reqnum_n, exaseq_n, exacod_n, _convcod_n, convnome_n, dtfat_n, valor_n = row[:8]
-            # 9a coluna (tipo F/C) e nova - arquivo exportado antes dessa mudança pode nao ter,
-            # entao trata como 'F' (risco) por precaução em vez de quebrar
-            tipo_n = row[8].strip().upper() if len(row) > 8 else "F"
             filcod_n = filcod_n.strip().rstrip(".")
             reqnum_n = reqnum_n.strip().rstrip(".")
             exaseq_n = exaseq_n.strip().rstrip(".")
             d = _data_aaaammdd(dtfat_n)
-            linha = {
+            linhas_ni.append({
                 "filial": filcod_n, "requisicao": reqnum_n, "seq": exaseq_n, "exame": exacod_n,
                 "convenio": convnome_n or "SEM CONVÊNIO CADASTRADO",
                 "faturado": d.strftime("%Y-%m-%d") if d else None,
                 "dias": (hoje - d).days if d else None,
                 "valor": _preco(valor_n) or 0.0,
-            }
-            # so convenio tipo C tem título gerado no nome do PACIENTE quando integra
-            # (não título de convênio) - por isso boa parte do C é campanha/cortesia que
-            # nunca deveria virar título (CHECK UP, CORTESIA etc.), e entra numa lista de
-            # observação separada em vez de contar como dívida de convênio de verdade.
-            # F (ou sem cadastro de convênio, por precaução) continua no alerta principal.
-            (linhas_c if tipo_n == "C" else linhas_f).append(linha)
-
-        nao_integrados = _bloco_nao_integrados(linhas_f)
-        if linhas_c:
-            nao_integrados_caixa = _bloco_nao_integrados(linhas_c)
+            })
+        nao_integrados = _bloco_nao_integrados(linhas_ni)
 
     return {
         "hoje": hoje.strftime("%Y-%m-%d"),
@@ -1380,11 +1369,6 @@ def carregar_financeiro():
         # seção de destaque "títulos não integrados" - None enquanto
         # contas_receber_nao_integrados.csv não for enviado
         "naoIntegrados": nao_integrados,
-        # convênios tipo C (caixa) sem título gerado no nome do paciente - não é dívida de
-        # convênio (a maior parte é campanha/cortesia que nunca vira título mesmo), mas fica
-        # visível à parte pra dar pra notar se algum convênio caixa começar a acumular valor
-        # fora do padrão (sinal de bug/limbo na integração) - None se não houver nenhuma linha
-        "naoIntegradosCaixa": nao_integrados_caixa,
     }
 
 
