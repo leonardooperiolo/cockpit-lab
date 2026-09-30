@@ -61,7 +61,9 @@ h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(2
 .ni-heat th:nth-child(2),.ni-heat td:nth-child(2){position:sticky;background:#fff;box-shadow:1px 0 0 var(--line);font-weight:700;z-index:1}
 .ni-heat thead th{background:#fafcff;color:var(--muted);font-weight:600;position:sticky;top:0;z-index:2}
 .ni-heat thead th:first-child,.ni-heat thead th:nth-child(2){z-index:3}
-.ni-heat tbody tr:last-child td{border-top:2px solid var(--line);font-weight:700}
+.ni-heat tbody tr:nth-last-child(2) td{border-top:2px solid var(--line);font-weight:700}
+.ni-heat tbody tr:nth-last-child(2) td:first-child,.ni-heat tbody tr:nth-last-child(2) td:nth-child(2){background:#fff}
+.ni-heat tbody tr:last-child td{color:var(--muted);font-size:12px}
 .ni-heat tbody tr:last-child td:first-child,.ni-heat tbody tr:last-child td:nth-child(2){background:#fff}
 .ni-heat td.cel{border-radius:5px}
 .notice button.lnk{font-size:14px}
@@ -182,6 +184,12 @@ body{font-family:'Inter',system-ui,-apple-system,Arial,sans-serif;color:#0b1220}
 .kpis-5{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
 .kpis-5 .v{font-size:clamp(17px,1.7vw,24px);white-space:nowrap}
 .cp-tab table td.num,.cp-tab table th.num{text-align:right}
+/* tabela de "Consultar títulos": larguras acompanham o conteúdo em vez de esticar pra
+   preencher 100% do card - a coluna de convênio/cliente estava sobrando espaço enquanto
+   título/parcela ficava apertada */
+.cp-tab table{width:auto;min-width:0}
+.cp-tab table td,.cp-tab table th{white-space:nowrap}
+.cp-tab table tfoot td{border-top:2px solid var(--line);font-weight:700;background:#fafcff}
 .tabs button{font-size:16px;padding:14px 20px}
 .tabs button[aria-selected=true]{color:#fff;background:var(--blue);border-radius:10px 10px 0 0;border-bottom-color:var(--blue)}
 .subtabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
@@ -1139,15 +1147,35 @@ function viewFinPagar(){
     ${F.recorrencia.naoLancadas.map(r=>`<tr><td>${esc(r.f)}</td><td>${esc(r.t)}</td><td>${r.dia?`por volta do dia ${r.dia}`:'sem histórico suficiente'}</td></tr>`).join('')}
     </tbody></table></div>`;
   }
+  h+=titulosPagosPorMesHTML(F);
   return h;
+}
+// mesmo estilo do gráfico "Faturamento líquido por mês" (visão Saúde do Negócio), mas com
+// o valor de títulos baixados (pagos) por mês em vez de faturamento - últimos 12 meses
+// com dado, terminando no mês de hoje
+function titulosPagosPorMesHTML(F){
+  const baixados=(F.baixados||[]).filter(r=>r.v);
+  if(!baixados.length)return '';
+  const [Yh,Mh]=F.hoje.split('-').map(Number);
+  const meses=[];
+  for(let i=11;i>=0;i--){let mm=Mh-i,yy=Yh;while(mm<=0){mm+=12;yy--;}meses.push(yy+'-'+String(mm).padStart(2,'0'));}
+  const porMes=new Map(meses.map(m=>[m,0]));
+  baixados.forEach(r=>{const ym=r.v.slice(0,7);if(porMes.has(ym))porMes.set(ym,porMes.get(ym)+r.s);});
+  const mesLbl=ym=>{const [y,m]=ym.split('-').map(Number);return MES[m-1]+'/'+String(y).slice(2);};
+  return `<h2 style="margin-top:28px">Títulos pagos por mês<small>últimos 12 meses</small></h2>
+  <div class="card">${chartLine({labels:meses.map(mesLbl),series:[{name:'Títulos pagos',color:'#1f9d6b',values:meses.map(m=>porMes.get(m))}],area:true,vals:true,axis:v=>'R$ '+fCmp.format(v),tip:v=>fBRL.format(v),fmtVal:v=>fCmp.format(v),aria:'Títulos pagos por mês'})}</div>`;
+}
+function rotuloColunaData(status){
+  return status==='aberto'?'Data de vencimento':status==='baixado'?'Data de pagamento':'Data';
 }
 function renderFpRes(){
   const rows=fpRows();
   let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(rows.length)} título(s) · clique num título da tabela pra ordenar por ele</p>`;
   if(!rows.length){$('#fpRes').innerHTML=h+'<div class="empty">Nenhum título encontrado com esses filtros.</div>';return;}
-  h+=`<div class="card tw cp-tab"><table><thead><tr>${fpTh('f','Fornecedor')}${fpTh('t','Título / Parcela')}${fpTh('v','Data')}${fpTh('st','Situação')}${fpTh('s','Valor','num')}</tr></thead><tbody>
+  const total=rows.reduce((a,r)=>a+r.s,0);
+  h+=`<div class="card tw cp-tab"><table><thead><tr>${fpTh('f','Fornecedor')}${fpTh('t','Título / Parcela')}${fpTh('v',rotuloColunaData(S.fp.status))}${fpTh('st','Situação')}${fpTh('s','Valor','num')}</tr></thead><tbody>
   ${rows.map(r=>`<tr><td>${esc(r.f||'—')}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)}${r.p?' / '+esc(r.p):''}</td><td>${isoBR(r.v)}</td><td>${r.st==='baixado'?'<span class="pill ok">Baixado</span>':'<span class="pill">Aberto</span>'}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
-  </tbody></table></div>`;
+  </tbody><tfoot><tr><td colspan="4">Total (${fNum.format(rows.length)} título(s))</td><td class="num">${fBRL.format(total)}</td></tr></tfoot></table></div>`;
   $('#fpRes').innerHTML=h;
   $$('[data-fp-ord]').forEach(t=>t.onclick=()=>{
     const k=t.dataset.fpOrd;
@@ -1234,6 +1262,7 @@ function niMatrizHTML(EM,opts){
    <table class="ni-heat"><thead><tr><th>Convênio</th><th>Total</th>${idxRev.map(i=>`<th>${mesLbl(EM.meses[i])}</th>`).join('')}</tr></thead><tbody>
    ${EM.linhas.map(l=>`<tr><td>${esc(l.convenio)}</td><td>${fBRL0.format(l.total)}</td>${idxRev.map(i=>cel(l.valores[i])).join('')}</tr>`).join('')}
    <tr><td>Total</td><td>${fBRL0.format(EM.totalGeral)}</td>${idxRev.map(i=>{const v=EM.totalMes[i];return `<td>${v?fBRL0.format(v):''}</td>`;}).join('')}</tr>
+   <tr><td>% do total</td><td>100%</td>${idxRev.map(i=>{const v=EM.totalMes[i];return `<td>${v?fD1.format(100*v/EM.totalGeral)+'%':''}</td>`;}).join('')}</tr>
    </tbody></table>
   </div>
   <p class="sub" style="margin:8px 0 24px">Cada célula é o valor faturado naquele mês que nunca virou título · quanto mais escuro, maior o valor parado · arraste a tabela pros lados pra ver os meses mais antigos.</p>`;
@@ -1262,7 +1291,6 @@ function viewFinReceber(){
       </tbody></table></div>${NI.linhas.length>300?`<p class="sub" style="margin-top:6px">mostrando os 300 mais antigos de ${fNum.format(NI.linhas.length)}</p>`:''}
      </details>
     </div>`;
-    h+=niMatrizHTML(NI.evolucaoMensal);
   }
   h+=`<div class="kpis kpis-5">
    ${k('Em aberto até fim do mês',fBRL0.format(R.aReceberMes.v),`${fNum.format(R.aReceberMes.n)} título(s) · inclui os já vencidos`,'var(--blue)')}
@@ -1276,20 +1304,22 @@ function viewFinReceber(){
    <label class="fld" style="flex:1 1 220px">Cliente/convênio<input type="search" id="frQ" placeholder="ex.: unimed" autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
    <label class="fld">De<input type="date" id="frDe" style="font:inherit;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
    <label class="fld">Até<input type="date" id="frAte" style="font:inherit;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
-   <label class="fld">Tipo<select id="frTipo"><option value="todos">Convênio + Particular</option><option value="C">Só convênio</option><option value="P">Só particular</option></select></label>
+   <label class="fld">Tipo<select id="frTipo"><option value="todos">Convênios + Clientes</option><option value="C">Só convênios</option><option value="P">Só clientes</option></select></label>
    <label class="fld">Status<select id="frStatus"><option value="aberto">Aberto</option><option value="baixado">Baixado</option><option value="ambos">Ambos</option></select></label>
    <label class="apck"><input type="checkbox" id="frTodos"> Buscar todos os títulos (sem limitar aos próximos 15 dias)</label>
   </div>
   <div id="frRes"></div>`;
+  if(NI)h+=niMatrizHTML(NI.evolucaoMensal);
   return h;
 }
 function renderFrRes(){
   const rows=frRows();
   let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(rows.length)} título(s) · clique num título da tabela pra ordenar por ele</p>`;
   if(!rows.length){$('#frRes').innerHTML=h+'<div class="empty">Nenhum título encontrado com esses filtros.</div>';return;}
-  h+=`<div class="card tw cp-tab"><table><thead><tr>${frTh('f','Cliente / Convênio')}${frTh('t','Título / Parcela')}<th>Tipo</th>${frTh('v','Data')}${frTh('st','Situação')}${frTh('s','Valor','num')}</tr></thead><tbody>
-  ${rows.map(r=>`<tr><td>${esc(r.f||'—')}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)}${r.p?' / '+esc(r.p):''}</td><td>${r.tp==='C'?'<span class="pill">Convênio</span>':'<span class="pill mut">Particular</span>'}</td><td>${isoBR(r.v)}</td><td>${r.st==='baixado'?'<span class="pill ok">Baixado</span>':'<span class="pill">Aberto</span>'}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
-  </tbody></table></div>`;
+  const total=rows.reduce((a,r)=>a+r.s,0);
+  h+=`<div class="card tw cp-tab"><table><thead><tr>${frTh('f','Cliente / Convênio')}${frTh('t','Título / Parcela')}<th>Tipo</th>${frTh('v',rotuloColunaData(S.fr.status))}${frTh('st','Situação')}${frTh('s','Valor','num')}</tr></thead><tbody>
+  ${rows.map(r=>`<tr><td>${esc(r.f||'—')}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)}${r.p?' / '+esc(r.p):''}</td><td>${r.tp==='C'?'<span class="pill">Convênio</span>':'<span class="pill mut">Cliente</span>'}</td><td>${isoBR(r.v)}</td><td>${r.st==='baixado'?'<span class="pill ok">Baixado</span>':'<span class="pill">Aberto</span>'}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
+  </tbody><tfoot><tr><td colspan="5">Total (${fNum.format(rows.length)} título(s))</td><td class="num">${fBRL.format(total)}</td></tr></tfoot></table></div>`;
   $('#frRes').innerHTML=h;
   $$('[data-fr-ord]').forEach(t=>t.onclick=()=>{
     const k=t.dataset.frOrd;
