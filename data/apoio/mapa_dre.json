@@ -1,0 +1,1052 @@
+{
+  "_comentario": "De-para código do CONCENT (TPDRCOD) -> conta do DRE. Gerado a partir de mapa_dre_para_revisar.xlsx (203 códigos batendo com o de-para de 2023 do ex-consultor + 5 classificados/confirmados manualmente pelo Leo). Código novo que aparecer aqui sem entrada correspondente cai em '(sem classificação)' no painel - nunca adivinhar a conta, sempre perguntar pro Leo antes de adicionar. Código 905 (ENTRADAS) confirmado pelo Leo em 30/09/2026 como legado/pouco usado - jogado em (-) Outras Despesas.",
+  "mapa": {
+    "1001": {
+      "conta_dre": "(-) Cta 1000 Pedágios",
+      "descricao": "PEDÁGIO",
+      "tipo": "D"
+    },
+    "1002": {
+      "conta_dre": "(-) Cta 1000 Investimentos CILA",
+      "descricao": "CENTRO MEDICO ANDAR 5",
+      "tipo": "D"
+    },
+    "1003": {
+      "conta_dre": "(-) Cta 1000 Outras Despesas Particulares",
+      "descricao": "multas pessoais",
+      "tipo": "D"
+    },
+    "1004": {
+      "conta_dre": "(-) Pró labore",
+      "descricao": "prolabore leonardo",
+      "tipo": "D"
+    },
+    "1005": {
+      "conta_dre": "(-) Cta 1000 Aluguéis e condomínios",
+      "descricao": "condominio",
+      "tipo": "D"
+    },
+    "1006": {
+      "conta_dre": "(-) Cta 1000 Telefone e internet",
+      "descricao": "telefone",
+      "tipo": "D"
+    },
+    "1007": {
+      "conta_dre": "???",
+      "descricao": "revisão carros",
+      "tipo": "D"
+    },
+    "1008": {
+      "conta_dre": "???",
+      "descricao": "San marino",
+      "tipo": "D"
+    },
+    "1009": {
+      "conta_dre": "(-) Cta 1000 IPVA, seguro e multas",
+      "descricao": "IPVA",
+      "tipo": "D"
+    },
+    "101": {
+      "conta_dre": "(+) Receita unidades",
+      "descricao": "Receita Faturamento Particular",
+      "tipo": "R"
+    },
+    "1010": {
+      "conta_dre": "(-) Cta 1000 Energia elétrica",
+      "descricao": "LUZ",
+      "tipo": "D"
+    },
+    "1011": {
+      "conta_dre": "(-) Cta 1000 Investimentos CILA",
+      "descricao": "investimento cila",
+      "tipo": "D"
+    },
+    "1012": {
+      "conta_dre": "(-) Cta 1000 IPVA, seguro e multas",
+      "descricao": "Seguro de carros",
+      "tipo": "D"
+    },
+    "1013": {
+      "conta_dre": "(-) Cta 1000 Clube de Tiro",
+      "descricao": "Clube de tiro",
+      "tipo": "D"
+    },
+    "1014": {
+      "conta_dre": "(-) Cta 1000 Cartões",
+      "descricao": "Cartao leo",
+      "tipo": "D"
+    },
+    "1015": {
+      "conta_dre": "(-) Cta 1000 Unimed",
+      "descricao": "Unimed",
+      "tipo": "D"
+    },
+    "1016": {
+      "conta_dre": "(-) Cta 1000 Aluguéis e condomínios",
+      "descricao": "CONDOMINIO BOURBOM",
+      "tipo": "D"
+    },
+    "1017": {
+      "conta_dre": "???",
+      "descricao": "Presentes",
+      "tipo": "D"
+    },
+    "1018": {
+      "conta_dre": "???",
+      "descricao": "CARTAO BNDES",
+      "tipo": "D"
+    },
+    "1019": {
+      "conta_dre": "(-) Cta 1000 Sky",
+      "descricao": "SKY",
+      "tipo": "D"
+    },
+    "102": {
+      "conta_dre": "(+) Receita Fat Convênio",
+      "descricao": "Receita Faturamento Convenio",
+      "tipo": "R"
+    },
+    "1020": {
+      "conta_dre": "(-) Cta 1000 Telefone e internet",
+      "descricao": "INTERNET",
+      "tipo": "D"
+    },
+    "1021": {
+      "conta_dre": "(-) Cta 1000 Outras Despesas Particulares",
+      "descricao": "despesas particular",
+      "tipo": "D"
+    },
+    "1022": {
+      "conta_dre": "(-) Cta 1000 IPTU, alvará, taxa de lixo e VISA",
+      "descricao": "IPTU",
+      "tipo": "D"
+    },
+    "1025": {
+      "conta_dre": "(-) Cta 1000 Aluguéis e condomínios",
+      "descricao": "condominio santa cruz",
+      "tipo": "D"
+    },
+    "1026": {
+      "conta_dre": "(-) Cta 1000 Aluguéis e condomínios",
+      "descricao": "condominio san marino",
+      "tipo": "D"
+    },
+    "1027": {
+      "conta_dre": "(-) Cta 1000 Supermercado",
+      "descricao": "COMPRAS MERCADO",
+      "tipo": "D"
+    },
+    "103": {
+      "conta_dre": "(-) Diferença Cartão",
+      "descricao": "Recebidos a maior cartão",
+      "tipo": "R"
+    },
+    "1030": {
+      "conta_dre": "(-) Cta 1000 Aluguéis e condomínios",
+      "descricao": "condominio curitiba",
+      "tipo": "D"
+    },
+    "1031": {
+      "conta_dre": "???",
+      "descricao": "parcela ap ctba",
+      "tipo": "D"
+    },
+    "1032": {
+      "conta_dre": "(-) Cta 1000 Aluguéis e condomínios",
+      "descricao": "condominio portal do lago",
+      "tipo": "D"
+    },
+    "1035": {
+      "conta_dre": "???",
+      "descricao": "iptu bom sucesso",
+      "tipo": "D"
+    },
+    "1036": {
+      "conta_dre": "(-) Cta 1000 Cartões",
+      "descricao": "CARTOES",
+      "tipo": "D"
+    },
+    "1038": {
+      "conta_dre": "(-) Cta 1000 Investimentos OuroCap",
+      "descricao": "OUROCAP",
+      "tipo": "D"
+    },
+    "1039": {
+      "conta_dre": "(-) Cta 1000 Manutenção e conservação de estrutura",
+      "descricao": "reformas",
+      "tipo": "D"
+    },
+    "1040": {
+      "conta_dre": "(-) Cta 1000 Aplicações Sócios",
+      "descricao": "APLICAÇÃO SOCIOS",
+      "tipo": "D"
+    },
+    "1041": {
+      "conta_dre": "(-) Combustível",
+      "descricao": "combustivel",
+      "tipo": "D"
+    },
+    "1042": {
+      "conta_dre": "(-) Cta 1000 Aluguéis e condomínios",
+      "descricao": "CHACARA",
+      "tipo": "D"
+    },
+    "1076": {
+      "conta_dre": "(-) Cta 1000 Farmácia",
+      "descricao": "FARMACIA",
+      "tipo": "D"
+    },
+    "1900": {
+      "conta_dre": "(+) Alugueis recebidos",
+      "descricao": "ALUGUEIS RECEBIDOS",
+      "tipo": "R"
+    },
+    "1901": {
+      "conta_dre_negativo": "(-) Empréstimos Pagos",
+      "conta_dre_positivo": "(+) Empréstimos Recebidos",
+      "descricao": "Credito Rotativo",
+      "regra_especial": "sinal",
+      "tipo": "R"
+    },
+    "2000": {
+      "conta_dre": "(-) Cta 2000 Leonardo",
+      "descricao": "LEONARDO",
+      "tipo": "D"
+    },
+    "201": {
+      "conta_dre": "(-) Material de consumo/expediente",
+      "descricao": "Material de escritório",
+      "tipo": "D"
+    },
+    "202": {
+      "conta_dre": "(-) Manutenção e conservação de equipamento",
+      "descricao": "Termõmetros",
+      "tipo": "D"
+    },
+    "203": {
+      "conta_dre": "(-) Compras de Kit Reagente",
+      "descricao": "Compras de Kit Reagente",
+      "tipo": "D"
+    },
+    "204": {
+      "conta_dre": "(-) Compra de equipamentos",
+      "descricao": "Compras de Equipamentos",
+      "tipo": "D"
+    },
+    "205": {
+      "conta_dre": "(-) Terceirização exames - Lab Apoio",
+      "descricao": "Laboratório de Apoio",
+      "tipo": "D"
+    },
+    "206": {
+      "conta_dre": "(-) Entidades de Classe",
+      "descricao": "Alvará CRF",
+      "tipo": "D"
+    },
+    "207": {
+      "conta_dre": "(-) Correios e transportes",
+      "descricao": "Correios",
+      "tipo": "D"
+    },
+    "208": {
+      "conta_dre": "(-) Telefone e internet",
+      "descricao": "Telefones/internet",
+      "tipo": "D"
+    },
+    "209": {
+      "conta_dre": "(-) Material de higiêne/limpeza",
+      "descricao": "Materiais de Limpeza",
+      "tipo": "D"
+    },
+    "210": {
+      "conta_dre": "(-) Lanches e refeições",
+      "descricao": "Lanches e refeições",
+      "tipo": "D"
+    },
+    "211": {
+      "conta_dre": "???",
+      "descricao": "Porcentagem das Clinicas",
+      "tipo": "D"
+    },
+    "212": {
+      "conta_dre": "(-) Compra de equipamentos",
+      "descricao": "Termômetros",
+      "tipo": "D"
+    },
+    "213": {
+      "conta_dre": "(-) Cartórios e registros",
+      "descricao": "Cartorio",
+      "tipo": "D"
+    },
+    "214": {
+      "conta_dre": "(-) Assessoria contábil",
+      "descricao": "Honorários contábeis",
+      "tipo": "D"
+    },
+    "215": {
+      "conta_dre": "(-) Softwares e informática",
+      "descricao": "Compra de computador",
+      "tipo": "D"
+    },
+    "216": {
+      "conta_dre": "(-) Lanches e refeições",
+      "descricao": "Padaria",
+      "tipo": "D"
+    },
+    "217": {
+      "conta_dre": "???",
+      "descricao": "TV por assinatura",
+      "tipo": "D"
+    },
+    "218": {
+      "conta_dre": "???",
+      "descricao": "Sindicato",
+      "tipo": "D"
+    },
+    "219": {
+      "conta_dre": "(-) Aluguéis e condomínios",
+      "descricao": "Aluguel",
+      "tipo": "D"
+    },
+    "220": {
+      "conta_dre": "(-) Outras Despesas",
+      "descricao": "Diversos",
+      "tipo": "D"
+    },
+    "221": {
+      "conta_dre": "(-) Manutenção e conservação de  equipamento",
+      "descricao": "Calibração Termômetros",
+      "tipo": "D"
+    },
+    "222": {
+      "conta_dre": "(-) Despesas com viagens / NET",
+      "descricao": "NET",
+      "tipo": "D"
+    },
+    "223": {
+      "conta_dre": "(-) Consultoria e auditoria",
+      "descricao": "Consultoria",
+      "tipo": "D"
+    },
+    "224": {
+      "conta_dre": "(-) Coleta de resíduos e detetização",
+      "descricao": "Coleta de resíduos e detetizaç",
+      "tipo": "D"
+    },
+    "225": {
+      "conta_dre": "(-) Água e esgoto",
+      "descricao": "Água e esgoto",
+      "tipo": "D"
+    },
+    "226": {
+      "conta_dre": "(-) Correios e transportes",
+      "descricao": "Transportes",
+      "tipo": "D"
+    },
+    "227": {
+      "conta_dre": "(-) Combustível",
+      "descricao": "Combustivel",
+      "tipo": "D"
+    },
+    "228": {
+      "conta_dre": "(-) Insumos",
+      "descricao": "Insumos",
+      "tipo": "D"
+    },
+    "229": {
+      "conta_dre": "(-) Energia elétrica",
+      "descricao": "ENERGIA",
+      "tipo": "D"
+    },
+    "230": {
+      "conta_dre": "(-) Energia elétrica",
+      "descricao": "LUZ",
+      "tipo": "D"
+    },
+    "231": {
+      "conta_dre": "(-) Marketing e propaganda",
+      "descricao": "marketing",
+      "tipo": "D"
+    },
+    "232": {
+      "conta_dre": "(-) Despesas e conservação de veículos",
+      "descricao": "REVISAO/CONSERTO CARROS",
+      "tipo": "D"
+    },
+    "233": {
+      "conta_dre": "(-) Controle de qualidade externo",
+      "descricao": "PNCQ",
+      "tipo": "D"
+    },
+    "234": {
+      "conta_dre": "(-) Manutenção e conservação de estrutura",
+      "descricao": "Manutenção laboratorio",
+      "tipo": "D"
+    },
+    "235": {
+      "conta_dre": "(-) Tarifas bancárias",
+      "descricao": "taxas bancarias",
+      "tipo": "D"
+    },
+    "236": {
+      "conta_dre": "???",
+      "descricao": "Programa",
+      "tipo": "D"
+    },
+    "237": {
+      "conta_dre": "(-) Manutenção e conservação de estrutura",
+      "descricao": "material de contrucao",
+      "tipo": "D"
+    },
+    "238": {
+      "conta_dre": "(-) Uniformes e EPI´s",
+      "descricao": "uniformes",
+      "tipo": "D"
+    },
+    "239": {
+      "conta_dre": "(-) Outras Despesas",
+      "descricao": "despesas dia",
+      "tipo": "D"
+    },
+    "240": {
+      "conta_dre": "(-) Aluguéis e condomínios",
+      "descricao": "aluguel quintino",
+      "tipo": "D"
+    },
+    "241": {
+      "conta_dre": "(-) Entidades de Classe",
+      "descricao": "CRBio-07",
+      "tipo": "D"
+    },
+    "242": {
+      "conta_dre": "(-) Coleta de resíduos e detetização",
+      "descricao": "DEDETIZAÇÃO",
+      "tipo": "D"
+    },
+    "243": {
+      "conta_dre": "(-) Softwares e informática",
+      "descricao": "Informática",
+      "tipo": "D"
+    },
+    "244": {
+      "conta_dre": "(-) Medicina ocupacional",
+      "descricao": "EXAMES PERIÓDICOS",
+      "tipo": "D"
+    },
+    "245": {
+      "conta_dre": "(-) Investimentos",
+      "descricao": "OBRA PITANGA",
+      "tipo": "D"
+    },
+    "246": {
+      "conta_dre": "(-) Investimentos",
+      "descricao": "OBRA CILLA",
+      "tipo": "D"
+    },
+    "247": {
+      "conta_dre": "(-) Material de higiêne/limpeza",
+      "descricao": "Compra Papel Toalha",
+      "tipo": "D"
+    },
+    "248": {
+      "conta_dre": "(-) Material de consumo/expediente",
+      "descricao": "Embalagens Batel",
+      "tipo": "D"
+    },
+    "249": {
+      "conta_dre": "(-) Simples Nacional",
+      "descricao": "IRPJ",
+      "tipo": "D"
+    },
+    "250": {
+      "conta_dre": "(-) Aluguéis e condomínios",
+      "descricao": "Condomínio Empresarial Lagos",
+      "tipo": "D"
+    },
+    "251": {
+      "conta_dre": "(-) Segurança e vigilância",
+      "descricao": "Seguros gerais",
+      "tipo": "D"
+    },
+    "252": {
+      "conta_dre": "(-) Segurança e vigilância",
+      "descricao": "Segurança e vigilância",
+      "tipo": "D"
+    },
+    "253": {
+      "conta_dre": "(-) Outras Despesas",
+      "descricao": "FARMACIA",
+      "tipo": "D"
+    },
+    "254": {
+      "conta_dre": "(-) Mercado",
+      "descricao": "MERCADO",
+      "tipo": "D"
+    },
+    "255": {
+      "conta_dre": "(-) Material de consumo/expediente",
+      "descricao": "DISK AGUA",
+      "tipo": "D"
+    },
+    "256": {
+      "conta_dre": "(-) Manutenção e conservação de estrutura",
+      "descricao": "EXTINTORES",
+      "tipo": "D"
+    },
+    "257": {
+      "conta_dre": "(-) Pró labore",
+      "descricao": "prolabore",
+      "tipo": "D"
+    },
+    "258": {
+      "conta_dre": "(-) Outras Despesas",
+      "descricao": "PLASTCENTER",
+      "tipo": "D"
+    },
+    "259": {
+      "conta_dre": "(-) Outras Despesas",
+      "descricao": "GIGA",
+      "tipo": "D"
+    },
+    "260": {
+      "conta_dre": "(-) Lanches e refeições",
+      "descricao": "PANIFICADORA",
+      "tipo": "D"
+    },
+    "261": {
+      "conta_dre": "(-) Limpeza / Diaristas",
+      "descricao": "DIARISTA",
+      "tipo": "D"
+    },
+    "262": {
+      "conta_dre": "(-) Lanches e refeições",
+      "descricao": "MARMITAS",
+      "tipo": "D"
+    },
+    "263": {
+      "conta_dre": "(-) Outras Despesas",
+      "descricao": "CARTÃO CELAPE",
+      "tipo": "D"
+    },
+    "264": {
+      "conta_dre": "(-) Despesas e conservação de veículos",
+      "descricao": "ESTACIONAMENTO QUINTIO",
+      "tipo": "D"
+    },
+    "265": {
+      "conta_dre": "(-) Simples Nacional",
+      "descricao": "CSLL",
+      "tipo": "D"
+    },
+    "266": {
+      "conta_dre": "(-) Salarios e ordenados",
+      "descricao": "IR PESSOA FÍSICA",
+      "tipo": "D"
+    },
+    "268": {
+      "conta_dre": "(-) Coleta de resíduos e detetização",
+      "descricao": "lixo hospitalar",
+      "tipo": "D"
+    },
+    "269": {
+      "conta_dre": "(-) Entidades de Classe",
+      "descricao": "CONSELHOS",
+      "tipo": "D"
+    },
+    "270": {
+      "conta_dre": "(-) Outras Despesas",
+      "descricao": "CHAVEIRO",
+      "tipo": "D"
+    },
+    "271": {
+      "conta_dre": "(-) Cancelamento de serviços ou glosas",
+      "descricao": "Devolução pacientes",
+      "tipo": "D"
+    },
+    "272": {
+      "conta_dre": "(-) Entidades de Classe",
+      "descricao": "CRB - Biomedicina",
+      "tipo": "D"
+    },
+    "273": {
+      "conta_dre": "(-) Telefone e internet",
+      "descricao": "SITE",
+      "tipo": "D"
+    },
+    "274": {
+      "conta_dre": "(-) Softwares e informática",
+      "descricao": "Rastreador",
+      "tipo": "D"
+    },
+    "275": {
+      "conta_dre": "(-) Manutenção e conservação de estrutura",
+      "descricao": "Jardinagem",
+      "tipo": "D"
+    },
+    "276": {
+      "conta_dre": "(-) Cartões Empresariais",
+      "descricao": "Fatura Cartão B.B Empresarial",
+      "tipo": "D"
+    },
+    "277": {
+      "conta_dre": "(-) Cartões Empresariais",
+      "descricao": "Fatura Cartão Santander Empres",
+      "tipo": "D"
+    },
+    "278": {
+      "conta_dre": "(-) Marketing e propaganda",
+      "descricao": "Presentes Médicos",
+      "tipo": "D"
+    },
+    "280": {
+      "conta_dre": "(-) Confraternização",
+      "descricao": "confratenização",
+      "tipo": "D"
+    },
+    "281": {
+      "conta_dre": "(-) Outras Despesas",
+      "descricao": "PIX",
+      "tipo": "D"
+    },
+    "295": {
+      "conta_dre": "(-) Outras Despesas",
+      "descricao": "tabacaria",
+      "tipo": "D"
+    },
+    "301": {
+      "conta_dre": "(-) Salarios e ordenados",
+      "descricao": "Salarios e ordenados",
+      "tipo": "D"
+    },
+    "302": {
+      "conta_dre": "(-) Férias",
+      "descricao": "Ferias",
+      "tipo": "D"
+    },
+    "303": {
+      "conta_dre": "(-) Vale alimentação",
+      "descricao": "Vale alimentação",
+      "tipo": "D"
+    },
+    "304": {
+      "conta_dre": "(-) FGTS",
+      "descricao": "Fgts",
+      "tipo": "D"
+    },
+    "305": {
+      "conta_dre": "(-) INSS s/ folha",
+      "descricao": "Inss",
+      "tipo": "D"
+    },
+    "306": {
+      "conta_dre": "(-) 13º Salário",
+      "descricao": "13. Salario",
+      "tipo": "D"
+    },
+    "307": {
+      "conta_dre": "(-) Aviso prévio e indenizações",
+      "descricao": "Rescisões",
+      "tipo": "D"
+    },
+    "308": {
+      "conta_dre": "(-) Vale transporte",
+      "descricao": "Vale transporte",
+      "tipo": "D"
+    },
+    "309": {
+      "conta_dre": "(-) Salarios e ordenados",
+      "descricao": "IRRF",
+      "tipo": "D"
+    },
+    "310": {
+      "conta_dre": "(-) Tarifas bancárias",
+      "descricao": "TAXAS DIVERSAS",
+      "tipo": "D"
+    },
+    "311": {
+      "conta_dre": "(-) Horas extras",
+      "descricao": "Horas extras",
+      "tipo": "D"
+    },
+    "312": {
+      "conta_dre": "(-) Salarios e ordenados",
+      "descricao": "Adiantamento de salario",
+      "tipo": "D"
+    },
+    "313": {
+      "conta_dre": "(-) Assistencia médica",
+      "descricao": "Assistencia médica",
+      "tipo": "D"
+    },
+    "314": {
+      "conta_dre": "(-) INSS s/ folha",
+      "descricao": "GPS",
+      "tipo": "D"
+    },
+    "315": {
+      "conta_dre": "???",
+      "descricao": "UNIMED",
+      "tipo": "D"
+    },
+    "316": {
+      "conta_dre": "(-) Entidades de Classe",
+      "descricao": "responsabilidade tecnica",
+      "tipo": "D"
+    },
+    "317": {
+      "conta_dre": "(-) Adicional noturno",
+      "descricao": "Adicional noturno",
+      "tipo": "D"
+    },
+    "318": {
+      "conta_dre": "(-) Adicional de insalubridade",
+      "descricao": "Adicional de insalubridade",
+      "tipo": "D"
+    },
+    "319": {
+      "conta_dre": "(-) Autonomos",
+      "descricao": "Autonomos",
+      "tipo": "D"
+    },
+    "320": {
+      "conta_dre": "(-) Investimentos",
+      "descricao": "Investimentos",
+      "tipo": "D"
+    },
+    "321": {
+      "conta_dre": "(-) Bônus, prêmios e gratificações",
+      "descricao": "Bônus, prêmios e gratificaçõe",
+      "tipo": "D"
+    },
+    "322": {
+      "conta_dre": "(-) Aviso prévio e indenizações",
+      "descricao": "Aviso prévio e indenizações",
+      "tipo": "D"
+    },
+    "323": {
+      "conta_dre": "(-) Seguro de vida",
+      "descricao": "Seguro de vida",
+      "tipo": "D"
+    },
+    "324": {
+      "conta_dre": "(-) Uniformes e EPI´s",
+      "descricao": "Uniformes e EPI´s",
+      "tipo": "D"
+    },
+    "325": {
+      "conta_dre": "(-) Contribuição sindical",
+      "descricao": "Contribuição sindical",
+      "tipo": "D"
+    },
+    "326": {
+      "conta_dre": "(-) Contribuição patronal",
+      "descricao": "Contribuição patronal",
+      "tipo": "D"
+    },
+    "327": {
+      "conta_dre": "(-) Cursos e treinamentos",
+      "descricao": "Cursos e treinamentos",
+      "tipo": "D"
+    },
+    "328": {
+      "conta_dre": "(-) Comissões",
+      "descricao": "Comissões",
+      "tipo": "D"
+    },
+    "329": {
+      "conta_dre": "(-) Auxilio educação",
+      "descricao": "Auxilio educação",
+      "tipo": "D"
+    },
+    "330": {
+      "conta_dre": "(-) Medicina ocupacional",
+      "descricao": "Medicina ocupacional",
+      "tipo": "D"
+    },
+    "331": {
+      "conta_dre": "(-) Confraternização",
+      "descricao": "Confraternização",
+      "tipo": "D"
+    },
+    "332": {
+      "conta_dre": "(-) Lanches e refeições",
+      "descricao": "Lanches e refeições",
+      "tipo": "D"
+    },
+    "333": {
+      "conta_dre": "(-) Outras despesas com pessoal",
+      "descricao": "Outras despesas com pessoal",
+      "tipo": "D"
+    },
+    "334": {
+      "conta_dre": "(-) Distribuição a sócios",
+      "descricao": "Distribuição a sócios",
+      "tipo": "D"
+    },
+    "335": {
+      "conta_dre": "(-) Medicina ocupacional",
+      "descricao": "Laudo de segurança de trabalho",
+      "tipo": "D"
+    },
+    "336": {
+      "conta_dre": "(-) Confraternização",
+      "descricao": "CONFRATERNIZAÇÃO",
+      "tipo": "D"
+    },
+    "338": {
+      "conta_dre": "(-) Assistencia médica",
+      "descricao": "Bradesco Saúde",
+      "tipo": "D"
+    },
+    "339": {
+      "conta_dre": "(-) Outras Despesas",
+      "descricao": "TED - Transferência bancária",
+      "tipo": "D"
+    },
+    "401": {
+      "conta_dre": "(-) Tarifas bancárias",
+      "descricao": "Tarifas bancárias",
+      "tipo": "D"
+    },
+    "402": {
+      "conta_dre": "(-) Juros",
+      "descricao": "Juros pagos",
+      "tipo": "D"
+    },
+    "403": {
+      "conta_dre": "(-) Descontos concedidos",
+      "descricao": "Descontos concedidos",
+      "tipo": "D"
+    },
+    "404": {
+      "conta_dre": "(-) Empréstimos Pagos",
+      "descricao": "Empréstimo Bancário",
+      "tipo": "D"
+    },
+    "444": {
+      "conta_dre": "(-) Assessoria advocatícia",
+      "descricao": "ADVOGADO",
+      "tipo": "D"
+    },
+    "499": {
+      "conta_dre": "(-) Aluguel Interface",
+      "descricao": "Locação de Equipamento XN1000S",
+      "tipo": "D"
+    },
+    "501": {
+      "conta_dre": "(-) Softwares e informática",
+      "descricao": "Manutenção dos computadores",
+      "tipo": "D"
+    },
+    "502": {
+      "conta_dre": "(-) Locação de  equipamento",
+      "descricao": "Aluguel de impressoras",
+      "tipo": "D"
+    },
+    "503": {
+      "conta_dre": "(-) Softwares e informática",
+      "descricao": "Sistemas de informação",
+      "tipo": "D"
+    },
+    "504": {
+      "conta_dre": "(-) Aluguel Interface",
+      "descricao": "Aluguel Equip. Interface 01",
+      "tipo": "D"
+    },
+    "505": {
+      "conta_dre": "(-) Aluguel Interface",
+      "descricao": "Aluguel Equip. Interface 02",
+      "tipo": "D"
+    },
+    "506": {
+      "conta_dre": "(-) Manutenção e conservação de  equipamento",
+      "descricao": "Ponto eletronico",
+      "tipo": "D"
+    },
+    "507": {
+      "conta_dre": "(-) Manutenção e conservação de  equipamento",
+      "descricao": "Concerto de aparelhos",
+      "tipo": "D"
+    },
+    "508": {
+      "conta_dre": "(-) Manutenção e conservação de  equipamento",
+      "descricao": "Manutenção de aparelhos",
+      "tipo": "D"
+    },
+    "509": {
+      "conta_dre": "(-) Despesas e conservação de veículos",
+      "descricao": "Manutenção carro",
+      "tipo": "D"
+    },
+    "525": {
+      "conta_dre": "(-) Segurança e vigilância",
+      "descricao": "Segurança e vigilância",
+      "tipo": "D"
+    },
+    "534": {
+      "conta_dre": "(-) Taxas Getnet",
+      "descricao": "TAXAS GETNET",
+      "tipo": "D"
+    },
+    "535": {
+      "conta_dre": "(-) IPTU, alvará, taxa de lixo e VISA",
+      "descricao": "TAXAS DIVERSAS",
+      "tipo": "D"
+    },
+    "601": {
+      "conta_dre": "???",
+      "descricao": "Hospital do cancer",
+      "tipo": "D"
+    },
+    "602": {
+      "conta_dre": "(-) Doações, brindes e patrocinios",
+      "descricao": "APAE",
+      "tipo": "D"
+    },
+    "603": {
+      "conta_dre": "(-) Doações, brindes e patrocinios",
+      "descricao": "DOAÇÕES",
+      "tipo": "D"
+    },
+    "701": {
+      "conta_dre": "???",
+      "descricao": "Taxa da secretaria da fazenda",
+      "tipo": "D"
+    },
+    "702": {
+      "conta_dre": "(-) Imposto de Renda",
+      "descricao": "IR",
+      "tipo": "D"
+    },
+    "703": {
+      "conta_dre": "(-) Simples Nacional",
+      "descricao": "IMPOSTO SIMPLES NACIONAL",
+      "tipo": "D"
+    },
+    "704": {
+      "conta_dre": "(-) Terceirização exames - Lab Apoio",
+      "descricao": "Imposto lab. apoio",
+      "tipo": "D"
+    },
+    "705": {
+      "conta_dre": "???",
+      "descricao": "Parcelamento impostos",
+      "tipo": "D"
+    },
+    "706": {
+      "conta_dre": "???",
+      "descricao": "Impostos Faturamento",
+      "tipo": "D"
+    },
+    "707": {
+      "conta_dre": "???",
+      "descricao": "Imposto autonomo",
+      "tipo": "D"
+    },
+    "708": {
+      "conta_dre": "???",
+      "descricao": "IMPOSTO PREFEITURA",
+      "tipo": "D"
+    },
+    "709": {
+      "conta_dre": "???",
+      "descricao": "MINISTERIO DA FAZENDA",
+      "tipo": "D"
+    },
+    "710": {
+      "conta_dre": "(-) IPTU, alvará, taxa de lixo e VISA",
+      "descricao": "iptu matriz",
+      "tipo": "D"
+    },
+    "711": {
+      "conta_dre": "(-) IPTU, alvará, taxa de lixo e VISA",
+      "descricao": "iptu quintino",
+      "tipo": "D"
+    },
+    "712": {
+      "conta_dre": "(-) Diferença Cartão",
+      "descricao": "ajuste",
+      "tipo": "D"
+    },
+    "713": {
+      "conta_dre": "(-) COFINS",
+      "descricao": "COFINS",
+      "tipo": "D"
+    },
+    "714": {
+      "conta_dre": "(-) COFINS",
+      "descricao": "COFINS COMULATIVO",
+      "tipo": "D"
+    },
+    "715": {
+      "conta_dre": "(-) IPTU, alvará, taxa de lixo e VISA",
+      "descricao": "IPTU, alvará, taxa de lixo",
+      "tipo": "D"
+    },
+    "716": {
+      "conta_dre": "(-) ISSQN",
+      "descricao": "imposto retido",
+      "tipo": "D"
+    },
+    "717": {
+      "conta_dre": "(-) PIS",
+      "descricao": "PIS",
+      "tipo": "D"
+    },
+    "718": {
+      "conta_dre": "(-) COFINS",
+      "descricao": "PIS/COFINS/CSLL RETIDO",
+      "tipo": "D"
+    },
+    "719": {
+      "conta_dre": "(-) PIS",
+      "descricao": "PIS CUMULATIVO",
+      "tipo": "D"
+    },
+    "720": {
+      "conta_dre": "(-) ISSQN",
+      "descricao": "ISSQN",
+      "tipo": "D"
+    },
+    "777": {
+      "conta_dre": null,
+      "descricao": "DIFERENÇA CARTÃO",
+      "tipo": "D"
+    },
+    "801": {
+      "conta_dre": "???",
+      "descricao": "Glosas",
+      "tipo": "D"
+    },
+    "901": {
+      "conta_dre": "(+) Adiantamento de Clientes",
+      "descricao": "Adiantamento de clientes",
+      "tipo": "R"
+    },
+    "902": {
+      "conta_dre": "(+) Adiantamento de Clientes",
+      "descricao": "Depositos não identificados",
+      "tipo": "R"
+    },
+    "903": {
+      "conta_dre": "(+) Juros recebidos",
+      "descricao": "Juros recebidos",
+      "tipo": "R"
+    },
+    "904": {
+      "conta_dre": "(+) Descontos auferidos",
+      "descricao": "Descontos obtidos",
+      "tipo": "R"
+    },
+    "905": {
+      "conta_dre": "(-) Outras Despesas",
+      "descricao": "ENTRADAS",
+      "tipo": "D"
+    },
+    "990": {
+      "conta_dre": "(-) Outras Despesas",
+      "descricao": "DALPOZZO",
+      "tipo": "D"
+    }
+  }
+}

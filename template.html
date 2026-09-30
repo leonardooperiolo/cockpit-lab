@@ -1368,6 +1368,93 @@ function bindFinReceber(){
   renderFrRes();
 }
 
+/* ---------- financeiro: DRE (sub-aba) ---------- */
+S.dre={escopo:'geral',mes:''};
+function dreEscopos(DRE){
+  // "geral" (tudo, incluindo o posto 100 - hub administrativo/rateio) e "consolidado"
+  // (só os postos 01-13, sem o 100) primeiro, do jeito que o Claudio (ex-consultor)
+  // organizava as abas "Celape Geral"/"Celape Consolidado" na planilha dele; depois
+  // cada posto individual, na ordem que já vem calculada em porPosto.
+  return [['geral','Geral (todos os postos)'],['consolidado','Consolidado (sem o posto 100)'],
+    ...DRE.postos.map(p=>[p,'Posto '+nomeFilial(p)])];
+}
+function dreDados(DRE,escopo){
+  if(escopo==='geral')return DRE.geral;
+  if(escopo==='consolidado')return DRE.consolidado;
+  return DRE.porPosto[escopo]||{};
+}
+function dreContasDoMes(DRE){
+  const dados=dreDados(DRE,S.dre.escopo);
+  const mes=S.dre.mes||DRE.meses[DRE.meses.length-1];
+  const contas=dados[mes]||{};
+  const receitas=[],despesas=[];
+  Object.entries(contas).forEach(([conta,info])=>{
+    (info.tipo==='R'?receitas:despesas).push({conta,...info});
+  });
+  receitas.sort((a,b)=>b.valor-a.valor);
+  despesas.sort((a,b)=>b.valor-a.valor);
+  return {mes,receitas,despesas};
+}
+function dreLinhaHTML(item,mostrarPosto){
+  const id='dre_'+item.conta.replace(/[^a-z0-9]/gi,'_')+'_'+Math.random().toString(36).slice(2,7);
+  const detalheHTML=item.lancamentos.map(l=>`<tr><td>${esc(l.fornecedor||'—')}${l.historico?`<span class="fin-fil">${esc(l.historico)}</span>`:''}</td><td>${esc(l.titulo)}${mostrarPosto&&l.filial?' · '+esc(nomeFilial(l.filial)):''}</td><td class="num">${fBRL.format(l.valor)}</td></tr>`).join('');
+  return `<tbody class="dre-linha-wrap"><tr class="dre-linha-resumo" data-dre-id="${id}" style="cursor:pointer"><td>▶ ${esc(item.conta)}</td><td>${fNum.format(item.lancamentos.length)} lançamento(s)</td><td class="num">${fBRL.format(item.valor)}</td></tr></tbody>
+   <tbody class="dre-linha-detalhe" id="${id}" hidden>${detalheHTML}</tbody>`;
+}
+function renderDreTab(){
+  const DRE=D.financeiro.dre;
+  const {mes,receitas,despesas}=dreContasDoMes(DRE);
+  const mostrarPosto=S.dre.escopo==='geral'||S.dre.escopo==='consolidado';
+  const totalReceita=receitas.reduce((a,r)=>a+r.valor,0);
+  const totalDespesa=despesas.reduce((a,r)=>a+r.valor,0);
+  const resultado=totalReceita-totalDespesa;
+  const k=(l,v,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor};${fitTxt(fBRL0.format(v))}">${fBRL0.format(v)}</div></div>`;
+  let h=`<div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+   ${k('Receitas',totalReceita,'var(--green)')}
+   ${k('Despesas',totalDespesa,'var(--red)')}
+   ${k('Resultado',resultado,resultado>=0?'var(--green)':'var(--red)')}
+  </div>`;
+  if(!receitas.length&&!despesas.length){
+    h+='<div class="empty" style="margin-top:16px">Nenhum título com baixa neste mês, neste escopo.</div>';
+  }else{
+    h+=`<div class="card tw" style="margin-top:16px"><table><thead><tr><th>Conta do DRE</th><th>Lançamentos</th><th class="num">Valor</th></tr></thead>
+     ${receitas.length?`<tbody class="dre-secao"><tr><td colspan="3"><b>Receitas</b></td></tr></tbody>${receitas.map(r=>dreLinhaHTML(r,mostrarPosto)).join('')}`:''}
+     ${despesas.length?`<tbody class="dre-secao"><tr><td colspan="3"><b>Despesas</b></td></tr></tbody>${despesas.map(r=>dreLinhaHTML(r,mostrarPosto)).join('')}`:''}
+    </table></div>`;
+  }
+  $('#dreTabWrap').innerHTML=h;
+  $$('.dre-linha-resumo').forEach(tr=>tr.onclick=()=>{
+    const id=tr.dataset.dreId,det=document.getElementById(id);
+    det.hidden=!det.hidden;
+    const td=tr.querySelector('td:first-child');
+    td.textContent=(det.hidden?'▶ ':'▼ ')+td.textContent.replace(/^[▶▼]\s*/,'');
+  });
+}
+function viewFinDRE(){
+  const F=D.financeiro;
+  if(!F||!F.dre)return `<div class="notice warn"><b>Ainda não há dados suficientes pro DRE.</b> Envie os arquivos <code>contas_a_pagar_valor_titulo</code> e <code>contas_a_receber_valor_titulo</code> (e as baixas/categorias mais recentes) para a pasta <code>data/financeiro</code> do repositório.</div>`;
+  const DRE=F.dre;
+  let h=`<div class="apbar" id="dreBar">
+   <label class="fld" style="flex:1 1 260px">Posto<select id="dreEscopo">${dreEscopos(DRE).map(([v,t])=>`<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+   <label class="fld">Mês<select id="dreMes">${DRE.meses.slice().reverse().map(m=>`<option value="${m}">${esc(mesLabelDe(m))}</option>`).join('')}</select></label>
+  </div>
+  <p class="sub">Regime de caixa: cada baixa (pagamento/recebimento) entra no mês em que foi paga, rateada proporcionalmente quando o título foi pago em mais de uma parcela. Clique numa conta pra ver os lançamentos que a compõem.</p>
+  <div id="dreTabWrap"></div>`;
+  return h;
+}
+function bindFinDRE(){
+  const F=D.financeiro;
+  if(!F||!F.dre)return;
+  const DRE=F.dre;
+  if(!S.dre.mes||!DRE.meses.includes(S.dre.mes))S.dre.mes=DRE.meses[DRE.meses.length-1];
+  const esco=$('#dreEscopo'),mes=$('#dreMes');
+  esco.value=S.dre.escopo;
+  mes.value=S.dre.mes;
+  esco.onchange=()=>{S.dre.escopo=esco.value;renderDreTab();};
+  mes.onchange=()=>{S.dre.mes=mes.value;renderDreTab();};
+  renderDreTab();
+}
+
 function viewQualidade(){
   const Q=D.qualidade;
   const k=(l,v,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:26px;color:var(--ink)">${v}</div><div class="s">${s||''}</div></div>`;
@@ -1605,13 +1692,13 @@ function bindPrecosConv(){
 }
 
 /* ---------- roteamento ---------- */
-const VIEWS={geral:[viewGeral,bindGeral],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],saude:[viewSaude,null],apoio:[viewApoio,bindApoio],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null],finGeral:[viewFinanceiro,bindFinanceiro],finPagar:[viewFinPagar,bindFinPagar],finReceber:[viewFinReceber,bindFinReceber]};
+const VIEWS={geral:[viewGeral,bindGeral],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],saude:[viewSaude,null],apoio:[viewApoio,bindApoio],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null],finGeral:[viewFinanceiro,bindFinanceiro],finPagar:[viewFinPagar,bindFinPagar],finReceber:[viewFinReceber,bindFinReceber],finDRE:[viewFinDRE,bindFinDRE]};
 const GROUPS={geral:{tabs:['geral'],lbl:{geral:'Visão Diária'}},
   saude:{tabs:['saude'],lbl:{saude:'Saúde do Negócio'}},
   apoio:{tabs:['apoio'],lbl:{apoio:'Laboratório de Apoio'}},
   fat:{tabs:['anual','periodos','exames','rank'],lbl:{anual:'Comparativo Anual',periodos:'Comparar Períodos',exames:'Setores',rank:'Convênios e Médicos'}},
   custos:{tabs:['precosconv','qualidade'],lbl:{precosconv:'Preços por Convênio',qualidade:'Qualidade dos Dados'}},
-  financeiro:{tabs:['finGeral','finPagar','finReceber'],lbl:{finGeral:'Visão Geral',finPagar:'Contas a Pagar',finReceber:'Contas a Receber'}}};
+  financeiro:{tabs:['finGeral','finPagar','finReceber','finDRE'],lbl:{finGeral:'Visão Geral',finPagar:'Contas a Pagar',finReceber:'Contas a Receber',finDRE:'DRE'}}};
 const tabToGroup=Object.fromEntries(Object.entries(GROUPS).flatMap(([g,o])=>o.tabs.map(t=>[t,g])));
 function go(){
   const curGroup=tabToGroup[S.tab]||'fat';
@@ -1628,7 +1715,7 @@ function go(){
   $('#fgPeriodo').style.display=(per&&S.tab!=='geral')?'':'none';
   $('#fgAtalhos').style.display=S.tab==='geral'?'none':'';
   $('#fgMedico').style.display=S.tab==='geral'?'none':'';
-  $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio'||S.tab==='precosconv'||S.tab==='saude'||S.tab==='finGeral'||S.tab==='finPagar'||S.tab==='finReceber')?'none':'';
+  $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio'||S.tab==='precosconv'||S.tab==='saude'||S.tab==='finGeral'||S.tab==='finPagar'||S.tab==='finReceber'||S.tab==='finDRE')?'none':'';
   $('#fHint').textContent=per?'':(S.tab==='anual'?'Nesta aba os anos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.':'Nesta aba os períodos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.');
   syncFilters();
   const [v,b]=VIEWS[S.tab];

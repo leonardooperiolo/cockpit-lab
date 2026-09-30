@@ -1005,11 +1005,39 @@ ARQ_FINANCEIRO = {
     "baixas": ("contas_a_pagar_baixas", "contas_pagar_baixas"),
     "baixas_receber": ("contas_a_receber_baixas", "contas_receber_baixas"),
     "nao_integrados": ("contas_a_receber_nao_integrados", "contas_receber_nao_integrados"),
+    # valor total de cada titulo (soma de todas as parcelas) - usado só pelo DRE, pra
+    # ratear a contribuição de um título entre os meses em que ele foi pago (regime de
+    # caixa). Sem esses dois arquivos o DRE fica None (mesmo padrão dos outros opcionais).
+    "valor_titulo": ("contas_a_pagar_valor_titulo", "contas_pagar_valor_titulo"),
+    "valor_titulo_receber": ("contas_a_receber_valor_titulo", "contas_receber_valor_titulo"),
 }
-# contas a pagar (aberto/categoria) sao obrigatorios; contas a receber e as baixas
-# (pagamentos ja efetivados, usados na sub-aba "Contas a Pagar") sao opcionais -
-# enquanto nao forem enviados, os cards que dependem deles ficam "sem dados ainda"
+# contas a pagar (aberto/categoria) sao obrigatorios; contas a receber, as baixas
+# (pagamentos ja efetivados, usados na sub-aba "Contas a Pagar") e o valor_titulo (usado
+# só pelo DRE) sao opcionais - enquanto nao forem enviados, os cards/abas que dependem
+# deles ficam "sem dados ainda"
 FINANCEIRO_OBRIGATORIOS = {"aberto", "categoria"}
+
+# mapa_dre.json mora em data/apoio (mesma pasta usada pra outros arquivos de apoio, ver
+# PASTA_APOIO/ARQ_APOIO acima) - não é sensível (só o de-para código->conta do DRE), por
+# isso não precisa ir criptografado feito o resto de data/financeiro.
+ARQ_MAPA_DRE = PASTA_APOIO / "mapa_dre.json"
+
+
+def carregar_mapa_dre():
+    """De-para TPDRCOD (código do CONCENT) -> conta do DRE, de data/apoio/mapa_dre.json.
+    Código novo que não estiver nesse mapa cai em "(sem classificação)" no DRE - nunca
+    adivinhar a conta certa, sempre perguntar pro Leo antes de adicionar uma entrada
+    nova nesse arquivo."""
+    if not ARQ_MAPA_DRE.exists():
+        print("AVISO: data/apoio/mapa_dre.json não encontrado - DRE ficará sem classificação de contas.")
+        return {}
+    try:
+        with open(ARQ_MAPA_DRE, encoding="utf-8") as f:
+            conteudo = json.load(f)
+        return conteudo.get("mapa", {})
+    except Exception as e:
+        print(f"AVISO: não consegui ler data/apoio/mapa_dre.json ({e}) - DRE ficará sem classificação de contas.")
+        return {}
 MESES_JANELA_RECORRENCIA = 12
 MIN_MESES_RECORRENTE = 10  # aparece em pelo menos 10 dos ultimos 12 meses = considerado recorrente
 
@@ -1366,6 +1394,8 @@ def carregar_financeiro():
             })
         nao_integrados = _bloco_nao_integrados(linhas_ni)
 
+    dre = _montar_dre(arqs)
+
     return {
         "hoje": hoje.strftime("%Y-%m-%d"),
         "resumo": {
@@ -1393,6 +1423,196 @@ def carregar_financeiro():
         # seção de destaque "títulos não integrados" - None enquanto
         # contas_receber_nao_integrados.csv não for enviado
         "naoIntegrados": nao_integrados,
+        # DRE (Demonstrativo de Resultado) em regime de caixa, por posto + consolidado
+        # (soma dos postos 01-13, sem o 100) + geral (soma de tudo, incluindo o 100) -
+        # None enquanto contas_a_pagar_valor_titulo/contas_a_receber_valor_titulo não
+        # forem enviados (ver _montar_dre logo abaixo pra metodologia completa)
+        "dre": dre,
+    }
+
+
+# ------------------------------------------------------------------- DRE (regime de caixa)
+def _chave_dre(filcod, titnr, serie, emitcod, espdccod):
+    """Chave que identifica um título de forma única no CONCENT. FILCOD+TITNRDOCTO+SERIECOD
+    sozinhos NÃO bastam: títulos manuais (SERIECOD='M') às vezes usam um número de
+    referência parecido com uma data (ex.: "16072026") que fornecedores diferentes no
+    mesmo posto podem repetir - sem EMITCOD/ESPDCCOD, títulos de fornecedores distintos
+    acabam se misturando e o rateio por mês sai completamente errado. Bug encontrado e
+    corrigido em 30/09/2026 validando o DRE contra os relatórios reais de 2023 do
+    Claudio (ex-consultor) - ver diagnostico_dre_mes.py."""
+    return (filcod.strip().rstrip("."), titnr.strip(), serie.strip(),
+            emitcod.strip().rstrip("."), espdccod.strip().rstrip("."))
+
+
+def _carregar_valor_titulo_dre(arqs, papel):
+    """Valor total de cada título (soma de todas as parcelas), de contas_a_pagar/
+    contas_a_receber_valor_titulo.csv. É o denominador da fração de rateio por mês."""
+    valores = {}
+    if papel not in arqs:
+        return valores
+    for row in _linhas_arquivo(arqs[papel]):
+        row = [_cel(c) for c in row]
+        if len(row) < 6:
+            continue
+        filcod, titnr, serie, emit, esp, total = row[:6]
+        valores[_chave_dre(filcod, titnr, serie, emit, esp)] = _preco(total) or 0.0
+    return valores
+
+
+def _parse_rateio_dre(arqs, papel):
+    """Uma linha por (título, código DRE) rateado, a partir de contas_a_pagar/
+    contas_a_receber_categoria.csv (já traz o rateio via join com RATEIOTITULO na
+    coleta da VM). Layout: FILCOD,TITNRDOCTO,SERIECOD,EMITNOME,dtemissao,centro,
+    TPDRCOD,TPDRDESCRICAO,TPDRTIPO,RATITVLR,historico,EMITCOD,ESPDCCOD."""
+    linhas = []
+    if papel not in arqs:
+        return linhas
+    for row in _linhas_arquivo(arqs[papel]):
+        row = [_cel(c) for c in row]
+        if len(row) < 13:
+            continue
+        filcod, titnr, serie, fornecedor, _dtemissao, _centro, tpdrcod, tpdrdesc, tpdrtipo, valor, historico, emit, esp = row[:13]
+        linhas.append({
+            "chave": _chave_dre(filcod, titnr, serie, emit, esp),
+            "filial": filcod.strip().rstrip("."),
+            "titulo": titnr.strip(),
+            "fornecedor": _nome_curto(fornecedor),
+            "tpdrcod": tpdrcod.strip().rstrip("."),
+            "descricao": tpdrdesc.strip(),
+            "tipo": tpdrtipo.strip(),
+            "valor": _preco(valor) or 0.0,
+            "historico": historico.strip(),
+        })
+    return linhas
+
+
+def _parse_baixas_dre(arqs, papel):
+    """Uma linha por baixa (pagamento/recebimento), a partir de contas_a_pagar/
+    contas_a_receber_baixas.csv. Layout: FILCOD,TITNRDOCTO,SERIECOD,PATITPARCELA,
+    dtpgto,valor,C/P,EMITCOD,ESPDCCOD (o C/P só é usado em baixas_receber, mas a coluna
+    existe nos dois - ver SQL_BAIXAS no coletar_contas_pagar.py)."""
+    linhas = []
+    if papel not in arqs:
+        return linhas
+    for row in _linhas_arquivo(arqs[papel]):
+        row = [_cel(c) for c in row]
+        if len(row) < 9:
+            continue
+        filcod, titnr, serie, _parcela, dtmov, valor, _flag, emit, esp = row[:9]
+        d = _data_aaaammdd(dtmov)
+        if not d:
+            continue
+        linhas.append({"chave": _chave_dre(filcod, titnr, serie, emit, esp),
+                        "mes": d.strftime("%Y-%m"), "valor": _preco(valor) or 0.0})
+    return linhas
+
+
+def _agrupar_pago_por_mes(baixas_dre):
+    pago = defaultdict(lambda: defaultdict(float))  # chave -> {mes: valor pago naquele mes}
+    for b in baixas_dre:
+        pago[b["chave"]][b["mes"]] += b["valor"]
+    return pago
+
+
+def _eventos_dre(rateio_linhas, pago_por_mes, valor_titulo, mapa_dre, nao_classificados):
+    """Regime de caixa: pra cada rateio (título x código DRE), distribui a contribuição
+    entre os meses em que o título teve alguma baixa, proporcional a
+    (pago naquele mês / valor total do título) - assim um título pago em parcelas em
+    meses diferentes entra em cada mês só com a fatia paga naquele mês. Metodologia
+    validada em 30/09/2026 contra os relatórios reais de maio/2023 e novembro/2023 do
+    Claudio (ex-consultor) - bateu centavo a centavo depois de corrigida a chave do
+    título (ver _chave_dre) e entendido que o posto 100 é o hub administrativo/rateio
+    (fica de fora do "Consolidado" mas entra no "Geral")."""
+    eventos = []
+    for r in rateio_linhas:
+        meses_pagos = pago_por_mes.get(r["chave"])
+        if not meses_pagos:
+            continue  # título sem nenhuma baixa ainda - não entra no regime de caixa
+        total_titulo = valor_titulo.get(r["chave"])
+        info = mapa_dre.get(r["tpdrcod"])
+        if info is None:
+            nao_classificados.add((r["tpdrcod"], r["descricao"]))
+            conta = "(sem classificação)"
+        elif info.get("regra_especial") == "sinal":
+            conta = info["conta_dre_positivo"] if r["valor"] >= 0 else info["conta_dre_negativo"]
+        else:
+            conta = info.get("conta_dre") or "(sem classificação)"
+        for mes, pago in meses_pagos.items():
+            if total_titulo:
+                fracao = pago / total_titulo
+            else:
+                # sem valor_titulo (ex.: arquivo ainda não enviado) - assume que a baixa
+                # cobre o título inteiro em vez de descartar a linha
+                fracao = 1.0
+            contribuicao = round(r["valor"] * fracao, 2)
+            if not contribuicao:
+                continue
+            eventos.append({"mes": mes, "filial": r["filial"], "conta": conta, "tipo": r["tipo"],
+                             "valor": contribuicao, "titulo": r["titulo"], "fornecedor": r["fornecedor"],
+                             "historico": r["historico"]})
+    return eventos
+
+
+def _resumo_dre(eventos):
+    """Agrupa eventos em {mes: {conta_dre: {tipo, valor, lancamentos: [...]}}}, pronto
+    pro painel abrir uma conta do DRE e ver os lançamentos que a compõem naquele mês."""
+    out = defaultdict(lambda: defaultdict(lambda: {"tipo": None, "valor": 0.0, "lancamentos": []}))
+    for e in eventos:
+        bucket = out[e["mes"]][e["conta"]]
+        bucket["tipo"] = e["tipo"]
+        bucket["valor"] = round(bucket["valor"] + e["valor"], 2)
+        bucket["lancamentos"].append({"titulo": e["titulo"], "fornecedor": e["fornecedor"],
+                                       "valor": e["valor"], "historico": e["historico"],
+                                       "filial": e["filial"]})
+    for contas in out.values():
+        for c in contas.values():
+            c["lancamentos"].sort(key=lambda l: -abs(l["valor"]))
+    return {mes: dict(contas) for mes, contas in out.items()}
+
+
+def _montar_dre(arqs):
+    """Monta o DRE completo (por posto + Consolidado [01-13, sem o 100] + Geral [tudo]),
+    em regime de caixa. Devolve None enquanto os arquivos de valor_titulo não tiverem
+    sido enviados pela VM (contas_a_pagar/contas_a_receber_valor_titulo.csv)."""
+    if "valor_titulo" not in arqs and "valor_titulo_receber" not in arqs:
+        return None
+
+    mapa_dre = carregar_mapa_dre()
+
+    valor_titulo_pagar = _carregar_valor_titulo_dre(arqs, "valor_titulo")
+    valor_titulo_receber = _carregar_valor_titulo_dre(arqs, "valor_titulo_receber")
+
+    rateio_pagar = _parse_rateio_dre(arqs, "categoria")
+    rateio_receber = _parse_rateio_dre(arqs, "categoria_receber")
+
+    pago_mes_pagar = _agrupar_pago_por_mes(_parse_baixas_dre(arqs, "baixas"))
+    pago_mes_receber = _agrupar_pago_por_mes(_parse_baixas_dre(arqs, "baixas_receber"))
+
+    nao_classificados = set()
+    eventos = (_eventos_dre(rateio_pagar, pago_mes_pagar, valor_titulo_pagar, mapa_dre, nao_classificados)
+               + _eventos_dre(rateio_receber, pago_mes_receber, valor_titulo_receber, mapa_dre, nao_classificados))
+
+    if nao_classificados:
+        print("AVISO: DRE - código(s) TPDRCOD sem classificação em data/apoio/mapa_dre.json "
+              "(perguntar pro Leo antes de adicionar, nunca chutar): "
+              + ", ".join(f"{c} ({d})" for c, d in sorted(nao_classificados)))
+
+    if not eventos:
+        return None
+
+    postos = sorted({e["filial"] for e in eventos}, key=lambda f: (len(f), f))
+    por_posto = {p: _resumo_dre([e for e in eventos if e["filial"] == p]) for p in postos}
+    consolidado = _resumo_dre([e for e in eventos if e["filial"] != "100"])
+    geral = _resumo_dre(eventos)
+    meses = sorted({e["mes"] for e in eventos})
+
+    return {
+        "meses": meses,
+        "postos": postos,
+        "porPosto": por_posto,
+        "consolidado": consolidado,
+        "geral": geral,
+        "naoClassificados": sorted(f"{c} - {d}" for c, d in nao_classificados),
     }
 
 
