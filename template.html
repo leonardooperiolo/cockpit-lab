@@ -1213,20 +1213,27 @@ function frTh(key,label,cls){
 // paleta sequencial (1 matiz, claro->escuro) pra a matriz de não integrados por mês -
 // mesma lógica de "quanto mais escuro, maior o valor", nunca cor por categoria aqui
 const NI_SEQ=['#eef4fc','#cde2fb','#9ec5f4','#6da7ec','#3987e5','#2a78d6','#184f95','#0d366b'];
-function niMatrizHTML(EM){
+// paleta neutra (cinza-azulado) pra matriz de observação dos convênios caixa - mesma lógica
+// sequencial, mas deliberadamente menos "alarmante" que o azul forte do bloco de risco real
+const NI_SEQ_NEUTRO=['#f5f6f9','#e7eaf0','#d4d9e5','#bcc4d5','#9aa5bf','#7a86a6','#5c6688','#434c6b'];
+function niMatrizHTML(EM,opts){
   if(!EM||!EM.meses.length)return '';
+  opts=opts||{};
+  const titulo=opts.titulo||'Evolução mensal por convênio';
+  const wrapId=opts.wrapId||'niMatrizWrap';
+  const seq=opts.seq||NI_SEQ;
   const max=Math.max(1,...EM.linhas.flatMap(l=>l.valores));
   const mesLbl=ym=>{const [y,m]=ym.split('-').map(Number);return MES[m-1]+'/'+String(y).slice(2);};
   const cel=v=>{
     if(!v)return '<td></td>';
-    const idx=Math.max(1,Math.round(Math.min(1,v/max)*(NI_SEQ.length-1)));
-    return `<td class="cel" style="background:${NI_SEQ[idx]};color:${idx>=5?'#fff':'inherit'}" title="${fBRL.format(v)}">${fBRL0.format(v)}</td>`;
+    const idx=Math.max(1,Math.round(Math.min(1,v/max)*(seq.length-1)));
+    return `<td class="cel" style="background:${seq[idx]};color:${idx>=5?'#fff':'inherit'}" title="${fBRL.format(v)}">${fBRL0.format(v)}</td>`;
   };
   // mês mais recente primeiro (mais fácil ver o que ficou parado agora), Total logo depois do
   // convênio, também fixo, pra sempre ter o número que mais importa visível mesmo rolando
   const idxRev=EM.meses.map((_,i)=>i).reverse();
-  return `<h2 style="margin-top:0">Evolução mensal por convênio</h2>
-  <div class="card tw" id="niMatrizWrap">
+  return `<h2 style="margin-top:0">${esc(titulo)}</h2>
+  <div class="card tw" id="${wrapId}">
    <table class="ni-heat"><thead><tr><th>Convênio</th><th>Total</th>${idxRev.map(i=>`<th>${mesLbl(EM.meses[i])}</th>`).join('')}</tr></thead><tbody>
    ${EM.linhas.map(l=>`<tr><td>${esc(l.convenio)}</td><td>${fBRL0.format(l.total)}</td>${idxRev.map(i=>cel(l.valores[i])).join('')}</tr>`).join('')}
    <tr><td>Total</td><td>${fBRL0.format(EM.totalGeral)}</td>${idxRev.map(i=>{const v=EM.totalMes[i];return `<td>${v?fBRL0.format(v):''}</td>`;}).join('')}</tr>
@@ -1234,8 +1241,8 @@ function niMatrizHTML(EM){
   </div>
   <p class="sub" style="margin:8px 0 24px">Cada célula é o valor faturado naquele mês que nunca virou título · quanto mais escuro, maior o valor parado · arraste a tabela pros lados pra ver os meses mais antigos.</p>`;
 }
-function ajustarStickyNiHeat(){
-  const tbl=document.querySelector('#niMatrizWrap table.ni-heat');
+function ajustarStickyNiHeat(wrapId){
+  const tbl=document.querySelector('#'+wrapId+' table.ni-heat');
   if(!tbl)return;
   const primeira=tbl.querySelector('tbody tr td:first-child')||tbl.querySelector('thead th:first-child');
   if(!primeira)return;
@@ -1245,13 +1252,13 @@ function ajustarStickyNiHeat(){
 function viewFinReceber(){
   const F=D.financeiro;
   if(!F||!F.receber)return `<div class="notice warn"><b>Ainda não há dados de contas a receber.</b> Envie os arquivos <code>contas_receber_aberto</code> e <code>contas_receber_baixas</code> para a pasta <code>data/financeiro</code> do repositório.</div>`;
-  const R=F.receber.resumo,NI=F.naoIntegrados;
+  const R=F.receber.resumo,NI=F.naoIntegrados,NIC=F.naoIntegradosCaixa;
   const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
   const semDados=(l,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:var(--muted);font-size:17px">Sem dados ainda</div><div class="s">${s}</div></div>`;
   let h='';
   if(NI){
     h+=`<div class="notice danger" style="margin-bottom:14px">
-     <b>⚠ ${fBRL0.format(NI.resumo.v)} em títulos não integrados</b> — ${fNum.format(NI.resumo.n)} exame(s) já faturado(s) ao convênio, mas que nunca geraram título de convênio, particular ou cartão. Esse dinheiro não aparece em nenhuma outra tela de contas a receber porque, tecnicamente, o título nem existe.
+     <b>⚠ ${fBRL0.format(NI.resumo.v)} em títulos não integrados</b> — ${fNum.format(NI.resumo.n)} exame(s) já faturado(s) a convênio faturado (tipo F), mas que nunca geraram título de convênio. Esse dinheiro não aparece em nenhuma outra tela de contas a receber porque, tecnicamente, o título nem existe.
      <details style="margin-top:10px"><summary style="cursor:pointer;color:var(--red);font-weight:600">ver os exames (${fNum.format(NI.linhas.length)})</summary>
       <div class="card tw" style="margin-top:8px"><table><thead><tr><th>Convênio</th><th>Requisição</th><th>Exame</th><th>Faturado em</th><th>Dias</th><th class="num">Valor</th></tr></thead><tbody>
       ${NI.linhas.slice(0,300).map(l=>`<tr><td>${esc(l.convenio)}</td><td>${esc(l.requisicao)}${l.filial?`<span class="fin-fil">${esc(nomeFilial(l.filial))}</span>`:''}</td><td>${esc(l.exame)}</td><td>${l.faturado?isoBR(l.faturado):'—'}</td><td>${l.dias==null?'—':fNum.format(l.dias)}</td><td class="num">${fBRL.format(l.valor)}</td></tr>`).join('')}
@@ -1259,6 +1266,17 @@ function viewFinReceber(){
      </details>
     </div>`;
     h+=niMatrizHTML(NI.evolucaoMensal);
+  }
+  if(NIC){
+    h+=`<div class="notice" style="margin-bottom:14px">
+     <b>ℹ ${fBRL0.format(NIC.resumo.v)} em convênios caixa sem título</b> — ${fNum.format(NIC.resumo.n)} exame(s) faturado(s) a convênio à vista/caixa (tipo C) que, ao integrar, deveriam gerar título no nome do próprio paciente (não de convênio). A maior parte costuma ser campanha/cortesia que nunca vira título mesmo (ex.: check-up, isenção) — mas vale de vez em quando olhar se algum convênio aqui está acumulando valor fora do padrão, o que pode indicar um título que ficou preso na integração.
+     <details style="margin-top:10px"><summary style="cursor:pointer;color:var(--blue);font-weight:600">ver os exames (${fNum.format(NIC.linhas.length)})</summary>
+      <div class="card tw" style="margin-top:8px"><table><thead><tr><th>Convênio</th><th>Requisição</th><th>Exame</th><th>Faturado em</th><th>Dias</th><th class="num">Valor</th></tr></thead><tbody>
+      ${NIC.linhas.slice(0,300).map(l=>`<tr><td>${esc(l.convenio)}</td><td>${esc(l.requisicao)}${l.filial?`<span class="fin-fil">${esc(nomeFilial(l.filial))}</span>`:''}</td><td>${esc(l.exame)}</td><td>${l.faturado?isoBR(l.faturado):'—'}</td><td>${l.dias==null?'—':fNum.format(l.dias)}</td><td class="num">${fBRL.format(l.valor)}</td></tr>`).join('')}
+      </tbody></table></div>${NIC.linhas.length>300?`<p class="sub" style="margin-top:6px">mostrando os 300 mais antigos de ${fNum.format(NIC.linhas.length)}</p>`:''}
+     </details>
+    </div>`;
+    h+=niMatrizHTML(NIC.evolucaoMensal,{titulo:'Evolução mensal · convênios caixa (observação)',wrapId:'niCaixaWrap',seq:NI_SEQ_NEUTRO});
   }
   h+=`<div class="kpis kpis-5">
    ${k('Em aberto até fim do mês',fBRL0.format(R.aReceberMes.v),`${fNum.format(R.aReceberMes.n)} título(s) · inclui os já vencidos`,'var(--blue)')}
@@ -1296,7 +1314,7 @@ function renderFrRes(){
 function bindFinReceber(){
   const F=D.financeiro;
   if(!F||!F.receber)return;
-  const niw=$('#niMatrizWrap');if(niw){niw.scrollLeft=0;requestAnimationFrame(ajustarStickyNiHeat);}
+  ['niMatrizWrap','niCaixaWrap'].forEach(id=>{const w=$('#'+id);if(w){w.scrollLeft=0;requestAnimationFrame(()=>ajustarStickyNiHeat(id));}});
   const q=$('#frQ'),de=$('#frDe'),ate=$('#frAte'),status=$('#frStatus'),tipo=$('#frTipo'),todos=$('#frTodos');
   q.value=S.fr.q;
   de.value=S.fr.de||(S.fr.todos?'':F.hoje);
