@@ -183,12 +183,14 @@ body{font-family:'Inter',system-ui,-apple-system,Arial,sans-serif;color:#0b1220}
 .kpi .s{font-size:14px;color:#334155}
 .kpis-5{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
 .kpis-5 .v{font-size:clamp(17px,1.7vw,24px);white-space:nowrap}
-.cp-tab table td.num,.cp-tab table th.num{text-align:right}
-/* tabela de "Consultar títulos": larguras acompanham o conteúdo em vez de esticar pra
-   preencher 100% do card - a coluna de convênio/cliente estava sobrando espaço enquanto
-   título/parcela ficava apertada */
-.cp-tab table{width:auto;min-width:0}
-.cp-tab table td,.cp-tab table th{white-space:nowrap}
+/* tabela de "Consultar títulos": largura fixa por coluna (via colgroup no HTML) em vez de
+   deixar o layout automático do navegador esticar uma coluna e apertar outra - largura
+   auto sem colgroup deixava uma barra em branco sobrando no card quando a tabela toda
+   ficava mais estreita que o card */
+.cp-tab table{table-layout:fixed;width:100%}
+.cp-tab table td,.cp-tab table th{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* todas as colunas centralizadas, incluindo Valor */
+.cp-tab table td,.cp-tab table th{text-align:center}
 .cp-tab table tfoot td{border-top:2px solid var(--line);font-weight:700;background:#fafcff}
 .tabs button{font-size:16px;padding:14px 20px}
 .tabs button[aria-selected=true]{color:#fff;background:var(--blue);border-radius:10px 10px 0 0;border-bottom-color:var(--blue)}
@@ -1173,7 +1175,7 @@ function renderFpRes(){
   let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(rows.length)} título(s) · clique num título da tabela pra ordenar por ele</p>`;
   if(!rows.length){$('#fpRes').innerHTML=h+'<div class="empty">Nenhum título encontrado com esses filtros.</div>';return;}
   const total=rows.reduce((a,r)=>a+r.s,0);
-  h+=`<div class="card tw cp-tab"><table><thead><tr>${fpTh('f','Fornecedor')}${fpTh('t','Título / Parcela')}${fpTh('v',rotuloColunaData(S.fp.status))}${fpTh('st','Situação')}${fpTh('s','Valor','num')}</tr></thead><tbody>
+  h+=`<div class="card tw cp-tab"><table><colgroup><col style="width:32%"><col style="width:28%"><col style="width:16%"><col style="width:12%"><col style="width:12%"></colgroup><thead><tr>${fpTh('f','Fornecedor')}${fpTh('t','Título / Parcela')}${fpTh('v',rotuloColunaData(S.fp.status))}${fpTh('st','Situação')}${fpTh('s','Valor','num')}</tr></thead><tbody>
   ${rows.map(r=>`<tr><td>${esc(r.f||'—')}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)}${r.p?' / '+esc(r.p):''}</td><td>${isoBR(r.v)}</td><td>${r.st==='baixado'?'<span class="pill ok">Baixado</span>':'<span class="pill">Aberto</span>'}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
   </tbody><tfoot><tr><td colspan="4">Total (${fNum.format(rows.length)} título(s))</td><td class="num">${fBRL.format(total)}</td></tr></tfoot></table></div>`;
   $('#fpRes').innerHTML=h;
@@ -1317,7 +1319,7 @@ function renderFrRes(){
   let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(rows.length)} título(s) · clique num título da tabela pra ordenar por ele</p>`;
   if(!rows.length){$('#frRes').innerHTML=h+'<div class="empty">Nenhum título encontrado com esses filtros.</div>';return;}
   const total=rows.reduce((a,r)=>a+r.s,0);
-  h+=`<div class="card tw cp-tab"><table><thead><tr>${frTh('f','Cliente / Convênio')}${frTh('t','Título / Parcela')}<th>Tipo</th>${frTh('v',rotuloColunaData(S.fr.status))}${frTh('st','Situação')}${frTh('s','Valor','num')}</tr></thead><tbody>
+  h+=`<div class="card tw cp-tab"><table><colgroup><col style="width:28%"><col style="width:24%"><col style="width:11%"><col style="width:14%"><col style="width:11%"><col style="width:12%"></colgroup><thead><tr>${frTh('f','Cliente / Convênio')}${frTh('t','Título / Parcela')}<th>Tipo</th>${frTh('v',rotuloColunaData(S.fr.status))}${frTh('st','Situação')}${frTh('s','Valor','num')}</tr></thead><tbody>
   ${rows.map(r=>`<tr><td>${esc(r.f||'—')}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)}${r.p?' / '+esc(r.p):''}</td><td>${r.tp==='C'?'<span class="pill">Convênio</span>':'<span class="pill mut">Cliente</span>'}</td><td>${isoBR(r.v)}</td><td>${r.st==='baixado'?'<span class="pill ok">Baixado</span>':'<span class="pill">Aberto</span>'}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
   </tbody><tfoot><tr><td colspan="5">Total (${fNum.format(rows.length)} título(s))</td><td class="num">${fBRL.format(total)}</td></tr></tfoot></table></div>`;
   $('#frRes').innerHTML=h;
