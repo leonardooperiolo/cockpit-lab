@@ -1296,12 +1296,43 @@ def carregar_financeiro():
             g = por_convenio[r["convenio"]]
             g["n"] += 1
             g["v"] += r["valor"]
+        porConvenio = sorted(
+            [{"convenio": c, "n": g["n"], "v": round(g["v"], 2)} for c, g in por_convenio.items()],
+            key=lambda x: -x["v"])
+
+        # evolução mensal por convênio (mesma ideia da planilha dinâmica que o Leo já
+        # fazia manualmente: convênio nas linhas, mês do FATURAMENTO nas colunas, soma do
+        # valor não integrado em cada célula) - mostra quando esse dinheiro ficou parado,
+        # não só o total acumulado. Só os TOP_N_MATRIZ convênios de maior valor viram linha
+        # própria; o resto entra agrupado em "Outros convênios" pra não estourar a tabela.
+        TOP_N_MATRIZ = 12
+        por_convenio_mes = defaultdict(lambda: defaultdict(float))
+        meses_set = set()
+        for r in linhas_ni:
+            if not r["faturado"]:
+                continue
+            ym = r["faturado"][:7]
+            por_convenio_mes[r["convenio"]][ym] += r["valor"]
+            meses_set.add(ym)
+        meses = sorted(meses_set)
+        top_convs = [c["convenio"] for c in porConvenio[:TOP_N_MATRIZ]]
+        outros_convs = [c["convenio"] for c in porConvenio[TOP_N_MATRIZ:]]
+
+        def linha_matriz(nome, lista_convs):
+            valores = [round(sum(por_convenio_mes[c].get(m, 0.0) for c in lista_convs), 2) for m in meses]
+            return {"convenio": nome, "valores": valores, "total": round(sum(valores), 2)}
+
+        matriz_linhas = [linha_matriz(c, [c]) for c in top_convs]
+        if outros_convs:
+            matriz_linhas.append(linha_matriz(f"Outros convênios ({len(outros_convs)})", outros_convs))
+        total_mes = [round(sum(l["valores"][i] for l in matriz_linhas), 2) for i in range(len(meses))]
+
         nao_integrados = {
             "resumo": {"n": len(linhas_ni), "v": round(sum(r["valor"] for r in linhas_ni), 2)},
-            "porConvenio": sorted(
-                [{"convenio": c, "n": g["n"], "v": round(g["v"], 2)} for c, g in por_convenio.items()],
-                key=lambda x: -x["v"]),
+            "porConvenio": porConvenio,
             "linhas": sorted(linhas_ni, key=lambda r: -(r["dias"] or 0)),
+            "evolucaoMensal": {"meses": meses, "linhas": matriz_linhas, "totalMes": total_mes,
+                                "totalGeral": round(sum(total_mes), 2)},
         }
 
     return {
