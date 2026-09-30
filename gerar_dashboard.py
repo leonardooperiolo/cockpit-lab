@@ -37,6 +37,7 @@ import json
 import os
 import re
 import shutil
+import statistics
 import tempfile
 import unicodedata
 import sys
@@ -988,9 +989,12 @@ ARQ_FINANCEIRO = {
     "categoria": ("categoria", "contas_a_pagar_categoria", "contas_pagar_categoria"),
     "aberto_receber": ("contas_a_receber_aberto", "contas_receber_aberto"),
     "categoria_receber": ("contas_a_receber_categoria", "contas_receber_categoria"),
+    "baixas": ("contas_a_pagar_baixas", "contas_pagar_baixas"),
+    "baixas_receber": ("contas_a_receber_baixas", "contas_receber_baixas"),
 }
-# contas a pagar (aberto/categoria) sao obrigatorios; contas a receber sao opcionais -
-# enquanto nao forem enviados, o card de recebimentos fica "sem dados ainda"
+# contas a pagar (aberto/categoria) sao obrigatorios; contas a receber e as baixas
+# (pagamentos ja efetivados, usados na sub-aba "Contas a Pagar") sao opcionais -
+# enquanto nao forem enviados, os cards que dependem deles ficam "sem dados ainda"
 FINANCEIRO_OBRIGATORIOS = {"aberto", "categoria"}
 MESES_JANELA_RECORRENCIA = 12
 MIN_MESES_RECORRENTE = 10  # aparece em pelo menos 10 dos ultimos 12 meses = considerado recorrente
@@ -1113,6 +1117,70 @@ def carregar_financeiro():
     recorrentes = {par for par, meses in por_par_meses.items() if len(meses) >= MIN_MESES_RECORRENTE}
     nao_lancadas = sorted(recorrentes - par_no_mes_atual)
 
+    # dia do mês "normal" de cada recorrência ainda não lançada (usa a mesma janela de
+    # histórico da categoria - a data de emissão é a melhor aproximação que temos hoje
+    # do "costuma vencer perto do dia X", já que ainda não temos o vencimento histórico
+    # de títulos já baixados/removidos, só do que está em aberto agora).
+    dias_por_par = defaultdict(list)
+    for c in categoria:
+        m = c["data"].strftime("%Y-%m")
+        if m in meses_janela:
+            dias_por_par[(c["fornecedor"], c["tipo"])].append(c["data"].day)
+
+    def _dia_estimado(chave):
+        dias = dias_por_par.get(chave)
+        return round(statistics.median(dias)) if dias else None
+
+    # baixas (pagamentos já efetivados, MOVTITULO com MVTITMOVTO='BXA') - opcional;
+    # alimenta "pago até hoje" e a projeção pela média dos últimos 2 anos. Enquanto
+    # contas_pagar_baixas.csv não for enviado, esses cards ficam "sem dados ainda",
+    # do mesmo jeito que contas a receber já fazia.
+    # fornecedor por título (filial+numero+série), a partir do histórico de categoria -
+    # que continua tendo o lançamento mesmo depois do título ser baixado/pago, ao
+    # contrário do aberto.csv (que só tem o que ainda está em aberto agora). É o que
+    # permite mostrar o nome do fornecedor numa baixa antiga.
+    fornecedor_por_titulo = {}
+    for row in _linhas_arquivo(arqs["categoria"]):
+        row = [_cel(c) for c in row]
+        if len(row) < 10:
+            continue
+        filcod_c, titnr_c, serie_c, fornecedor_c = row[0], row[1], row[2], row[3]
+        fornecedor_por_titulo[(filcod_c.strip().rstrip("."), titnr_c, serie_c)] = fornecedor_c
+
+    baixas = []
+    if "baixas" in arqs:
+        for row in _linhas_arquivo(arqs["baixas"]):
+            row = [_cel(c) for c in row]
+            if len(row) < 6:
+                continue
+            filcod_b, titnr_b, serie_b, parcela_b, dtmov, valor = row[:6]
+            filcod_b = filcod_b.strip().rstrip(".")
+            d = _data_aaaammdd(dtmov)
+            if d:
+                baixas.append({
+                    "data": d, "valor": _preco(valor) or 0.0, "titulo": titnr_b, "parcela": parcela_b,
+                    "filial": filcod_b,
+                    "fornecedor": fornecedor_por_titulo.get((filcod_b, titnr_b, serie_b), ""),
+                })
+
+    pago_mes = None
+    projecao_mes = None
+    if baixas:
+        pago_mes = round(sum(b["valor"] for b in baixas
+                              if b["data"].strftime("%Y-%m") == mes_atual_str and b["data"] <= hoje), 2)
+        totais_por_ano = defaultdict(float)
+        for b in baixas:
+            if b["data"].month == hoje.month and b["data"].year < hoje.year:
+                totais_por_ano[b["data"].year] += b["valor"]
+        anos_recentes = sorted(totais_por_ano)[-2:]
+        if anos_recentes:
+            projecao_mes = round(sum(totais_por_ano[a] for a in anos_recentes) / len(anos_recentes), 2)
+
+    janela_7d = hoje + timedelta(days=7)
+    janela_15d = hoje + timedelta(days=15)
+    a_pagar_7d = [a for a in aberto if a["vencimento"] and a["vencimento"] <= janela_7d]
+    a_pagar_15d = [a for a in aberto if a["vencimento"] and a["vencimento"] <= janela_15d]
+
     recebimentos_mes = None
     if "aberto_receber" in arqs:
         a_receber = []
@@ -1132,9 +1200,21 @@ def carregar_financeiro():
             "vencidas": resumo_grupo(vencidas), "hoje": resumo_grupo(venc_hoje),
             "restoMes": resumo_grupo(resto_mes), "aPagarMes": resumo_grupo(ate_fim_mes),
             "recebimentosMes": recebimentos_mes,
+            "pagoMes": pago_mes, "projecaoMes": projecao_mes,
+            "aPagar7d": resumo_grupo(a_pagar_7d), "aPagar15d": resumo_grupo(a_pagar_15d),
         },
         "tabela": tabela,
-        "recorrencia": {"naoLancadas": [{"f": f, "t": t} for f, t in nao_lancadas], "n": len(nao_lancadas)},
+        "recorrencia": {
+            "naoLancadas": [{"f": f, "t": t, "dia": _dia_estimado((f, t))} for f, t in nao_lancadas],
+            "n": len(nao_lancadas),
+        },
+        # listas completas (não só vencidas/hoje) pra sub-aba "Contas a Pagar", com
+        # filtro por data/status no próprio painel
+        "abertos": [{"f": a["fornecedor"], "t": a["titulo"], "p": a["parcela"], "fil": a["filial"],
+                     "v": a["vencimento"].strftime("%Y-%m-%d") if a["vencimento"] else None,
+                     "s": round(a["saldo"], 2)} for a in aberto],
+        "baixados": [{"f": b["fornecedor"], "t": b["titulo"], "p": b["parcela"], "fil": b["filial"],
+                      "v": b["data"].strftime("%Y-%m-%d"), "s": round(b["valor"], 2)} for b in baixas],
     }
 
 

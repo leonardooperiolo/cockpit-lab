@@ -1013,6 +1013,86 @@ function bindFinanceiro(){
   upd();
 }
 
+/* ---------- financeiro: contas a pagar (sub-aba) ---------- */
+S.fp={todos:false,status:'aberto',de:'',ate:''};
+function fpDefAte(hojeIso,dias){
+  const d=new Date(hojeIso+'T00:00:00');
+  d.setDate(d.getDate()+dias);
+  return d.toISOString().slice(0,10);
+}
+function fpRows(){
+  const F=D.financeiro,st=S.fp.status;
+  let rows=[];
+  if(st==='aberto'||st==='ambos')rows=rows.concat((F.abertos||[]).map(r=>({...r,st:'aberto'})));
+  if(st==='baixado'||st==='ambos')rows=rows.concat((F.baixados||[]).map(r=>({...r,st:'baixado'})));
+  rows=rows.filter(r=>r.v);
+  const de=S.fp.de||(S.fp.todos?null:F.hoje);
+  const ate=S.fp.ate||(S.fp.todos?null:fpDefAte(F.hoje,15));
+  if(de)rows=rows.filter(r=>r.v>=de);
+  if(ate)rows=rows.filter(r=>r.v<=ate);
+  rows.sort((a,b)=>a.v<b.v?-1:a.v>b.v?1:0);
+  return rows;
+}
+function viewFinPagar(){
+  const F=D.financeiro;
+  if(!F)return `<div class="notice warn"><b>Ainda não há dados financeiros.</b> Envie os arquivos de contas a pagar para a pasta <code>data/financeiro</code> do repositório.</div>`;
+  const R=F.resumo;
+  const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
+  const semDados=(l,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:var(--muted);font-size:17px">Sem dados ainda</div><div class="s">${s}</div></div>`;
+  let h=`<div class="kpis">
+   ${k('Em aberto até fim do mês',fBRL0.format(R.aPagarMes.v),`${fNum.format(R.aPagarMes.n)} conta(s) · inclui as já vencidas`,'var(--blue)')}
+   ${R.pagoMes==null?semDados('Pago até hoje','aguardando extração de baixas (MOVTITULO)'):k('Pago até hoje',fBRL0.format(R.pagoMes),`em ${mesLabelDe(F.hoje)}`,'var(--green)')}
+   ${k('A pagar em 7 dias',fBRL0.format(R.aPagar7d.v),`${fNum.format(R.aPagar7d.n)} conta(s) · inclui as já vencidas`,'var(--amber)')}
+   ${k('A pagar em 15 dias',fBRL0.format(R.aPagar15d.v),`${fNum.format(R.aPagar15d.n)} conta(s) · inclui as já vencidas`,'var(--amber)')}
+   ${R.projecaoMes==null?semDados('Projeção do mês','média dos últimos 2 anos · aguardando extração de baixas'):k('Projeção do mês',fBRL0.format(R.projecaoMes),'média dos últimos 2 anos (mesmo mês)','var(--ink)')}
+  </div>`;
+  h+=`<h2 style="margin-top:28px">Consultar títulos</h2>
+  <div class="apbar" id="fpBar">
+   <label class="fld">De<input type="date" id="fpDe" style="font:inherit;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
+   <label class="fld">Até<input type="date" id="fpAte" style="font:inherit;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
+   <label class="fld">Status<select id="fpStatus"><option value="aberto">Aberto</option><option value="baixado">Baixado</option><option value="ambos">Ambos</option></select></label>
+   <label class="apck"><input type="checkbox" id="fpTodos"> Buscar todos os títulos (sem limitar aos próximos 15 dias)</label>
+  </div>
+  <div id="fpRes"></div>`;
+  h+=`<h2 style="margin-top:28px">Recorrentes sem lançamento em ${mesLabelDe(F.hoje)}<small>fornecedor/categoria que sempre aparece e ainda não tem título lançado neste mês</small></h2>`;
+  if(!F.recorrencia.naoLancadas.length){
+    h+='<div class="empty">Nenhuma pendência de recorrência este mês.</div>';
+  }else{
+    h+=`<div class="card tw"><table><thead><tr><th>Fornecedor</th><th>Categoria</th><th>Costuma vencer</th></tr></thead><tbody>
+    ${F.recorrencia.naoLancadas.map(r=>`<tr><td>${esc(r.f)}</td><td>${esc(r.t)}</td><td>${r.dia?`por volta do dia ${r.dia}`:'sem histórico suficiente'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  }
+  return h;
+}
+function renderFpRes(){
+  const rows=fpRows();
+  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(rows.length)} título(s)</p>`;
+  if(!rows.length){$('#fpRes').innerHTML=h+'<div class="empty">Nenhum título encontrado com esses filtros.</div>';return;}
+  h+=`<div class="card tw fin-tab"><table><thead><tr><th>Fornecedor</th><th>Título / Parcela</th><th>Data</th><th>Situação</th><th class="num">Valor</th></tr></thead><tbody>
+  ${rows.map(r=>`<tr><td>${esc(r.f||'—')}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)}${r.p?' / '+esc(r.p):''}</td><td>${isoBR(r.v)}</td><td>${r.st==='baixado'?'<span class="pill ok">Baixado</span>':'<span class="pill">Aberto</span>'}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
+  </tbody></table></div>`;
+  $('#fpRes').innerHTML=h;
+}
+function bindFinPagar(){
+  const F=D.financeiro;
+  if(!F)return;
+  const de=$('#fpDe'),ate=$('#fpAte'),status=$('#fpStatus'),todos=$('#fpTodos');
+  de.value=S.fp.de||(S.fp.todos?'':F.hoje);
+  ate.value=S.fp.ate||(S.fp.todos?'':fpDefAte(F.hoje,15));
+  status.value=S.fp.status;
+  todos.checked=S.fp.todos;
+  de.onchange=()=>{S.fp.de=de.value;renderFpRes();};
+  ate.onchange=()=>{S.fp.ate=ate.value;renderFpRes();};
+  status.onchange=()=>{S.fp.status=status.value;renderFpRes();};
+  todos.onchange=()=>{
+    S.fp.todos=todos.checked;
+    if(todos.checked){S.fp.de='';S.fp.ate='';de.value='';ate.value='';}
+    else{S.fp.de=F.hoje;S.fp.ate=fpDefAte(F.hoje,15);de.value=S.fp.de;ate.value=S.fp.ate;}
+    renderFpRes();
+  };
+  renderFpRes();
+}
+
 function viewQualidade(){
   const Q=D.qualidade;
   const k=(l,v,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:26px;color:var(--ink)">${v}</div><div class="s">${s||''}</div></div>`;
@@ -1250,13 +1330,13 @@ function bindPrecosConv(){
 }
 
 /* ---------- roteamento ---------- */
-const VIEWS={geral:[viewGeral,bindGeral],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],saude:[viewSaude,null],apoio:[viewApoio,bindApoio],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null],finGeral:[viewFinanceiro,bindFinanceiro]};
+const VIEWS={geral:[viewGeral,bindGeral],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],saude:[viewSaude,null],apoio:[viewApoio,bindApoio],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null],finGeral:[viewFinanceiro,bindFinanceiro],finPagar:[viewFinPagar,bindFinPagar]};
 const GROUPS={geral:{tabs:['geral'],lbl:{geral:'Visão Diária'}},
   saude:{tabs:['saude'],lbl:{saude:'Saúde do Negócio'}},
   apoio:{tabs:['apoio'],lbl:{apoio:'Laboratório de Apoio'}},
   fat:{tabs:['anual','periodos','exames','rank'],lbl:{anual:'Comparativo Anual',periodos:'Comparar Períodos',exames:'Setores',rank:'Convênios e Médicos'}},
   custos:{tabs:['precosconv','qualidade'],lbl:{precosconv:'Preços por Convênio',qualidade:'Qualidade dos Dados'}},
-  financeiro:{tabs:['finGeral'],lbl:{finGeral:'Visão Geral'}}};
+  financeiro:{tabs:['finGeral','finPagar'],lbl:{finGeral:'Visão Geral',finPagar:'Contas a Pagar'}}};
 const tabToGroup=Object.fromEntries(Object.entries(GROUPS).flatMap(([g,o])=>o.tabs.map(t=>[t,g])));
 function go(){
   const curGroup=tabToGroup[S.tab]||'fat';
@@ -1273,7 +1353,7 @@ function go(){
   $('#fgPeriodo').style.display=(per&&S.tab!=='geral')?'':'none';
   $('#fgAtalhos').style.display=S.tab==='geral'?'none':'';
   $('#fgMedico').style.display=S.tab==='geral'?'none':'';
-  $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio'||S.tab==='precosconv'||S.tab==='saude'||S.tab==='finGeral')?'none':'';
+  $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio'||S.tab==='precosconv'||S.tab==='saude'||S.tab==='finGeral'||S.tab==='finPagar')?'none':'';
   $('#fHint').textContent=per?'':(S.tab==='anual'?'Nesta aba os anos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.':'Nesta aba os períodos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.');
   syncFilters();
   const [v,b]=VIEWS[S.tab];
