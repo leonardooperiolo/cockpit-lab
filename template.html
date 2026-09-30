@@ -168,6 +168,8 @@ body{font-family:'Inter',system-ui,-apple-system,Arial,sans-serif;color:#0b1220}
 .kpi .l{font-size:15px;font-weight:700;color:#334155}
 .kpi .v{font-size:clamp(30px,3.4vw,42px)}
 .kpi .s{font-size:14px;color:#334155}
+.kpis-5{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.kpis-5 .v{font-size:clamp(17px,1.7vw,24px);white-space:nowrap}
 .tabs button{font-size:16px;padding:14px 20px}
 .tabs button[aria-selected=true]{color:#fff;background:var(--blue);border-radius:10px 10px 0 0;border-bottom-color:var(--blue)}
 .subtabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
@@ -1014,7 +1016,7 @@ function bindFinanceiro(){
 }
 
 /* ---------- financeiro: contas a pagar (sub-aba) ---------- */
-S.fp={todos:false,status:'aberto',de:'',ate:''};
+S.fp={todos:false,status:'aberto',de:'',ate:'',q:''};
 function fpDefAte(hojeIso,dias){
   const d=new Date(hojeIso+'T00:00:00');
   d.setDate(d.getDate()+dias);
@@ -1026,6 +1028,8 @@ function fpRows(){
   if(st==='aberto'||st==='ambos')rows=rows.concat((F.abertos||[]).map(r=>({...r,st:'aberto'})));
   if(st==='baixado'||st==='ambos')rows=rows.concat((F.baixados||[]).map(r=>({...r,st:'baixado'})));
   rows=rows.filter(r=>r.v);
+  const qs=normTxt(S.fp.q).trim();
+  if(qs)rows=rows.filter(r=>normTxt(r.f).includes(qs));
   const de=S.fp.de||(S.fp.todos?null:F.hoje);
   const ate=S.fp.ate||(S.fp.todos?null:fpDefAte(F.hoje,15));
   if(de)rows=rows.filter(r=>r.v>=de);
@@ -1039,7 +1043,7 @@ function viewFinPagar(){
   const R=F.resumo;
   const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
   const semDados=(l,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:var(--muted);font-size:17px">Sem dados ainda</div><div class="s">${s}</div></div>`;
-  let h=`<div class="kpis">
+  let h=`<div class="kpis kpis-5">
    ${k('Em aberto até fim do mês',fBRL0.format(R.aPagarMes.v),`${fNum.format(R.aPagarMes.n)} conta(s) · inclui as já vencidas`,'var(--blue)')}
    ${R.pagoMes==null?semDados('Pago até hoje','aguardando extração de baixas (MOVTITULO)'):k('Pago até hoje',fBRL0.format(R.pagoMes),`em ${mesLabelDe(F.hoje)}`,'var(--green)')}
    ${k('A pagar em 7 dias',fBRL0.format(R.aPagar7d.v),`${fNum.format(R.aPagar7d.n)} conta(s) · inclui as já vencidas`,'var(--amber)')}
@@ -1048,6 +1052,7 @@ function viewFinPagar(){
   </div>`;
   h+=`<h2 style="margin-top:28px">Consultar títulos</h2>
   <div class="apbar" id="fpBar">
+   <label class="fld" style="flex:1 1 220px">Fornecedor<input type="search" id="fpQ" placeholder="ex.: laborsys" autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
    <label class="fld">De<input type="date" id="fpDe" style="font:inherit;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
    <label class="fld">Até<input type="date" id="fpAte" style="font:inherit;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
    <label class="fld">Status<select id="fpStatus"><option value="aberto">Aberto</option><option value="baixado">Baixado</option><option value="ambos">Ambos</option></select></label>
@@ -1076,11 +1081,13 @@ function renderFpRes(){
 function bindFinPagar(){
   const F=D.financeiro;
   if(!F)return;
-  const de=$('#fpDe'),ate=$('#fpAte'),status=$('#fpStatus'),todos=$('#fpTodos');
+  const q=$('#fpQ'),de=$('#fpDe'),ate=$('#fpAte'),status=$('#fpStatus'),todos=$('#fpTodos');
+  q.value=S.fp.q;
   de.value=S.fp.de||(S.fp.todos?'':F.hoje);
   ate.value=S.fp.ate||(S.fp.todos?'':fpDefAte(F.hoje,15));
   status.value=S.fp.status;
   todos.checked=S.fp.todos;
+  let fpT=null;q.oninput=()=>{clearTimeout(fpT);fpT=setTimeout(()=>{S.fp.q=q.value;renderFpRes();},120);};
   de.onchange=()=>{S.fp.de=de.value;renderFpRes();};
   ate.onchange=()=>{S.fp.ate=ate.value;renderFpRes();};
   status.onchange=()=>{S.fp.status=status.value;renderFpRes();};
