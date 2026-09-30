@@ -55,13 +55,14 @@ h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(2
 .notice.warn b{color:var(--amber)}
 .notice.danger{background:#fdecec;border-color:#f2b8b8}
 .notice.danger b{color:var(--red)}
-.ni-heat{border-collapse:separate;border-spacing:0;font-size:13px;white-space:nowrap}
-.ni-heat th,.ni-heat td{padding:7px 10px;text-align:right}
-.ni-heat th:first-child,.ni-heat td:first-child{text-align:left;position:sticky;left:0;background:#fff;box-shadow:1px 0 0 var(--line)}
-.ni-heat thead th{background:#fafcff;color:var(--muted);font-weight:600;position:sticky;top:0}
-.ni-heat thead th:first-child{z-index:2}
+.ni-heat{border-collapse:separate;border-spacing:0;font-size:13px;width:auto}
+.ni-heat th,.ni-heat td{padding:7px 12px;text-align:center;white-space:nowrap}
+.ni-heat th:first-child,.ni-heat td:first-child{text-align:left;position:sticky;left:0;background:#fff;box-shadow:1px 0 0 var(--line);z-index:1}
+.ni-heat th:nth-child(2),.ni-heat td:nth-child(2){position:sticky;background:#fff;box-shadow:1px 0 0 var(--line);font-weight:700;z-index:1}
+.ni-heat thead th{background:#fafcff;color:var(--muted);font-weight:600;position:sticky;top:0;z-index:2}
+.ni-heat thead th:first-child,.ni-heat thead th:nth-child(2){z-index:3}
 .ni-heat tbody tr:last-child td{border-top:2px solid var(--line);font-weight:700}
-.ni-heat tbody tr:last-child td:first-child{background:#fff}
+.ni-heat tbody tr:last-child td:first-child,.ni-heat tbody tr:last-child td:nth-child(2){background:#fff}
 .ni-heat td.cel{border-radius:5px}
 .notice button.lnk{font-size:14px}
 
@@ -1221,14 +1222,25 @@ function niMatrizHTML(EM){
     const idx=Math.max(1,Math.round(Math.min(1,v/max)*(NI_SEQ.length-1)));
     return `<td class="cel" style="background:${NI_SEQ[idx]};color:${idx>=5?'#fff':'inherit'}" title="${fBRL.format(v)}">${fBRL0.format(v)}</td>`;
   };
+  // mês mais recente primeiro (mais fácil ver o que ficou parado agora), Total logo depois do
+  // convênio, também fixo, pra sempre ter o número que mais importa visível mesmo rolando
+  const idxRev=EM.meses.map((_,i)=>i).reverse();
   return `<h2 style="margin-top:0">Evolução mensal por convênio</h2>
   <div class="card tw" id="niMatrizWrap">
-   <table class="ni-heat"><thead><tr><th>Convênio</th>${EM.meses.map(m=>`<th>${mesLbl(m)}</th>`).join('')}<th>Total</th></tr></thead><tbody>
-   ${EM.linhas.map(l=>`<tr><td>${esc(l.convenio)}</td>${l.valores.map(cel).join('')}<td>${fBRL0.format(l.total)}</td></tr>`).join('')}
-   <tr><td>Total</td>${EM.totalMes.map(v=>`<td>${v?fBRL0.format(v):''}</td>`).join('')}<td>${fBRL0.format(EM.totalGeral)}</td></tr>
+   <table class="ni-heat"><thead><tr><th>Convênio</th><th>Total</th>${idxRev.map(i=>`<th>${mesLbl(EM.meses[i])}</th>`).join('')}</tr></thead><tbody>
+   ${EM.linhas.map(l=>`<tr><td>${esc(l.convenio)}</td><td>${fBRL0.format(l.total)}</td>${idxRev.map(i=>cel(l.valores[i])).join('')}</tr>`).join('')}
+   <tr><td>Total</td><td>${fBRL0.format(EM.totalGeral)}</td>${idxRev.map(i=>{const v=EM.totalMes[i];return `<td>${v?fBRL0.format(v):''}</td>`;}).join('')}</tr>
    </tbody></table>
   </div>
-  <p class="sub" style="margin:8px 0 24px">Cada célula é o valor faturado naquele mês que nunca virou título · quanto mais escuro, maior o valor parado · arraste a tabela pros lados pra ver todos os meses.</p>`;
+  <p class="sub" style="margin:8px 0 24px">Cada célula é o valor faturado naquele mês que nunca virou título · quanto mais escuro, maior o valor parado · arraste a tabela pros lados pra ver os meses mais antigos.</p>`;
+}
+function ajustarStickyNiHeat(){
+  const tbl=document.querySelector('#niMatrizWrap table.ni-heat');
+  if(!tbl)return;
+  const primeira=tbl.querySelector('tbody tr td:first-child')||tbl.querySelector('thead th:first-child');
+  if(!primeira)return;
+  const w=Math.ceil(primeira.getBoundingClientRect().width);
+  tbl.querySelectorAll('th:nth-child(2),td:nth-child(2)').forEach(el=>el.style.left=w+'px');
 }
 function viewFinReceber(){
   const F=D.financeiro;
@@ -1284,7 +1296,7 @@ function renderFrRes(){
 function bindFinReceber(){
   const F=D.financeiro;
   if(!F||!F.receber)return;
-  const niw=$('#niMatrizWrap');if(niw)niw.scrollLeft=niw.scrollWidth;
+  const niw=$('#niMatrizWrap');if(niw){niw.scrollLeft=0;requestAnimationFrame(ajustarStickyNiHeat);}
   const q=$('#frQ'),de=$('#frDe'),ate=$('#frAte'),status=$('#frStatus'),tipo=$('#frTipo'),todos=$('#frTodos');
   q.value=S.fr.q;
   de.value=S.fr.de||(S.fr.todos?'':F.hoje);
