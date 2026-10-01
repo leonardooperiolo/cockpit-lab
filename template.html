@@ -282,19 +282,21 @@ table tr:hover td{background:#F8FAFC}
 
 .pill.venc{background:#fee2e2;color:#b91c1c}
 .fin-tab table td.num,.fin-tab table th.num{text-align:center}
-.fin-tab table td.chk,.fin-tab table th.chk{width:32px;text-align:center}
+.fin-tab table td.chk,.fin-tab table th.chk,.cp-tab table td.chk,.cp-tab table th.chk{width:32px;text-align:center}
 .fin-tab table th:nth-child(2){text-align:center}
 .fin-tab table td:nth-child(2){text-align:center;white-space:normal;max-width:260px;font-size:13.5px;font-family:'Manrope',system-ui,sans-serif;font-weight:800}
 .fin-fil{display:block;font-family:'Inter',system-ui,sans-serif;font-weight:500;font-size:11px;color:var(--muted);margin-top:2px}
 .fin-tab table td:nth-child(3),.fin-tab table th:nth-child(3),
 .fin-tab table td:nth-child(4),.fin-tab table th:nth-child(4),
 .fin-tab table td:nth-child(5),.fin-tab table th:nth-child(5){text-align:center}
-.finChk{width:16px;height:16px;cursor:pointer}
-.fin-tab table tr.fin-linha-sel{background:#eff6ff}
+.finChk,.fpChk,.frChk{width:16px;height:16px;cursor:pointer}
+.fin-tab table tr.fin-linha-sel,.cp-tab table tr.fin-linha-sel{background:#eff6ff}
 .fin-selecao{margin-top:12px;padding:12px 16px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe;display:flex;gap:28px;align-items:center;font-size:14px;flex-wrap:wrap}
 .fin-selecao b{font-size:16px}
 .fin-selecao .fin-total{flex:1;text-align:center}
-.fin-selecao #finSelTotal{color:var(--red);font-size:22px}
+.fin-selecao .fin-total-val{font-size:22px}
+.fin-selecao .fin-total-val.despesa{color:var(--red)}
+.fin-selecao .fin-total-val.receita{color:var(--green)}
 .fin-selecao button{margin-left:auto;border:1px solid #bfdbfe;background:#fff;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;color:#1d4ed8}
 .fin-selecao button:hover{background:#dbeafe}
 </style>
@@ -1046,7 +1048,7 @@ function renderFinTab(){
    </tbody></table></div>
    <div class="fin-selecao" id="finSelecao" style="display:none">
     <span>Selecionadas: <b id="finSelCount">0</b> conta(s)</span>
-    <span class="fin-total">Total: <b id="finSelTotal">R$ 0,00</b></span>
+    <span class="fin-total">Total: <b id="finSelTotal" class="fin-total-val despesa">R$ 0,00</b></span>
     <button type="button" id="finSelLimpar">Limpar seleção</button>
    </div>`;
   wrap.innerHTML=h;
@@ -1175,15 +1177,41 @@ function renderFpRes(){
   let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(rows.length)} título(s) · clique num título da tabela pra ordenar por ele</p>`;
   if(!rows.length){$('#fpRes').innerHTML=h+'<div class="empty">Nenhum título encontrado com esses filtros.</div>';return;}
   const total=rows.reduce((a,r)=>a+r.s,0);
-  h+=`<div class="card tw cp-tab"><table><colgroup><col style="width:32%"><col style="width:28%"><col style="width:16%"><col style="width:12%"><col style="width:12%"></colgroup><thead><tr>${fpTh('f','Fornecedor')}${fpTh('t','Título / Parcela')}${fpTh('v',rotuloColunaData(S.fp.status))}${fpTh('st','Situação')}${fpTh('s','Valor','num')}</tr></thead><tbody>
-  ${rows.map(r=>`<tr><td>${esc(r.f||'—')}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)}${r.p?' / '+esc(r.p):''}</td><td>${isoBR(r.v)}</td><td>${r.st==='baixado'?'<span class="pill ok">Baixado</span>':'<span class="pill">Aberto</span>'}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
-  </tbody><tfoot><tr><td colspan="4">Total (${fNum.format(rows.length)} título(s))</td><td class="num">${fBRL.format(total)}</td></tr></tfoot></table></div>`;
+  h+=`<div class="card tw cp-tab"><table><colgroup><col style="width:32px"><col style="width:28%"><col style="width:28%"><col style="width:16%"><col style="width:12%"><col style="width:12%"></colgroup><thead><tr><th class="chk"></th>${fpTh('f','Fornecedor')}${fpTh('t','Título / Parcela')}${fpTh('v',rotuloColunaData(S.fp.status))}${fpTh('st','Situação')}${fpTh('s','Valor','num')}</tr></thead><tbody>
+  ${rows.map((r,i)=>`<tr><td class="chk"><input type="checkbox" class="fpChk" data-i="${i}" data-v="${r.s}"></td><td>${esc(r.f||'—')}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)}${r.p?' / '+esc(r.p):''}</td><td>${isoBR(r.v)}</td><td>${r.st==='baixado'?'<span class="pill ok">Baixado</span>':'<span class="pill">Aberto</span>'}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
+  </tbody><tfoot><tr><td colspan="5">Total (${fNum.format(rows.length)} título(s))</td><td class="num">${fBRL.format(total)}</td></tr></tfoot></table></div>
+  <div class="fin-selecao" id="fpSelecao" style="display:none">
+   <span>Selecionadas: <b id="fpSelCount">0</b> conta(s)</span>
+   <span class="fin-total">Total: <b id="fpSelTotal" class="fin-total-val despesa">R$ 0,00</b></span>
+   <button type="button" id="fpSelLimpar">Limpar seleção</button>
+  </div>`;
   $('#fpRes').innerHTML=h;
   $$('[data-fp-ord]').forEach(t=>t.onclick=()=>{
     const k=t.dataset.fpOrd;
     if(S.fpOrd.key===k)S.fpOrd.dir*=-1;else{S.fpOrd.key=k;S.fpOrd.dir=1;}
     renderFpRes();
   });
+  bindFpSelecao();
+}
+function bindFpSelecao(){
+  const box=$('#fpSelecao');
+  if(!box)return;
+  const chks=$$('.fpChk');
+  function upd(){
+    let n=0,v=0;
+    chks.forEach(c=>{if(c.checked){n++;v+=parseFloat(c.dataset.v);}});
+    box.style.display=n?'':'none';
+    $('#fpSelCount').textContent=fNum.format(n);
+    $('#fpSelTotal').textContent=fBRL.format(v);
+  }
+  function pintarLinha(c){
+    const tr=c.closest('tr');
+    if(tr)tr.classList.toggle('fin-linha-sel',c.checked);
+  }
+  chks.forEach(c=>{c.onchange=()=>{pintarLinha(c);upd();};});
+  const limpar=$('#fpSelLimpar');
+  if(limpar)limpar.onclick=()=>{chks.forEach(c=>{c.checked=false;pintarLinha(c);});upd();};
+  upd();
 }
 function bindFinPagar(){
   const F=D.financeiro;
@@ -1333,15 +1361,41 @@ function renderFrRes(){
   let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(rows.length)} título(s) · clique num título da tabela pra ordenar por ele</p>`;
   if(!rows.length){$('#frRes').innerHTML=h+'<div class="empty">Nenhum título encontrado com esses filtros.</div>';return;}
   const total=rows.reduce((a,r)=>a+r.s,0);
-  h+=`<div class="card tw cp-tab"><table><colgroup><col style="width:28%"><col style="width:24%"><col style="width:11%"><col style="width:14%"><col style="width:11%"><col style="width:12%"></colgroup><thead><tr>${frTh('f','Cliente / Convênio')}${frTh('t','Título / Parcela')}<th>Tipo</th>${frTh('v',rotuloColunaData(S.fr.status))}${frTh('st','Situação')}${frTh('s','Valor','num')}</tr></thead><tbody>
-  ${rows.map(r=>`<tr><td>${esc(r.f||'—')}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)}${r.p?' / '+esc(r.p):''}</td><td>${r.tp==='C'?'<span class="pill">Convênio</span>':'<span class="pill mut">Cliente</span>'}</td><td>${isoBR(r.v)}</td><td>${r.st==='baixado'?'<span class="pill ok">Baixado</span>':'<span class="pill">Aberto</span>'}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
-  </tbody><tfoot><tr><td colspan="5">Total (${fNum.format(rows.length)} título(s))</td><td class="num">${fBRL.format(total)}</td></tr></tfoot></table></div>`;
+  h+=`<div class="card tw cp-tab"><table><colgroup><col style="width:32px"><col style="width:24%"><col style="width:24%"><col style="width:11%"><col style="width:14%"><col style="width:11%"><col style="width:12%"></colgroup><thead><tr><th class="chk"></th>${frTh('f','Cliente / Convênio')}${frTh('t','Título / Parcela')}<th>Tipo</th>${frTh('v',rotuloColunaData(S.fr.status))}${frTh('st','Situação')}${frTh('s','Valor','num')}</tr></thead><tbody>
+  ${rows.map((r,i)=>`<tr><td class="chk"><input type="checkbox" class="frChk" data-i="${i}" data-v="${r.s}"></td><td>${esc(r.f||'—')}${r.fil?`<span class="fin-fil">${esc(nomeFilial(r.fil))}</span>`:''}</td><td>${esc(r.t)}${r.p?' / '+esc(r.p):''}</td><td>${r.tp==='C'?'<span class="pill">Convênio</span>':'<span class="pill mut">Cliente</span>'}</td><td>${isoBR(r.v)}</td><td>${r.st==='baixado'?'<span class="pill ok">Baixado</span>':'<span class="pill">Aberto</span>'}</td><td class="num">${fBRL.format(r.s)}</td></tr>`).join('')}
+  </tbody><tfoot><tr><td colspan="6">Total (${fNum.format(rows.length)} título(s))</td><td class="num">${fBRL.format(total)}</td></tr></tfoot></table></div>
+  <div class="fin-selecao" id="frSelecao" style="display:none">
+   <span>Selecionadas: <b id="frSelCount">0</b> conta(s)</span>
+   <span class="fin-total">Total: <b id="frSelTotal" class="fin-total-val receita">R$ 0,00</b></span>
+   <button type="button" id="frSelLimpar">Limpar seleção</button>
+  </div>`;
   $('#frRes').innerHTML=h;
   $$('[data-fr-ord]').forEach(t=>t.onclick=()=>{
     const k=t.dataset.frOrd;
     if(S.frOrd.key===k)S.frOrd.dir*=-1;else{S.frOrd.key=k;S.frOrd.dir=1;}
     renderFrRes();
   });
+  bindFrSelecao();
+}
+function bindFrSelecao(){
+  const box=$('#frSelecao');
+  if(!box)return;
+  const chks=$$('.frChk');
+  function upd(){
+    let n=0,v=0;
+    chks.forEach(c=>{if(c.checked){n++;v+=parseFloat(c.dataset.v);}});
+    box.style.display=n?'':'none';
+    $('#frSelCount').textContent=fNum.format(n);
+    $('#frSelTotal').textContent=fBRL.format(v);
+  }
+  function pintarLinha(c){
+    const tr=c.closest('tr');
+    if(tr)tr.classList.toggle('fin-linha-sel',c.checked);
+  }
+  chks.forEach(c=>{c.onchange=()=>{pintarLinha(c);upd();};});
+  const limpar=$('#frSelLimpar');
+  if(limpar)limpar.onclick=()=>{chks.forEach(c=>{c.checked=false;pintarLinha(c);});upd();};
+  upd();
 }
 function bindFinReceber(){
   const F=D.financeiro;
