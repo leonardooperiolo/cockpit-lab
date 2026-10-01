@@ -1544,8 +1544,15 @@ def _eventos_dre(rateio_linhas, pago_por_mes, valor_titulo, mapa_dre, nao_classi
             conta = "(sem classificação)"
         elif info.get("regra_especial") == "sinal":
             conta = info["conta_dre_positivo"] if r["valor"] >= 0 else info["conta_dre_negativo"]
+        elif info.get("conta_dre"):
+            conta = info["conta_dre"]
         else:
-            conta = info.get("conta_dre") or "(sem classificação)"
+            # existe em mapa_dre.json mas com "conta_dre": null (placeholder nunca
+            # preenchido, ex.: entrada criada de antemão esperando um código que só veio a
+            # aparecer de verdade depois) - trata igual a "não encontrado", pra aparecer no
+            # aviso de não classificados em vez de desaparecer silenciosamente.
+            nao_classificados.add((r["tpdrcod"], info.get("descricao") or r["descricao"]))
+            conta = "(sem classificação)"
         for mes, pago in meses_pagos.items():
             if total_titulo:
                 fracao = pago / total_titulo
@@ -1600,8 +1607,13 @@ def _parse_movcxb_dre(arqs, mapa_dre, nao_classificados):
             conta = "(sem classificação)"
         elif info.get("regra_especial") == "sinal":
             conta = info["conta_dre_positivo"] if valor_assinado >= 0 else info["conta_dre_negativo"]
+        elif info.get("conta_dre"):
+            conta = info["conta_dre"]
         else:
-            conta = info.get("conta_dre") or "(sem classificação)"
+            # mesma situação do _eventos_dre acima: existe em mapa_dre.json mas com
+            # "conta_dre": null - trata como não classificado em vez de sumir.
+            nao_classificados.add((tpdrcod, info.get("descricao") or tpdrdesc.strip()))
+            conta = "(sem classificação)"
         eventos.append({"mes": d.strftime("%Y-%m"), "filial": filcod.strip().rstrip("."), "conta": conta,
                          "tipo": tpdrtipo.strip(), "valor": round(valor_assinado, 2), "titulo": "",
                          "fornecedor": _nome_curto(fornecedor), "historico": historico.strip()})
