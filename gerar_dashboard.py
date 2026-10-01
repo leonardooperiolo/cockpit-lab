@@ -1083,14 +1083,18 @@ def _add_meses(ano, mes, k):
     return ano + m // 12, m % 12 + 1
 
 
-def carregar_financeiro():
+def carregar_financeiro(movimento_diario=None):
     """Contas a pagar (aberto.csv) + lançamentos por categoria (categoria.csv,
     também usado no DRE) exportados do CONCENT. Monta o resumo da aba
     Financeiro / Visão Geral: vencidas, vencendo hoje, resto do mês, total a
     pagar até fim do mês, e a lista de fornecedores/categorias recorrentes
     (aparecem em pelo menos 10 dos últimos 12 meses) que ainda não tiveram
     nenhum lançamento no mês atual. Devolve None se os arquivos não foram
-    enviados para data/financeiro/."""
+    enviados para data/financeiro/.
+
+    movimento_diario: {filial: {ym: valor}} com o Líquido faturado (vindo da
+    base de exames, não dos títulos) - usado só no DRE por posto individual,
+    pra substituir a receita (ver _montar_dre)."""
     arqs = achar_arquivos_financeiro()
     faltam = [k for k in FINANCEIRO_OBRIGATORIOS if k not in arqs]
     if faltam:
@@ -1394,7 +1398,7 @@ def carregar_financeiro():
             })
         nao_integrados = _bloco_nao_integrados(linhas_ni)
 
-    dre = _montar_dre(arqs)
+    dre = _montar_dre(arqs, movimento_diario)
 
     return {
         "hoje": hoje.strftime("%Y-%m-%d"),
@@ -1570,7 +1574,177 @@ def _resumo_dre(eventos):
     return {mes: dict(contas) for mes, contas in out.items()}
 
 
-def _montar_dre(arqs):
+# --------------------------------------------------------------------------- DRE: hierarquia
+# Estrutura do DRE igual à planilha "Acompanhamento Realizado" que o Claudio (ex-consultor)
+# usava (aba "Celape Geral"), reproduzida linha por linha a partir do arquivo real de
+# novembro/2023 que o Leo enviou em 30/09/2026. Só entram aqui os nomes de conta que já
+# existem em data/apoio/mapa_dre.json (99 dos 101 bateram exatamente com o texto da
+# planilha do Claudio) - conferido programaticamente antes de escrever esta lista, não
+# chutado. Uma conta nova que apareça em mapa_dre.json sem estar em nenhum desses grupos
+# cai automaticamente no grupo "(-) Outras contas (a posicionar na hierarquia)" no fim,
+# com aviso no log - nunca inventamos onde ela entra.
+_DRE_GRUPO_RECEITA_BRUTA = ["(+) Receita unidades", "(+) Receita Fat Convênio", "(-) Cancelamento de serviços ou glosas"]
+_DRE_GRUPO_IMPOSTOS_RECEITA = ["(-) ISSQN", "(-) PIS", "(-) COFINS", "(-) Simples Nacional", "(-) Imposto autônomo"]
+_DRE_GRUPO_CUSTOS_VARIAVEIS = ["(-) Compras de Kit Reagente", "(-) Aluguel Interface", "(-) Insumos", "(-) Terceirização exames - Lab Apoio"]
+_DRE_SUBGRUPOS_DESPESAS_FIXAS = [
+    ("Desp. com pessoal", ["(-) Salarios e ordenados", "(-) Horas extras", "(-) Adicional noturno",
+        "(-) Adicional de insalubridade", "(-) Autonomos", "(-) Estagiarios", "(-) 13º Salário", "(-) Férias",
+        "(-) INSS s/ folha", "(-) FGTS", "(-) Bônus, prêmios e gratificações", "(-) Aviso prévio e indenizações",
+        "(-) Seguro de vida", "(-) Vale alimentação", "(-) Vale transporte", "(-) Assistencia médica",
+        "(-) Uniformes e EPI´s", "(-) Contribuição sindical", "(-) Contribuição patronal",
+        "(-) Cursos e treinamentos", "(-) Comissões", "(-) Auxilio educação", "(-) Medicina ocupacional",
+        "(-) Confraternização", "(-) Lanches e refeições", "(-) Outras despesas com pessoal",
+        "(-) Pró labore", "(-) Distribuição a sócios"]),
+    ("Desp. com infraestrutura", ["(-) Energia elétrica", "(-) Água e esgoto", "(-) Aluguéis e condomínios",
+        "(-) Limpeza / Diaristas", "(-) Telefone e internet", "(-) Coleta de resíduos e detetização",
+        "(-) IPTU, alvará, taxa de lixo e VISA", "(-) Segurança e vigilância",
+        "(-) Manutenção e conservação de estrutura"]),
+    ("Desp. com marketing e comercial", ["(-) Marketing e propaganda", "(-) Tráfego Pago", "(-) Eventos",
+        "(-) Viagens comerciais", "(-) Doações, brindes e patrocinios"]),
+    ("Desp. com equipamentos", ["(-) Locação de  equipamento", "(-) Manutenção e conservação de  equipamento",
+        "(-) Manutenção e conservação de equipamento", "(-) Compra de equipamentos"]),
+    ("Desp. administrativas", ["(-) Material de consumo/expediente", "(-) Material de higiêne/limpeza",
+        "(-) Material de copa/cozinha", "(-) Despesas com viagens / NET", "(-) Cartórios e registros",
+        "(-) Combustível", "(-) Entidades de Classe", "(-) Mercado", "(-) Cartões Empresariais",
+        "(-) Outras Despesas", "???"]),
+    ("Desp. com logística", ["(-) Despesas e conservação de veículos", "(-) Combustíveis e lubrificantes",
+        "(-) Correios e transportes", "(-) Fretes e carretos", "(-) IPVA, seguro e multas"]),
+    ("Desp. com serviços contratados", ["(-) Assessoria advocatícia", "(-) Assessoria contábil",
+        "(-) Consultoria e auditoria", "(-) Softwares e informática", "(-) Controle de qualidade externo"]),
+]
+_DRE_GRUPO_RECEITAS_FINANCEIRAS = ["(+) Juros recebidos", "(+) Descontos auferidos"]
+_DRE_GRUPO_DESPESAS_FINANCEIRAS = ["(-) Juros", "(-) Taxas Getnet", "(-) Descontos concedidos", "(-) Tarifas bancárias"]
+_DRE_GRUPO_IMPOSTOS_LUCRO = ["(-) Contribuição Social", "(-) Imposto de Renda"]
+_DRE_GRUPO_OUTROS_MOVIMENTOS = ["(+) Adiantamento de Clientes", "(-) Investimentos", "(+) Empréstimos Recebidos",
+                                 "(-) Empréstimos Pagos", "(-) Diferença Cartão"]
+_DRE_GRUPO_CONTA_1000 = ["(-) Cta 1000 Energia elétrica", "(-) Cta 1000 Aluguéis e condomínios",
+    "(-) Cta 1000 Telefone e internet", "(-) Cta 1000 Sky", "(-) Cta 1000 IPTU, alvará, taxa de lixo e VISA",
+    "(-) Cta 1000 Manutenção e conservação de estrutura", "(-) Cta 1000 Pedágios", "(-) Cta 1000 Cartões",
+    "(-) Cta 1000 Clube de Tiro", "(-) Cta 1000 Outras Despesas Particulares", "(-) Cta 1000 Unimed",
+    "(-) Cta 1000 Farmácia", "(-) Cta 1000 Supermercado", "(-) Cta 1000 IPVA, seguro e multas",
+    "(-) Cta 1000 Aplicações Sócios", "(-) Cta 1000 Investimentos CILA", "(-) Cta 1000 Investimentos OuroCap"]
+_DRE_GRUPO_FINAIS = ["(+) Alugueis recebidos", "(-) Cta 2000 Leonardo"]
+_DRE_CONTAS_CONHECIDAS = set(
+    _DRE_GRUPO_RECEITA_BRUTA + _DRE_GRUPO_IMPOSTOS_RECEITA + _DRE_GRUPO_CUSTOS_VARIAVEIS
+    + [c for _, cs in _DRE_SUBGRUPOS_DESPESAS_FIXAS for c in cs]
+    + _DRE_GRUPO_RECEITAS_FINANCEIRAS + _DRE_GRUPO_DESPESAS_FINANCEIRAS + _DRE_GRUPO_IMPOSTOS_LUCRO
+    + _DRE_GRUPO_OUTROS_MOVIMENTOS + _DRE_GRUPO_CONTA_1000 + _DRE_GRUPO_FINAIS)
+
+
+def _dre_valor_assinado(info):
+    return info["valor"] if info["tipo"] == "R" else -info["valor"]
+
+
+def _dre_grupo_simples(nome, contas_lista, contas_mes, usadas):
+    itens, soma = [], 0.0
+    for c in contas_lista:
+        info = contas_mes.get(c)
+        if not info:
+            continue
+        usadas.add(c)
+        itens.append({"tipo": "conta", "nome": c, "tipoDre": info["tipo"], "valor": info["valor"],
+                      "lancamentos": info["lancamentos"]})
+        soma += _dre_valor_assinado(info)
+    return {"tipo": "grupo", "nome": nome, "valor": round(soma, 2), "contas": itens}
+
+
+def _dre_grupo_composto(nome, subgrupos_def, contas_mes, usadas):
+    subitens, soma = [], 0.0
+    for sub_nome, lista in subgrupos_def:
+        sub = _dre_grupo_simples(sub_nome, lista, contas_mes, usadas)
+        if sub["contas"]:
+            subitens.append(sub)
+            soma += sub["valor"]
+    return {"tipo": "grupo", "nome": nome, "valor": round(soma, 2), "contas": subitens}
+
+
+def _dre_formula(nome, valor):
+    return {"tipo": "formula", "nome": nome, "valor": round(valor, 2)}
+
+
+def _dre_leaf_movimento(valor):
+    return {"tipo": "conta", "nome": "(+) Receita Movimento Diário", "tipoDre": "R",
+            "valor": round(valor, 2), "lancamentos": []}
+
+
+def _hierarquia_dre(contas_mes, movimento_mes=None):
+    """Aplica a estrutura acima sobre {conta: {tipo,valor,lancamentos}} de um mês/escopo e
+    devolve a lista ordenada de blocos (grupo/subgrupo com contas e drill-down, ou formula
+    - subtotal calculado, sem lançamentos próprios) pronta pro painel renderizar.
+
+    movimento_mes: quando informado (só acontece no DRE de um posto individual), substitui
+    as contas normais de receita bruta por uma única linha "Receita Movimento Diário" com o
+    Líquido faturado da base de exames daquele posto/mês - porque, posto a posto, o
+    faturamento por título não é confiável (fica tudo junto no "conjunto" entre as
+    filiais), diferente do Geral/Consolidado, que usam os títulos de verdade."""
+    usadas = set()
+    if movimento_mes is not None:
+        for c in _DRE_GRUPO_RECEITA_BRUTA:
+            if c in contas_mes:
+                usadas.add(c)
+        receita_bruta = {"tipo": "grupo", "nome": "Receita bruta operacional",
+                          "valor": round(movimento_mes, 2), "contas": [_dre_leaf_movimento(movimento_mes)]}
+    else:
+        receita_bruta = _dre_grupo_simples("Receita bruta operacional", _DRE_GRUPO_RECEITA_BRUTA, contas_mes, usadas)
+    impostos_receita = _dre_grupo_simples("(-) Impostos sobre a receita", _DRE_GRUPO_IMPOSTOS_RECEITA, contas_mes, usadas)
+    receita_liquida_v = receita_bruta["valor"] + impostos_receita["valor"]
+    custos_variaveis = _dre_grupo_simples("(-) Custos de produção - variáveis", _DRE_GRUPO_CUSTOS_VARIAVEIS, contas_mes, usadas)
+    margem_contribuicao_v = receita_liquida_v + custos_variaveis["valor"]
+    despesas_fixas = _dre_grupo_composto("(-) Despesas operacionais - fixas", _DRE_SUBGRUPOS_DESPESAS_FIXAS, contas_mes, usadas)
+    ebitda_v = margem_contribuicao_v + despesas_fixas["valor"]
+    receitas_financeiras = _dre_grupo_simples("Receitas financeiras", _DRE_GRUPO_RECEITAS_FINANCEIRAS, contas_mes, usadas)
+    despesas_financeiras = _dre_grupo_simples("(-) Despesas financeiras", _DRE_GRUPO_DESPESAS_FINANCEIRAS, contas_mes, usadas)
+    resultado_financeiro_v = receitas_financeiras["valor"] + despesas_financeiras["valor"]
+    impostos_lucro = _dre_grupo_simples("(-) Impostos sobre o lucro", _DRE_GRUPO_IMPOSTOS_LUCRO, contas_mes, usadas)
+    resultado_liquido_op_v = ebitda_v + resultado_financeiro_v + impostos_lucro["valor"]
+    outros_movimentos = _dre_grupo_simples("Outros movimentos", _DRE_GRUPO_OUTROS_MOVIMENTOS, contas_mes, usadas)
+    conta_1000 = _dre_grupo_simples("Total Conta 1000", _DRE_GRUPO_CONTA_1000, contas_mes, usadas)
+    finais = _dre_grupo_simples("Outros lançamentos", _DRE_GRUPO_FINAIS, contas_mes, usadas)
+    resultado_liquido_final_v = resultado_liquido_op_v + outros_movimentos["valor"] + conta_1000["valor"] + finais["valor"]
+
+    hierarquia = [receita_bruta, impostos_receita, _dre_formula("Receita líquida", receita_liquida_v),
+                  custos_variaveis, _dre_formula("Margem de contribuição", margem_contribuicao_v),
+                  despesas_fixas, _dre_formula("EBITDA", ebitda_v)]
+    if receitas_financeiras["contas"] or despesas_financeiras["contas"]:
+        hierarquia += [receitas_financeiras, despesas_financeiras,
+                       _dre_formula("Resultado financeiro", resultado_financeiro_v)]
+    if impostos_lucro["contas"]:
+        hierarquia.append(impostos_lucro)
+    hierarquia.append(_dre_formula("Resultado líquido operacional", resultado_liquido_op_v))
+    extras_finais = [g for g in (outros_movimentos, conta_1000, finais) if g["contas"]]
+    if extras_finais:
+        hierarquia += extras_finais
+        hierarquia.append(_dre_formula("Resultado líquido", resultado_liquido_final_v))
+    else:
+        # sem lançamentos "fora do operacional" neste mês/escopo - o resultado líquido
+        # operacional já é o final, não repete a mesma linha duas vezes
+        hierarquia[-1] = _dre_formula("Resultado líquido", resultado_liquido_op_v)
+
+    sobrando = {c: info for c, info in contas_mes.items() if c not in usadas}
+    if sobrando:
+        extra = {"tipo": "grupo", "nome": "(-) Outras contas (a posicionar na hierarquia)",
+                 "valor": round(sum(_dre_valor_assinado(i) for i in sobrando.values()), 2),
+                 "contas": [{"tipo": "conta", "nome": c, "tipoDre": i["tipo"], "valor": i["valor"],
+                             "lancamentos": i["lancamentos"]} for c, i in sobrando.items()]}
+        hierarquia.append(extra)
+        print("AVISO: DRE - conta(s) sem posição definida na hierarquia (caíram em "
+              "'(-) Outras contas (a posicionar na hierarquia)', ajustar em gerar_dashboard.py): "
+              + ", ".join(sorted(sobrando)))
+    return hierarquia
+
+
+def _aplicar_hierarquia(flat_por_mes, movimento_por_mes=None):
+    return {mes: _hierarquia_dre(contas, (movimento_por_mes or {}).get(mes))
+            for mes, contas in flat_por_mes.items()}
+
+
+# Postos com DRE individual - só os 7 que o Claudio acompanhava separadamente (os outros,
+# Quintino/Laranjeiras/Administrativo, não tem botão nem filtro próprio, mas continuam
+# entrando no Geral - e Quintino/Laranjeiras também no Consolidado, como já era).
+_DRE_POSTOS_INDIVIDUAIS = {"1", "2", "4", "7", "8", "10", "13"}
+
+
+def _montar_dre(arqs, movimento_diario=None):
     """Monta o DRE completo (por posto + Consolidado [01-13, sem o 100] + Geral [tudo]),
     em regime de caixa. Devolve None enquanto os arquivos de valor_titulo não tiverem
     sido enviados pela VM (contas_a_pagar/contas_a_receber_valor_titulo.csv)."""
@@ -1600,10 +1774,12 @@ def _montar_dre(arqs):
     if not eventos:
         return None
 
-    postos = sorted({e["filial"] for e in eventos}, key=lambda f: (len(f), f))
-    por_posto = {p: _resumo_dre([e for e in eventos if e["filial"] == p]) for p in postos}
-    consolidado = _resumo_dre([e for e in eventos if e["filial"] != "100"])
-    geral = _resumo_dre(eventos)
+    postos = sorted({e["filial"] for e in eventos if e["filial"] in _DRE_POSTOS_INDIVIDUAIS},
+                     key=lambda f: (len(f), f))
+    por_posto = {p: _aplicar_hierarquia(_resumo_dre([e for e in eventos if e["filial"] == p]),
+                                         (movimento_diario or {}).get(p)) for p in postos}
+    consolidado = _aplicar_hierarquia(_resumo_dre([e for e in eventos if e["filial"] != "100"]))
+    geral = _aplicar_hierarquia(_resumo_dre(eventos))
     meses = sorted({e["mes"] for e in eventos})
 
     return {
@@ -1712,7 +1888,15 @@ def main():
         ult = dados["reajustesDB"][-1]
         print(f"Histórico de reajustes DB: {len(dados['reajustesDB'])} evento(s); último em {ult['data']} "
               f"({len(ult['linhas'])} exames mudaram).")
-    dados["financeiro"] = carregar_financeiro()
+    # Líquido faturado por posto/mês (base de exames, não títulos) - usado no DRE por
+    # posto individual, onde o faturamento por título vem todo junto no "conjunto" e não
+    # dá pra atribuir com confiança a uma filial (ver _montar_dre/_hierarquia_dre).
+    mov = df.groupby(["uni", "ym"])["Líquido"].sum().reset_index()
+    movimento_diario = {}
+    for r in mov.itertuples():
+        filial = str(int(r.uni))
+        movimento_diario.setdefault(filial, {})[r.ym] = round(float(r.Líquido), 2)
+    dados["financeiro"] = carregar_financeiro(movimento_diario)
     if dados["financeiro"]:
         rf = dados["financeiro"]["resumo"]
         print(f"Financeiro: {rf['vencidas']['n']} contas vencidas (R$ {rf['vencidas']['v']:,.2f}), "

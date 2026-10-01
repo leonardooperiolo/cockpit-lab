@@ -1373,53 +1373,74 @@ S.dre={escopo:'geral',mes:''};
 function dreEscopos(DRE){
   // "geral" (tudo, incluindo o posto 100 - hub administrativo/rateio) e "consolidado"
   // (só os postos 01-13, sem o 100) primeiro, do jeito que o Claudio (ex-consultor)
-  // organizava as abas "Celape Geral"/"Celape Consolidado" na planilha dele; depois
-  // cada posto individual, na ordem que já vem calculada em porPosto.
-  return [['geral','Geral (todos os postos)'],['consolidado','Consolidado (sem o posto 100)'],
-    ...DRE.postos.map(p=>[p,'Posto '+nomeFilial(p)])];
+  // organizava as abas "Celape Geral"/"Celape Consolidado" na planilha dele; depois só
+  // os postos individuais que o backend gera (DRE.postos já vem filtrado pros 7 que o
+  // Claudio acompanhava separadamente - os demais entram no Geral/Consolidado mas não
+  // tem DRE próprio).
+  return [['geral','Geral'],['consolidado','Consolidado'],
+    ...DRE.postos.map(p=>[p,nomeFilial(p)])];
 }
 function dreDados(DRE,escopo){
   if(escopo==='geral')return DRE.geral;
   if(escopo==='consolidado')return DRE.consolidado;
   return DRE.porPosto[escopo]||{};
 }
-function dreContasDoMes(DRE){
+function dreHierarquiaDoMes(DRE){
   const dados=dreDados(DRE,S.dre.escopo);
   const mes=S.dre.mes||DRE.meses[DRE.meses.length-1];
-  const contas=dados[mes]||{};
-  const receitas=[],despesas=[];
-  Object.entries(contas).forEach(([conta,info])=>{
-    (info.tipo==='R'?receitas:despesas).push({conta,...info});
-  });
-  receitas.sort((a,b)=>b.valor-a.valor);
-  despesas.sort((a,b)=>b.valor-a.valor);
-  return {mes,receitas,despesas};
+  return {mes,blocos:dados[mes]||[]};
 }
-function dreLinhaHTML(item,mostrarPosto){
-  const id='dre_'+item.conta.replace(/[^a-z0-9]/gi,'_')+'_'+Math.random().toString(36).slice(2,7);
-  const detalheHTML=item.lancamentos.map(l=>`<tr><td>${esc(l.fornecedor||'—')}${l.historico?`<span class="fin-fil">${esc(l.historico)}</span>`:''}</td><td>${esc(l.titulo)}${mostrarPosto&&l.filial?' · '+esc(nomeFilial(l.filial)):''}</td><td class="num">${fBRL.format(l.valor)}</td></tr>`).join('');
-  return `<tbody class="dre-linha-wrap"><tr class="dre-linha-resumo" data-dre-id="${id}" style="cursor:pointer"><td>▶ ${esc(item.conta)}</td><td>${fNum.format(item.lancamentos.length)} lançamento(s)</td><td class="num">${fBRL.format(item.valor)}</td></tr></tbody>
+const dreCor=v=>v>=0?'var(--green)':'var(--red)';
+// Cores de fundo neutras (nunca por sinal) - só diferenciam o nível da hierarquia, do
+// mais escuro (totais/fórmulas) pro mais claro (contas-folha), igual pedido pelo Leo
+// ("não gostei do fundo vermelho... cores suaves, azul clarinho / cinza claro").
+const DRE_AZUL='#eaf1fb', DRE_AZUL2='#f4f8fd', DRE_CINZA='#f3f4f6', DRE_CINZA2='#f9fafb';
+function dreFundoGrupo(nivel){ return nivel===0?DRE_AZUL:DRE_CINZA; }
+function dreFundoLinha(nivel){ return nivel%2===0?DRE_CINZA2:'#fff'; }
+function dreLinhaHTML(item,nivel,mostrarPosto){
+  // A conta "Receita Movimento Diário" (ver _hierarquia_dre no backend) é um agregado da
+  // base de exames, sem título/lançamento individual pra abrir - mostra sem seta e sem
+  // "0 lançamento(s)", que ficaria confuso.
+  const semDrill=item.lancamentos.length===0;
+  if(semDrill){
+    return `<tbody class="dre-linha-wrap"><tr style="background:${dreFundoLinha(nivel)}"><td style="padding-left:${10+nivel*18}px">${esc(item.nome)}</td><td style="color:#94a3b8;font-size:13px">agregado da base de exames</td><td class="num" style="color:${dreCor(item.tipoDre==='R'?1:-1)}">${fBRL.format(item.valor)}</td></tr></tbody>`;
+  }
+  const id='dre_'+item.nome.replace(/[^a-z0-9]/gi,'_')+'_'+Math.random().toString(36).slice(2,7);
+  const sinal=item.tipoDre==='R'?1:-1;
+  const detalheHTML=item.lancamentos.map(l=>`<tr><td style="padding-left:${10+(nivel+1)*18}px">${esc(l.fornecedor||'—')}${l.historico?`<span class="fin-fil">${esc(l.historico)}</span>`:''}</td><td>${esc(l.titulo)}${mostrarPosto&&l.filial?' · '+esc(nomeFilial(l.filial)):''}</td><td class="num">${fBRL.format(l.valor)}</td></tr>`).join('');
+  return `<tbody class="dre-linha-wrap"><tr class="dre-linha-resumo" style="cursor:pointer;background:${dreFundoLinha(nivel)}" data-dre-id="${id}"><td style="padding-left:${10+nivel*18}px">▶ ${esc(item.nome)}</td><td>${fNum.format(item.lancamentos.length)} lançamento(s)</td><td class="num" style="color:${dreCor(sinal)}">${fBRL.format(item.valor)}</td></tr></tbody>
    <tbody class="dre-linha-detalhe" id="${id}" hidden>${detalheHTML}</tbody>`;
+}
+function dreBlocoHTML(bloco,nivel,mostrarPosto){
+  if(bloco.tipo==='formula'){
+    return `<tbody class="dre-formula"><tr style="background:${DRE_AZUL2};border-top:1px solid #cfdaee;border-bottom:1px solid #cfdaee"><td colspan="2" style="font-weight:700;padding:10px 8px 10px ${10+nivel*18}px">${esc(bloco.nome)}</td><td class="num" style="font-weight:700;color:${dreCor(bloco.valor)}">${fBRL.format(bloco.valor)}</td></tr></tbody>`;
+  }
+  let h=`<tbody class="dre-grupo"><tr style="background:${dreFundoGrupo(nivel)}"><td colspan="2" style="font-weight:700;padding:${nivel===0?10:6}px 8px ${nivel===0?10:6}px ${10+nivel*18}px">${esc(bloco.nome)}</td><td class="num" style="font-weight:700;color:${dreCor(bloco.valor)}">${fBRL.format(bloco.valor)}</td></tr></tbody>`;
+  bloco.contas.forEach(item=>{
+    h+=item.tipo==='grupo'?dreBlocoHTML(item,nivel+1,mostrarPosto):dreLinhaHTML(item,nivel+1,mostrarPosto);
+  });
+  return h;
 }
 function renderDreTab(){
   const DRE=D.financeiro.dre;
-  const {mes,receitas,despesas}=dreContasDoMes(DRE);
+  const {mes,blocos}=dreHierarquiaDoMes(DRE);
   const mostrarPosto=S.dre.escopo==='geral'||S.dre.escopo==='consolidado';
-  const totalReceita=receitas.reduce((a,r)=>a+r.valor,0);
-  const totalDespesa=despesas.reduce((a,r)=>a+r.valor,0);
-  const resultado=totalReceita-totalDespesa;
+  const acha=nome=>blocos.find(b=>b.nome===nome);
+  const receitaBruta=acha('Receita bruta operacional'),ultimaFormula=[...blocos].reverse().find(b=>b.tipo==='formula');
+  const totalReceita=receitaBruta?receitaBruta.valor:0;
+  const resultado=ultimaFormula?ultimaFormula.valor:0;
+  const totalDespesa=totalReceita-resultado;
   const k=(l,v,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor};${fitTxt(fBRL0.format(v))}">${fBRL0.format(v)}</div></div>`;
   let h=`<div class="kpis" style="grid-template-columns:repeat(3,1fr)">
    ${k('Receitas',totalReceita,'var(--green)')}
    ${k('Despesas',totalDespesa,'var(--red)')}
-   ${k('Resultado',resultado,resultado>=0?'var(--green)':'var(--red)')}
+   ${k(ultimaFormula?ultimaFormula.nome:'Resultado',resultado,dreCor(resultado))}
   </div>`;
-  if(!receitas.length&&!despesas.length){
+  if(!blocos.length){
     h+='<div class="empty" style="margin-top:16px">Nenhum título com baixa neste mês, neste escopo.</div>';
   }else{
-    h+=`<div class="card tw" style="margin-top:16px"><table><thead><tr><th>Conta do DRE</th><th>Lançamentos</th><th class="num">Valor</th></tr></thead>
-     ${receitas.length?`<tbody class="dre-secao"><tr><td colspan="3"><b>Receitas</b></td></tr></tbody>${receitas.map(r=>dreLinhaHTML(r,mostrarPosto)).join('')}`:''}
-     ${despesas.length?`<tbody class="dre-secao"><tr><td colspan="3"><b>Despesas</b></td></tr></tbody>${despesas.map(r=>dreLinhaHTML(r,mostrarPosto)).join('')}`:''}
+    h+=`<div class="card tw dre-tab" style="margin-top:16px"><table><thead><tr><th>Conta do DRE</th><th>Lançamentos</th><th class="num">Valor</th></tr></thead>
+     ${blocos.map(b=>dreBlocoHTML(b,0,mostrarPosto)).join('')}
     </table></div>`;
   }
   $('#dreTabWrap').innerHTML=h;
@@ -1434,9 +1455,9 @@ function viewFinDRE(){
   const F=D.financeiro;
   if(!F||!F.dre)return `<div class="notice warn"><b>Ainda não há dados suficientes pro DRE.</b> Envie os arquivos <code>contas_a_pagar_valor_titulo</code> e <code>contas_a_receber_valor_titulo</code> (e as baixas/categorias mais recentes) para a pasta <code>data/financeiro</code> do repositório.</div>`;
   const DRE=F.dre;
-  let h=`<div class="apbar" id="dreBar">
-   <label class="fld" style="flex:1 1 260px">Posto<select id="dreEscopo">${dreEscopos(DRE).map(([v,t])=>`<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
-   <label class="fld">Mês<select id="dreMes">${DRE.meses.slice().reverse().map(m=>`<option value="${m}">${esc(mesLabelDe(m))}</option>`).join('')}</select></label>
+  let h=`<div class="apbar" id="dreBar" style="align-items:center">
+   <div class="subtabs" id="dreEscopo" role="group" aria-label="Posto">${dreEscopos(DRE).map(([v,t])=>`<button type="button" data-v="${v}" aria-selected="${v===S.dre.escopo}">${esc(t)}</button>`).join('')}</div>
+   <label class="fld" style="margin-left:auto">Mês<select id="dreMes">${DRE.meses.slice().reverse().map(m=>`<option value="${m}">${esc(mesLabelDe(m))}</option>`).join('')}</select></label>
   </div>
   <p class="sub">Regime de caixa: cada baixa (pagamento/recebimento) entra no mês em que foi paga, rateada proporcionalmente quando o título foi pago em mais de uma parcela. Clique numa conta pra ver os lançamentos que a compõem.</p>
   <div id="dreTabWrap"></div>`;
@@ -1447,10 +1468,18 @@ function bindFinDRE(){
   if(!F||!F.dre)return;
   const DRE=F.dre;
   if(!S.dre.mes||!DRE.meses.includes(S.dre.mes))S.dre.mes=DRE.meses[DRE.meses.length-1];
+  const escosValidos=dreEscopos(DRE).map(([v])=>v);
+  if(!escosValidos.includes(S.dre.escopo))S.dre.escopo='geral';
   const esco=$('#dreEscopo'),mes=$('#dreMes');
-  esco.value=S.dre.escopo;
   mes.value=S.dre.mes;
-  esco.onchange=()=>{S.dre.escopo=esco.value;renderDreTab();};
+  esco.querySelectorAll('button').forEach(b=>{
+    b.setAttribute('aria-selected',String(b.dataset.v===S.dre.escopo));
+    b.onclick=()=>{
+      S.dre.escopo=b.dataset.v;
+      esco.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',String(x===b)));
+      renderDreTab();
+    };
+  });
   mes.onchange=()=>{S.dre.mes=mes.value;renderDreTab();};
   renderDreTab();
 }

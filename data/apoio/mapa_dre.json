@@ -1,5 +1,5 @@
 {
-  "_comentario": "De-para código do CONCENT (TPDRCOD) -> conta do DRE. Gerado a partir de mapa_dre_para_revisar.xlsx (203 códigos batendo com o de-para de 2023 do ex-consultor + 5 classificados/confirmados manualmente pelo Leo). Código novo que aparecer aqui sem entrada correspondente cai em '(sem classificação)' no painel - nunca adivinhar a conta, sempre perguntar pro Leo antes de adicionar. Código 905 (ENTRADAS) confirmado pelo Leo em 30/09/2026 como legado/pouco usado - jogado em (-) Outras Despesas.",
+  "_comentario": "De-para código do CONCENT (TPDRCOD) -> conta do DRE. Gerado a partir de mapa_dre_para_revisar.xlsx (203 códigos batendo com o de-para de 2023 do ex-consultor + 5 classificados/confirmados manualmente pelo Leo). Código novo que aparecer aqui sem entrada correspondente cai em '(sem classificação)' no painel - nunca adivinhar a conta, sempre perguntar pro Leo antes de adicionar. Código 905 (ENTRADAS) confirmado pelo Leo em 30/09/2026 como legado/pouco usado - jogado em (-) Outras Despesas. Em 30/09/2026 o Leo classificou 17 dos 19 códigos \"???\" (confirmados caso a caso); código 707 (Imposto autonomo) virou uma conta nova \"(-) Imposto autônomo\". Códigos 601 e 1018 confirmados em seguida pelo Leo.",
   "mapa": {
     "1001": {
       "conta_dre": "(-) Cta 1000 Pedágios",
@@ -32,12 +32,12 @@
       "tipo": "D"
     },
     "1007": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Cta 1000 Manutenção e conservação de estrutura",
       "descricao": "revisão carros",
       "tipo": "D"
     },
     "1008": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Cta 1000 Aluguéis e condomínios",
       "descricao": "San marino",
       "tipo": "D"
     },
@@ -87,12 +87,12 @@
       "tipo": "D"
     },
     "1017": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Cta 1000 Outras Despesas Particulares",
       "descricao": "Presentes",
       "tipo": "D"
     },
     "1018": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Outras Despesas",
       "descricao": "CARTAO BNDES",
       "tipo": "D"
     },
@@ -147,7 +147,7 @@
       "tipo": "D"
     },
     "1031": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Cta 1000 Aluguéis e condomínios",
       "descricao": "parcela ap ctba",
       "tipo": "D"
     },
@@ -157,7 +157,7 @@
       "tipo": "D"
     },
     "1035": {
-      "conta_dre": "???",
+      "conta_dre": "(-) IPTU, alvará, taxa de lixo e VISA",
       "descricao": "iptu bom sucesso",
       "tipo": "D"
     },
@@ -264,7 +264,7 @@
       "tipo": "D"
     },
     "211": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Aluguéis e condomínios",
       "descricao": "Porcentagem das Clinicas",
       "tipo": "D"
     },
@@ -294,12 +294,12 @@
       "tipo": "D"
     },
     "217": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Telefone e internet",
       "descricao": "TV por assinatura",
       "tipo": "D"
     },
     "218": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Contribuição sindical",
       "descricao": "Sindicato",
       "tipo": "D"
     },
@@ -389,7 +389,7 @@
       "tipo": "D"
     },
     "236": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Softwares e informática",
       "descricao": "Programa",
       "tipo": "D"
     },
@@ -684,7 +684,7 @@
       "tipo": "D"
     },
     "315": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Assistencia médica",
       "descricao": "UNIMED",
       "tipo": "D"
     },
@@ -894,7 +894,7 @@
       "tipo": "D"
     },
     "601": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Doações, brindes e patrocinios",
       "descricao": "Hospital do cancer",
       "tipo": "D"
     },
@@ -909,7 +909,7 @@
       "tipo": "D"
     },
     "701": {
-      "conta_dre": "???",
+      "conta_dre": "(-) ISSQN",
       "descricao": "Taxa da secretaria da fazenda",
       "tipo": "D"
     },
@@ -929,27 +929,27 @@
       "tipo": "D"
     },
     "705": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Empréstimos Pagos",
       "descricao": "Parcelamento impostos",
       "tipo": "D"
     },
     "706": {
-      "conta_dre": "???",
+      "conta_dre": "(-) ISSQN",
       "descricao": "Impostos Faturamento",
       "tipo": "D"
     },
     "707": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Imposto autônomo",
       "descricao": "Imposto autonomo",
       "tipo": "D"
     },
     "708": {
-      "conta_dre": "???",
+      "conta_dre": "(-) ISSQN",
       "descricao": "IMPOSTO PREFEITURA",
       "tipo": "D"
     },
     "709": {
-      "conta_dre": "???",
+      "conta_dre": "(-) ISSQN",
       "descricao": "MINISTERIO DA FAZENDA",
       "tipo": "D"
     },
@@ -1014,7 +1014,7 @@
       "tipo": "D"
     },
     "801": {
-      "conta_dre": "???",
+      "conta_dre": "(-) Cancelamento de serviços ou glosas",
       "descricao": "Glosas",
       "tipo": "D"
     },
