@@ -1371,14 +1371,12 @@ function bindFinReceber(){
 /* ---------- financeiro: DRE (sub-aba) ---------- */
 S.dre={escopo:'geral',mes:''};
 function dreEscopos(DRE){
-  // "geral" (tudo, incluindo o posto 100 - hub administrativo/rateio) e "consolidado"
-  // (só os postos 01-13, sem o 100) primeiro, do jeito que o Claudio (ex-consultor)
-  // organizava as abas "Celape Geral"/"Celape Consolidado" na planilha dele; depois só
+  // "geral" (tudo, incluindo o posto 100 - hub administrativo/rateio) primeiro, depois só
   // os postos individuais que o backend gera (DRE.postos já vem filtrado pros 7 que o
-  // Claudio acompanhava separadamente - os demais entram no Geral/Consolidado mas não
-  // tem DRE próprio).
-  return [['geral','Geral'],['consolidado','Consolidado'],
-    ...DRE.postos.map(p=>[p,nomeFilial(p)])];
+  // Claudio acompanhava separadamente - os demais entram no Geral mas não tem DRE
+  // próprio). O "Consolidado" (só os postos 01-13, sem o 100) saiu da seleção a pedido
+  // do Leo - o backend ainda calcula (DRE.consolidado), só não aparece mais aqui.
+  return [['geral','Geral'], ...DRE.postos.map(p=>[p,nomeFilial(p)])];
 }
 function dreDados(DRE,escopo){
   if(escopo==='geral')return DRE.geral;
@@ -1421,6 +1419,36 @@ function dreBlocoHTML(bloco,nivel,mostrarPosto){
   });
   return h;
 }
+function dreFlatten(blocos,nivel){
+  let linhas=[];
+  blocos.forEach(b=>{
+    if(b.tipo==='formula'){
+      linhas.push({nivel,nome:b.nome,tipo:'Fórmula',lanc:'',valor:b.valor});
+    }else{
+      linhas.push({nivel,nome:b.nome,tipo:'Grupo',lanc:'',valor:b.valor});
+      b.contas.forEach(item=>{
+        if(item.tipo==='grupo')linhas=linhas.concat(dreFlatten([item],nivel+1));
+        else linhas.push({nivel:nivel+1,nome:item.nome,tipo:'Conta',lanc:item.lancamentos.length,valor:item.valor});
+      });
+    }
+  });
+  return linhas;
+}
+function dreExportarCSV(){
+  const DRE=D.financeiro.dre;
+  const {mes,blocos}=dreHierarquiaDoMes(DRE);
+  const escopoLbl=(dreEscopos(DRE).find(([v])=>v===S.dre.escopo)||['',S.dre.escopo])[1];
+  const cel=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const num=v=>String(v.toFixed(2)).replace('.',',');
+  const linhas=[['Posto',escopoLbl].map(cel).join(';'),
+    ['Mês',mesLabelDe(mes)].map(cel).join(';'), '',
+    ['Nível','Conta do DRE','Tipo','Lançamentos','Valor'].map(cel).join(';')];
+  dreFlatten(blocos,0).forEach(r=>linhas.push([r.nivel,r.nome,r.tipo,r.lanc,num(r.valor)].map(cel).join(';')));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['﻿'+linhas.join('\r\n')],{type:'text/csv;charset=utf-8'}));
+  a.download=`dre_${S.dre.escopo}_${mes}.csv`;
+  a.click();
+}
 function renderDreTab(){
   const DRE=D.financeiro.dre;
   const {mes,blocos}=dreHierarquiaDoMes(DRE);
@@ -1458,6 +1486,7 @@ function viewFinDRE(){
   let h=`<div class="apbar" id="dreBar" style="align-items:center">
    <div class="subtabs" id="dreEscopo" role="group" aria-label="Posto">${dreEscopos(DRE).map(([v,t])=>`<button type="button" data-v="${v}" aria-selected="${v===S.dre.escopo}">${esc(t)}</button>`).join('')}</div>
    <label class="fld" style="margin-left:auto">Mês<select id="dreMes">${DRE.meses.slice().reverse().map(m=>`<option value="${m}">${esc(mesLabelDe(m))}</option>`).join('')}</select></label>
+   <button class="btn" id="dreCsv" type="button">Exportar CSV</button>
   </div>
   <p class="sub">Regime de caixa: cada baixa (pagamento/recebimento) entra no mês em que foi paga, rateada proporcionalmente quando o título foi pago em mais de uma parcela. Clique numa conta pra ver os lançamentos que a compõem.</p>
   <div id="dreTabWrap"></div>`;
@@ -1481,6 +1510,7 @@ function bindFinDRE(){
     };
   });
   mes.onchange=()=>{S.dre.mes=mes.value;renderDreTab();};
+  $('#dreCsv').onclick=dreExportarCSV;
   renderDreTab();
 }
 
@@ -1727,7 +1757,7 @@ const GROUPS={geral:{tabs:['geral'],lbl:{geral:'Visão Diária'}},
   apoio:{tabs:['apoio'],lbl:{apoio:'Laboratório de Apoio'}},
   fat:{tabs:['anual','periodos','exames','rank'],lbl:{anual:'Comparativo Anual',periodos:'Comparar Períodos',exames:'Setores',rank:'Convênios e Médicos'}},
   custos:{tabs:['precosconv','qualidade'],lbl:{precosconv:'Preços por Convênio',qualidade:'Qualidade dos Dados'}},
-  financeiro:{tabs:['finGeral','finPagar','finReceber','finDRE'],lbl:{finGeral:'Visão Geral',finPagar:'Contas a Pagar',finReceber:'Contas a Receber',finDRE:'DRE'}}};
+  financeiro:{tabs:['finGeral','finPagar','finReceber','finDRE'],lbl:{finGeral:'Visão Geral',finPagar:'Contas a Pagar',finReceber:'Contas a Receber',finDRE:'Demonstrativos de Resultado'}}};
 const tabToGroup=Object.fromEntries(Object.entries(GROUPS).flatMap(([g,o])=>o.tabs.map(t=>[t,g])));
 function go(){
   const curGroup=tabToGroup[S.tab]||'fat';
