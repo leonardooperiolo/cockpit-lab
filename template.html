@@ -1404,7 +1404,12 @@ function dreLinhaHTML(item,nivel,mostrarPosto){
     return `<tbody class="dre-linha-wrap"><tr style="background:${dreFundoLinha(nivel)}"><td style="padding-left:${10+nivel*18}px">${esc(item.nome)}</td><td style="color:#94a3b8;font-size:13px">agregado da base de exames</td><td class="num" style="color:${dreCor(item.tipoDre==='R'?1:-1)}">${fBRL.format(item.valor)}</td></tr></tbody>`;
   }
   const id='dre_'+item.nome.replace(/[^a-z0-9]/gi,'_')+'_'+Math.random().toString(36).slice(2,7);
-  const sinal=item.tipoDre==='R'?1:-1;
+  // Normalmente uma conta "D" (despesa) guarda sempre o valor em módulo (positivo) e uma
+  // "R" (receita) também - a cor segue só o tipo. Mas contas com "regra_especial: sinal"
+  // no mapa_dre.json (ex.: Crédito Rotativo) podem jogar uma mesma categoria "R" ora na
+  // conta positiva (entrada) ora na negativa (amortização, valor negativo) - nesse caso
+  // o sinal de verdade tem que vencer, senão uma saída de dinheiro aparece em verde.
+  const sinal=item.tipoDre==='D'?-1:(item.valor>=0?1:-1);
   const detalheHTML=item.lancamentos.map(l=>`<tr><td style="padding-left:${10+(nivel+1)*18}px">${esc(l.fornecedor||'—')}${l.historico?`<span class="fin-fil">${esc(l.historico)}</span>`:''}</td><td>${esc(l.titulo)}${mostrarPosto&&l.filial?' · '+esc(nomeFilial(l.filial)):''}</td><td class="num">${fBRL.format(l.valor)}</td></tr>`).join('');
   return `<tbody class="dre-linha-wrap"><tr class="dre-linha-resumo" style="cursor:pointer;background:${dreFundoLinha(nivel)}" data-dre-id="${id}"><td style="padding-left:${10+nivel*18}px">▶ ${esc(item.nome)}</td><td>${fNum.format(item.lancamentos.length)} lançamento(s)</td><td class="num" style="color:${dreCor(sinal)}">${fBRL.format(item.valor)}</td></tr></tbody>
    <tbody class="dre-linha-detalhe" id="${id}" hidden>${detalheHTML}</tbody>`;

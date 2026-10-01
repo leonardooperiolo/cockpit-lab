@@ -1010,6 +1010,11 @@ ARQ_FINANCEIRO = {
     # caixa). Sem esses dois arquivos o DRE fica None (mesmo padrão dos outros opcionais).
     "valor_titulo": ("contas_a_pagar_valor_titulo", "contas_pagar_valor_titulo"),
     "valor_titulo_receber": ("contas_a_receber_valor_titulo", "contas_receber_valor_titulo"),
+    # lançamentos de caixa (módulo CXB) sem título nenhum por trás - crédito rotativo,
+    # aluguel recebido direto no portador, toxicológico/DNA, etc. (ver _parse_movcxb_dre).
+    # Também opcional - sem esse arquivo o DRE só fica sem esses lançamentos, como já
+    # acontecia antes dessa fonte existir.
+    "movcxb": ("contas_movcxb", "movcxb"),
 }
 # contas a pagar (aberto/categoria) sao obrigatorios; contas a receber, as baixas
 # (pagamentos ja efetivados, usados na sub-aba "Contas a Pagar") e o valor_titulo (usado
@@ -1557,6 +1562,52 @@ def _eventos_dre(rateio_linhas, pago_por_mes, valor_titulo, mapa_dre, nao_classi
     return eventos
 
 
+def _parse_movcxb_dre(arqs, mapa_dre, nao_classificados):
+    """Lançamentos de caixa (módulo CXB) que não passam por título nenhum - ex.: saques/
+    pagamentos do crédito rotativo, aluguéis recebidos direto no portador, exames de
+    toxicológico/DNA cujo recebimento não gera conta a receber no sistema. Vêm prontos
+    da VM em contas_movcxb.csv (ver SQL_MOVCXB em coletar_contas_pagar.py), já filtrados
+    só pros lançamentos "reais" (MVCXBTIPO='TS' - as transferências entre portadores,
+    MVCXBTIPO='TR', são só troco de bolso entre contas internas e não entram no DRE;
+    confirmado que 100% das TR do ano têm TPDRCOD=0, nunca aparecem aqui).
+
+    Diferente de título (que pode ser pago em parcelas em meses diferentes - regime de
+    caixa via _eventos_dre), cada linha de MOVCXB já É o movimento de caixa, pronto e
+    definitivo: sem rateio por mês, sem fração de baixa - o valor da linha é o evento
+    inteiro. Layout: FILCOD,data(AAAAMMDD),MVCXBNRO,MVCXBMOVTO(E/S),valor,TPDRCOD,
+    TPDRDESCRICAO,TPDRTIPO,historico,EMITCOD,EMITNOME."""
+    eventos = []
+    if "movcxb" not in arqs:
+        return eventos
+    for row in _linhas_arquivo(arqs["movcxb"]):
+        row = [_cel(c) for c in row]
+        if len(row) < 11:
+            continue
+        filcod, data, _nro, movto, valor, tpdrcod, tpdrdesc, tpdrtipo, historico, _emit, fornecedor = row[:11]
+        d = _data_aaaammdd(data)
+        if not d:
+            continue
+        v = _preco(valor) or 0.0
+        if not v:
+            continue
+        # MVCXBMOVTO: 'E' = entrada (dinheiro entrando no portador), 'S' = saída - dá o
+        # sinal direto, sem precisar inferir nada do texto do histórico.
+        valor_assinado = v if movto.strip().upper() == "E" else -v
+        tpdrcod = tpdrcod.strip().rstrip(".")
+        info = mapa_dre.get(tpdrcod)
+        if info is None:
+            nao_classificados.add((tpdrcod, tpdrdesc.strip()))
+            conta = "(sem classificação)"
+        elif info.get("regra_especial") == "sinal":
+            conta = info["conta_dre_positivo"] if valor_assinado >= 0 else info["conta_dre_negativo"]
+        else:
+            conta = info.get("conta_dre") or "(sem classificação)"
+        eventos.append({"mes": d.strftime("%Y-%m"), "filial": filcod.strip().rstrip("."), "conta": conta,
+                         "tipo": tpdrtipo.strip(), "valor": round(valor_assinado, 2), "titulo": "",
+                         "fornecedor": _nome_curto(fornecedor), "historico": historico.strip()})
+    return eventos
+
+
 def _resumo_dre(eventos):
     """Agrupa eventos em {mes: {conta_dre: {tipo, valor, lancamentos: [...]}}}, pronto
     pro painel abrir uma conta do DRE e ver os lançamentos que a compõem naquele mês."""
@@ -1764,7 +1815,8 @@ def _montar_dre(arqs, movimento_diario=None):
 
     nao_classificados = set()
     eventos = (_eventos_dre(rateio_pagar, pago_mes_pagar, valor_titulo_pagar, mapa_dre, nao_classificados)
-               + _eventos_dre(rateio_receber, pago_mes_receber, valor_titulo_receber, mapa_dre, nao_classificados))
+               + _eventos_dre(rateio_receber, pago_mes_receber, valor_titulo_receber, mapa_dre, nao_classificados)
+               + _parse_movcxb_dre(arqs, mapa_dre, nao_classificados))
 
     if nao_classificados:
         print("AVISO: DRE - código(s) TPDRCOD sem classificação em data/apoio/mapa_dre.json "
