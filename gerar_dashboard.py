@@ -1035,6 +1035,14 @@ def carregar_area_tecnica():
         agora = datetime.now(ZoneInfo("America/Sao_Paulo")).replace(tzinfo=None)
     except Exception:
         agora = datetime.now()
+    # Alguns exames (ex.: GPO/curva glicêmica, LAC/intolerância a lactose - testes com
+    # vários "tempos"/materiais de coleta) vêm com MAIS de uma linha física no export
+    # pra um mesmo exame (fil+req+seq+cod) - provavelmente um join que multiplica
+    # (LABEXAME ou LABCOLTRI com mais de um registro para o mesmo exame). Sem agrupar
+    # aqui, o mesmo exame aparecia 4-5x repetido no painel. Juntamos tudo numa linha só
+    # por (fil,req,seq,cod), usando "o mais avançado" entre as cópias (se qualquer cópia
+    # diz coletado/triado, vale coletado/triado).
+    agrupado = {}
     for r in _linhas_db2(arqs["exames"]):
         if len(r) < 18:
             continue
@@ -1042,6 +1050,33 @@ def carregar_area_tecnica():
          paciente, exame, strcod, setor, coletado, triado, hr_coleta, hr_triado) = r[:18]
         fil, req, seq = _dbnum(fil), _dbnum(req), _dbnum(seq)
         cod = cod.strip()
+        chave = (fil, req, seq, cod)
+        atual = agrupado.get(chave)
+        if atual is None:
+            agrupado[chave] = {
+                "dt_entrada": dt_entrada, "dt_promessa": dt_promessa, "hr_promessa": hr_promessa,
+                "conferido": conferido, "liberado": liberado, "cancelado": cancelado,
+                "paciente": paciente, "exame": exame, "setor": setor,
+                "coletado": coletado, "triado": triado, "hr_coleta": hr_coleta, "hr_triado": hr_triado,
+            }
+        else:
+            s_s = lambda v: (v or "").strip().upper() == "S"
+            if s_s(conferido):
+                atual["conferido"] = conferido
+            if s_s(coletado):
+                atual["coletado"], atual["hr_coleta"] = coletado, (atual["hr_coleta"] or hr_coleta)
+            if s_s(triado):
+                atual["triado"], atual["hr_triado"] = triado, (atual["hr_triado"] or hr_triado)
+            if s_s(liberado):
+                atual["liberado"] = liberado
+            if s_s(cancelado):
+                atual["cancelado"] = cancelado
+
+    for (fil, req, seq, cod), v in agrupado.items():
+        dt_entrada, dt_promessa, hr_promessa = v["dt_entrada"], v["dt_promessa"], v["hr_promessa"]
+        conferido, liberado, cancelado = v["conferido"], v["liberado"], v["cancelado"]
+        paciente, exame, setor = v["paciente"], v["exame"], v["setor"]
+        coletado, triado, hr_coleta, hr_triado = v["coletado"], v["triado"], v["hr_coleta"], v["hr_triado"]
         if (liberado or "").strip().upper() == "S" or (cancelado or "").strip().upper() == "S":
             continue  # não deveria vir na extração, mas por segurança não entra no painel
         ob, dg = obrig.get(cod, 0), digit.get((fil, req, seq, cod), 0)
