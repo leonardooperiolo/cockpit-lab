@@ -1025,7 +1025,16 @@ def carregar_area_tecnica():
     cont_status = defaultdict(int)
     cont_setor = defaultdict(int)
     atrasados = 0
-    agora = datetime.now()
+    # datetime.now() sozinho pega a hora do servidor do GitHub Actions, que roda em UTC
+    # (3h à frente do horário de Brasília) - sem isso, exame com prazo às 17:30 aparecia
+    # "atrasado" já no início da tarde. RQEXDTPROMESSA/RQEXHRPROMESSA vêm do DB2 como
+    # horário local (sem fuso), então precisamos do agora também como horário local, sem
+    # tzinfo (senão o Python não deixa subtrair aware de naive).
+    try:
+        from zoneinfo import ZoneInfo
+        agora = datetime.now(ZoneInfo("America/Sao_Paulo")).replace(tzinfo=None)
+    except Exception:
+        agora = datetime.now()
     for r in _linhas_db2(arqs["exames"]):
         if len(r) < 18:
             continue
