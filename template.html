@@ -1811,9 +1811,14 @@ function bindPrecosConv(){
 }
 
 /* ---------- área técnica (prazo de entrega) ---------- */
-S.at={q:'',status:'',setor:'',vista:'and',ord:null,dir:1,pg:0};
-const AT_PAGE=50;
+/* Mesma lógica do relatório "Previsões de Entrega" do CONCENT: setor -> requisição
+   (paciente) -> exames daquela requisição naquele setor, numerados pelo EXASEQ,
+   igual ao "1.GLI(D) - GLICOSE" do relatório em PDF. A mesma requisição pode
+   aparecer em mais de um setor (cada um só com os exames daquele setor). */
+S.at={q:'',status:'',vista:'and',aberto:'',pg:0};
+const AT_PAGE=25;
 const AT_STATUS={t:'Triado',col:'Coletado',dp:'Digitado Parcial',d:'Digitado',c:'Conferido'};
+const AT_ABREV={t:'T',col:'Col',dp:'DP',d:'D',c:'C'};
 const AT_PILL={t:'',col:'',dp:'warn',d:'',c:'ok'};
 function atBR(iso){ if(!iso)return ''; const [a,m,d]=iso.split('-'); return `${d}/${m}/${a}`; }
 function atHay(r){ return r._h||(r._h=normTxt([r.paciente,r.exame,r.cod,r.req,r.setor].join(' '))); }
@@ -1821,55 +1826,96 @@ function atRows(){
   const AT=D.areaTecnica, base=S.at.vista==='agu'?AT.aguardandoColeta:AT.rows;
   const qs=normTxt(S.at.q).trim(), tk=qs.split(/\s+/).filter(Boolean);
   let rows=base;
-  if(S.at.setor) rows=rows.filter(r=>r.setor===S.at.setor);
   if(S.at.vista==='and'&&S.at.status) rows=rows.filter(r=>r.status===S.at.status);
   if(tk.length) rows=rows.filter(r=>{const h=atHay(r);return tk.every(t=>h.includes(t));});
-  const ord=S.at.ord,dir=S.at.dir;
-  if(ord){
-    rows=rows.slice().sort((a,b)=>{
-      const key={paciente:r=>normTxt(r.paciente),exame:r=>normTxt(r.exame),setor:r=>normTxt(r.setor),
-        prazo:r=>r.horasRestantes==null?1e15:r.horasRestantes,entrada:r=>r.entrada||''}[ord];
-      const x=key(a),y=key(b);
-      return x<y?-dir:x>y?dir:0;
-    });
-  }
   return rows;
 }
-function atStatusPill(st){
-  return `<span class="pill ${AT_PILL[st]||''}">${esc(AT_STATUS[st]||st)}</span>`;
+/* agrupa em setor -> requisição(fil+req) -> exames (ordenados por EXASEQ) */
+function atAgrupar(rows){
+  const agu=S.at.vista==='agu';
+  const urg=g=>agu?Math.min(...g.exames.map(e=>e.entrada||'9999')):Math.min(...g.exames.map(e=>e.horasRestantes==null?1e15:e.horasRestantes));
+  const temAtraso=g=>!agu&&g.exames.some(e=>e.atrasado);
+  const bySetor=new Map();
+  rows.forEach(r=>{
+    if(!bySetor.has(r.setor))bySetor.set(r.setor,new Map());
+    const reqs=bySetor.get(r.setor), k=r.fil+'|'+r.req;
+    if(!reqs.has(k))reqs.set(k,{setor:r.setor,fil:r.fil,req:r.req,paciente:r.paciente,exames:[]});
+    reqs.get(k).exames.push(r);
+  });
+  const setores=[...bySetor.entries()].map(([setor,reqsMap])=>{
+    const reqs=[...reqsMap.values()];
+    reqs.forEach(g=>g.exames.sort((a,b)=>(a.seq||0)-(b.seq||0)));
+    reqs.sort((a,b)=>(temAtraso(b)-temAtraso(a))||(urg(a)-urg(b)));
+    const atrasados=reqs.reduce((n,g)=>n+g.exames.filter(e=>e.atrasado).length,0);
+    const total=reqs.reduce((n,g)=>n+g.exames.length,0);
+    return {setor,reqs,total,atrasados};
+  });
+  setores.sort((a,b)=>b.atrasados-a.atrasados||b.total-a.total||(normTxt(a.setor)<normTxt(b.setor)?-1:1));
+  return setores;
 }
-function atPrazoCel(r){
-  if(r.prazo==null)return '<span class="mut">sem prazo</span>';
-  const dt=atBR(r.prazo)+(r.prazoHora?' '+r.prazoHora:'');
-  if(r.atrasado){
-    const h=Math.abs(r.horasRestantes);
-    const txt=h<48?`${Math.round(h)}h atrasado`:`${Math.round(h/24)}d atrasado`;
+function atExameLinha(e){
+  const agu=S.at.vista==='agu';
+  const rotulo=`${e.seq!=null?e.seq+'.':''}${esc(e.cod)}${agu?'':`(${AT_ABREV[e.status]||e.status})`}`;
+  const info=agu?`<span class="cdg">aguardando desde ${atBR(e.entrada)}</span>`:atPrazoInline(e);
+  return `<li><code>${rotulo}</code> — ${esc(e.exame)} ${info}</li>`;
+}
+function atPrazoInline(e){
+  if(e.prazo==null)return '<span class="mut">sem prazo</span>';
+  const dt=atBR(e.prazo)+(e.prazoHora?' '+e.prazoHora:'');
+  if(e.atrasado){
+    const h=Math.abs(e.horasRestantes),txt=h<48?`${Math.round(h)}h atrasado`:`${Math.round(h/24)}d atrasado`;
     return `<span class="pv" style="color:#b3261e">${dt}</span><span class="cdg" style="color:#b3261e">${txt}</span>`;
   }
-  const h=r.horasRestantes;
-  const txt=h<48?`faltam ${Math.round(h)}h`:`faltam ${Math.round(h/24)}d`;
+  const h=e.horasRestantes,txt=h<48?`faltam ${Math.round(h)}h`:`faltam ${Math.round(h/24)}d`;
   return `<span class="pv">${dt}</span><span class="cdg">${txt}</span>`;
 }
-function renderAreaTecnica(){
-  const AT=D.areaTecnica, rows=atRows(), n=rows.length, pgs=Math.max(1,Math.ceil(n/AT_PAGE));
+function atRenderGrupos(reqs,mostrarSetor){
+  return reqs.map(g=>{
+    const temAtraso=g.exames.some(e=>e.atrasado);
+    return `<div class="card" style="margin-bottom:8px${temAtraso?';border-left:4px solid #b3261e':''}">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">
+        <div><b>${esc(g.paciente)}</b> <span class="cdg">Requisição <code>${esc(g.req)}</code></span>${mostrarSetor?` <span class="tag">${esc(g.setor)}</span>`:''}</div>
+      </div>
+      <ol style="margin:6px 0 0;padding-left:22px">${g.exames.map(atExameLinha).join('')}</ol></div>`;
+  }).join('');
+}
+function atPaginar(lista,container){
+  const n=lista.length,pgs=Math.max(1,Math.ceil(n/AT_PAGE));
   S.at.pg=Math.min(S.at.pg,pgs-1);
-  const agu=S.at.vista==='agu';
-  const seta=k=>S.at.ord===k?(S.at.dir>0?' ▲':' ▼'):'';
-  const th=(k,t,cls='')=>`<th class="${cls}" data-at-ord="${k}" style="cursor:pointer" aria-sort="${S.at.ord===k?(S.at.dir>0?'ascending':'descending'):'none'}">${t}${seta(k)}</th>`;
-  const ini=S.at.pg*AT_PAGE, vis=rows.slice(ini,ini+AT_PAGE);
-  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'exame':'exames'}${S.at.q.trim()?` para “${esc(S.at.q.trim())}”`:''} · clique no título de uma coluna para ordenar</p>`;
-  if(!n){$('#atRes').innerHTML=h+'<div class="empty">Nenhum exame encontrado com estes filtros.</div>';return;}
-  h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('paciente','Paciente','nm')}<th class="nm">Requisição</th>${th('exame','Exame','nm')}${th('setor','Setor','nm')}${agu?th('entrada','Aguardando desde','pc'):'<th class="pc">Status</th>'+th('prazo','Prazo','pc st')}</tr></thead><tbody>`;
-  vis.forEach(r=>{
-    h+=`<tr><td class="nm" data-l="Paciente">${esc(r.paciente)}</td><td class="nm" data-l="Requisição"><code>${esc(r.req)}</code> ${esc(r.cod)}</td>
-     <td class="nm" data-l="Exame">${esc(r.exame)}</td><td class="nm" data-l="Setor">${esc(r.setor)}</td>
-     ${agu?`<td class="pc" data-l="Aguardando desde">${atBR(r.entrada)}</td>`:`<td class="pc" data-l="Status">${atStatusPill(r.status)}</td><td class="pc st" data-l="Prazo">${atPrazoCel(r)}</td>`}</tr>`;
+  const ini=S.at.pg*AT_PAGE,vis=lista.slice(ini,ini+AT_PAGE);
+  let h=atRenderGrupos(vis,true);
+  if(pgs>1)h+=`<div class="row" style="margin:10px 0 0"><button class="btn" data-at-pg="-1" ${S.at.pg?'':'disabled'}>← Anterior</button><span class="sub" style="margin:0">Página ${S.at.pg+1} de ${pgs} · requisições ${fNum.format(ini+1)} a ${fNum.format(Math.min(n,ini+AT_PAGE))} de ${fNum.format(n)}</span><button class="btn" data-at-pg="1" ${S.at.pg<pgs-1?'':'disabled'}>Próxima →</button></div>`;
+  $(container).innerHTML=h;
+  $$('[data-at-pg]').forEach(b=>b.onclick=()=>{S.at.pg+=+b.dataset.atPg;renderAreaTecnica();$('#atBar').scrollIntoView({block:'start'});});
+}
+function renderAreaTecnica(){
+  const rows=atRows(), qs=normTxt(S.at.q).trim();
+  const buscando=!!qs||!!S.at.status;
+  if(buscando||S.at.aberto){
+    // busca ativa (ignora o drill-down) OU setor aberto: lista de requisições
+    const setores=atAgrupar(rows);
+    const reqs=buscando?setores.flatMap(s=>s.reqs):((setores.find(s=>s.setor===S.at.aberto)||{reqs:[]}).reqs);
+    const n=reqs.length;
+    let h='';
+    if(!buscando)h=`<p class="sub" style="margin:10px 0 6px"><a href="#" id="atVoltar" style="color:var(--blue)">← Todos os setores</a> · <b>${esc(S.at.aberto)}</b></p>`;
+    h+=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'requisição':'requisições'}${qs?` para “${esc(qs)}”`:''}</p>`;
+    if(!n){h+='<div class="empty">Nenhuma requisição encontrada com estes filtros.</div>';$('#atRes').innerHTML=h;return;}
+    $('#atRes').innerHTML=h+'<div id="atGrupos"></div>';
+    atPaginar(reqs,'#atGrupos');
+    const v=$('#atVoltar');if(v)v.onclick=(ev)=>{ev.preventDefault();S.at.aberto='';S.at.pg=0;renderAreaTecnica();};
+    return;
+  }
+  // nenhuma busca, nenhum setor aberto: lista de setores (drill-down)
+  const setores=atAgrupar(rows);
+  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(setores.reduce((n,s)=>n+s.total,0))} exames em ${fNum.format(setores.length)} setores · clique num setor para ver as requisições</p>`;
+  if(!setores.length){$('#atRes').innerHTML=h+'<div class="empty">Nada por aqui com estes filtros.</div>';return;}
+  h+=`<div class="card tw"><table class="aptb"><thead><tr><th class="nm">Setor</th><th class="pc">Exames</th><th class="pc st">Atrasados</th></tr></thead><tbody>`;
+  setores.forEach(s=>{
+    h+=`<tr class="atSetorRow" data-at-abrir="${esc(s.setor)}" style="cursor:pointer"><td class="nm">${esc(s.setor)} <span class="cdg">▸ ver requisições</span></td><td class="pc">${fNum.format(s.total)}</td><td class="pc st">${s.atrasados?`<span class="pv" style="color:#b3261e">${fNum.format(s.atrasados)}</span>`:'<span class="mut">0</span>'}</td></tr>`;
   });
   h+='</tbody></table></div>';
-  if(pgs>1)h+=`<div class="row" style="margin:10px 0 0"><button class="btn" data-at-pg="-1" ${S.at.pg?'':'disabled'}>← Anterior</button><span class="sub" style="margin:0">Página ${S.at.pg+1} de ${pgs} · ${fNum.format(ini+1)} a ${fNum.format(Math.min(n,ini+AT_PAGE))} de ${fNum.format(n)}</span><button class="btn" data-at-pg="1" ${S.at.pg<pgs-1?'':'disabled'}>Próxima →</button></div>`;
   $('#atRes').innerHTML=h;
-  $$('[data-at-ord]').forEach(t=>t.onclick=()=>{const k=t.dataset.atOrd;if(S.at.ord===k)S.at.dir*=-1;else{S.at.ord=k;S.at.dir=1;}S.at.pg=0;renderAreaTecnica();});
-  $$('[data-at-pg]').forEach(b=>b.onclick=()=>{S.at.pg+=+b.dataset.atPg;renderAreaTecnica();$('#atBar').scrollIntoView({block:'start'});});
+  $$('[data-at-abrir]').forEach(tr=>tr.onclick=()=>{S.at.aberto=tr.dataset.atAbrir;S.at.pg=0;renderAreaTecnica();$('#atBar').scrollIntoView({block:'start'});});
 }
 function viewAreaTecnica(){
   const AT=D.areaTecnica;
@@ -1879,23 +1925,20 @@ function viewAreaTecnica(){
   let h=`<div class="kpis">${k('Em andamento',fNum.format(R.emAndamento),'ainda não liberados')}${k('Atrasados',fNum.format(R.atrasados),'prazo já vencido','#b3261e')}
     ${k('Aguardando coleta',fNum.format(R.aguardandoColeta),'amostra ainda não chegou no laboratório','var(--amber)')}
     ${k('Por status',`<span style="font-size:15px">Triado ${fNum.format(c.t)} · Coletado ${fNum.format(c.col)} · Dig. Parcial ${fNum.format(c.dp)} · Digitado ${fNum.format(c.d)} · Conferido ${fNum.format(c.c)}</span>`,'exames em andamento')}</div>`;
-  const setores=Object.keys(R.porSetor).sort((a,b)=>normTxt(a)<normTxt(b)?-1:1);
   h+=`<div class="apbar" id="atBar">
     <label class="fld" style="flex:0 0 auto"><select id="atVista"><option value="and">Em andamento (${fNum.format(R.emAndamento)})</option><option value="agu">Aguardando coleta (${fNum.format(R.aguardandoColeta)})</option></select></label>
     <label class="fld" style="flex:1 1 280px">Buscar<input type="search" id="atQ" placeholder="Paciente, exame, requisição..." autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
-    <label class="fld">Setor<select id="atSetor" style="max-width:240px"><option value="">Todos os setores</option>${setores.map(s=>`<option value="${esc(s)}">${esc(s)} (${fNum.format(R.porSetor[s])})</option>`).join('')}</select></label>
     <label class="fld" id="atStatusFld">Status<select id="atStatus"><option value="">Todos</option>${Object.entries(AT_STATUS).map(([k,t])=>`<option value="${k}">${t}</option>`).join('')}</select></label></div>
-    <p class="sub">Único lugar do painel que mostra nome de paciente — serve pra achar a amostra na bancada. “Aguardando coleta” ainda não tem prazo gravado no sistema (a amostra não chegou no laboratório); o prazo só existe a partir do momento em que entra na área técnica.</p><div id="atRes"></div>`;
+    <p class="sub">Único lugar do painel que mostra nome de paciente — serve pra achar a amostra na bancada. Organizado como o relatório do CONCENT: setor → requisição → exames daquele setor, numerados como no laudo. “Aguardando coleta” ainda não tem prazo (a amostra não chegou no laboratório).</p><div id="atRes"></div>`;
   return h;
 }
 function bindAreaTecnica(){
   if(!D.areaTecnica)return;
-  const q=$('#atQ'),vista=$('#atVista'),setor=$('#atSetor'),status=$('#atStatus');
-  q.value=S.at.q; vista.value=S.at.vista; setor.value=S.at.setor; status.value=S.at.status;
+  const q=$('#atQ'),vista=$('#atVista'),status=$('#atStatus');
+  q.value=S.at.q; vista.value=S.at.vista; status.value=S.at.status;
   $('#atStatusFld').style.display=S.at.vista==='agu'?'none':'';
   let t=null; q.oninput=()=>{clearTimeout(t);t=setTimeout(()=>{S.at.q=q.value;S.at.pg=0;renderAreaTecnica();},120);};
-  vista.onchange=()=>{S.at.vista=vista.value;S.at.pg=0;S.at.ord=null;$('#atStatusFld').style.display=S.at.vista==='agu'?'none':'';renderAreaTecnica();};
-  setor.onchange=()=>{S.at.setor=setor.value;S.at.pg=0;renderAreaTecnica();};
+  vista.onchange=()=>{S.at.vista=vista.value;S.at.pg=0;S.at.aberto='';$('#atStatusFld').style.display=S.at.vista==='agu'?'none':'';renderAreaTecnica();};
   status.onchange=()=>{S.at.status=status.value;S.at.pg=0;renderAreaTecnica();};
   renderAreaTecnica();
 }
