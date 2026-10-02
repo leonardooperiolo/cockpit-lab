@@ -1910,7 +1910,7 @@ function atRenderGrupos(reqs,mostrarSetor){
     const temAtraso=g.exames.some(e=>e.atrasado);
     return `<div class="card" style="margin-bottom:8px${temAtraso?';border-left:4px solid #b3261e':''}">
       <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">
-        <div><b>${esc(g.paciente)}</b><span style="margin-left:22px"><b>Requisição <code>${esc(g.req)}</code></b></span>${mostrarSetor?` <span class="tag">${esc(g.setor)}</span>`:''}</div>
+        <div><b style="font-size:15px">${esc(g.paciente)}</b><span style="margin-left:22px;font-size:15px"><b>Requisição <code style="font-size:15px">${esc(g.req)}</code></b></span>${mostrarSetor?` <span class="tag">${esc(g.setor)}</span>`:''}</div>
       </div>
       <ol style="margin:6px 0 0;padding-left:22px">${g.exames.map(atExameLinha).join('')}</ol></div>`;
   }).join('');
@@ -1973,13 +1973,13 @@ function viewAreaTecnica(){
   let h=`<div class="kpis">${k('Em andamento',fNum.format(R.emAndamento),'ainda não liberados')}${k('Atrasados',fNum.format(R.atrasados),'prazo já vencido','#b3261e')}
     ${k('Aguardando coleta',fNum.format(R.aguardandoColeta),'amostra ainda não chegou no laboratório','var(--amber)')}
     ${k('Por status',`<span style="font-size:15px">Triado ${fNum.format(c.t)} · Coletado ${fNum.format(c.col)} · Dig. Parcial ${fNum.format(c.dp)} · Digitado ${fNum.format(c.d)} · Conferido ${fNum.format(c.c)}</span>`,'exames em andamento')}</div>`;
-  h+=`<div class="apbar" id="atBar">
+  h+=`<div class="apbar" id="atBar" style="justify-content:center">
     <label class="fld" style="flex:0 0 auto"><select id="atVista"><option value="and">Em andamento (${fNum.format(R.emAndamento)})</option><option value="agu">Aguardando coleta (${fNum.format(R.aguardandoColeta)})</option></select></label>
     <label class="fld" style="flex:1 1 240px">Buscar paciente, exame ou requisição<input type="search" id="atQ" placeholder="Nome do paciente, exame, requisição..." autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
     <label class="fld">De<input type="date" id="atDe" style="font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 10px;height:40px;background:#fff"></label>
     <label class="fld">Até<input type="date" id="atAte" style="font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 10px;height:40px;background:#fff"></label>
     <div class="fld" style="flex:1 1 220px">Exame<div id="atExameSel"></div></div></div>
-    <div class="apbar" id="atStatusFld" style="margin-top:8px">${Object.entries(AT_STATUS).map(([k,t])=>`<label style="display:inline-flex;align-items:center;gap:5px;font-size:13.5px;font-weight:600;color:var(--ink)"><input type="checkbox" class="atSts" data-k="${k}" ${S.at.sts[k]?'checked':''}> ${t}</label>`).join('')}</div>
+    <div class="apbar" id="atStatusFld" style="margin-top:8px;justify-content:center">${Object.entries(AT_STATUS).filter(([k])=>k!=='c').map(([k,t])=>`<label style="display:inline-flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:var(--ink)"><input type="checkbox" class="atSts" data-k="${k}" ${S.at.sts[k]?'checked':''} style="width:17px;height:17px"> ${t}</label>`).join('')}</div>
     <p class="sub">Único lugar do painel que mostra nome de paciente — serve pra achar a amostra na bancada. Organizado como o relatório do CONCENT: setor → requisição → exames daquele setor. Por padrão mostra o prazo de hoje até 75 dias atrás, e esconde os já Conferidos (que estão prestes a liberar). “Aguardando coleta” ainda não tem prazo (a amostra não chegou no laboratório).</p><div id="atRes"></div>`;
   return h;
 }
