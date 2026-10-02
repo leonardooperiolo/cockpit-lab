@@ -906,6 +906,195 @@ def carregar_apoio():
     }
 
 
+# --------------------------------------------------------------------------- área técnica (prazo de entrega)
+# Exceção de privacidade: esta é a ÚNICA aba do painel que mostra nome de
+# paciente (campo "paciente" abaixo). Decisão combinada: o objetivo aqui é
+# o técnico achar a amostra física na bancada, e sem nome isso não dá pra
+# fazer. Em nenhum outro lugar do dashboard o nome de paciente aparece.
+#
+# O status (Não Coletado / Triado / Digitado / Digitado Parcial / Conferido)
+# não existe como campo pronto no banco - é calculado aqui a partir de flags
+# espalhados em 3 tabelas (ver PLANO_extracao_area_tecnica.md para o
+# levantamento). A extração (coletar_area_tecnica.py, roda só na VM do
+# Leo) já filtra para "ainda não liberado, não cancelado, entrada nos
+# últimos ~120 dias" - ou seja, o CSV já É o backlog em aberto, não um
+# recorte por prazo; aqui só resta calcular o status e separar quem está
+# aguardando coleta (sem prazo ainda, nada a cobrar) de quem já está em
+# andamento (tem prazo, pode estar atrasado).
+PASTA_AREA_TEC = PASTA_DADOS / "area_tecnica"
+ARQ_AREA_TEC = {
+    "exames": ("area_tecnica_exames",),
+    "digitados": ("area_tecnica_digitados",),
+    "obrigatorios": ("area_tecnica_obrigatorios",),
+}
+NOME_PAPEL_AT = {
+    "exames": "Exames pendentes (área técnica)",
+    "digitados": "Atributos digitados por exame",
+    "obrigatorios": "Atributos obrigatórios por tipo de exame",
+}
+STATUS_AT = {
+    "nc": "Não Coletado", "t": "Triado", "col": "Coletado",
+    "dp": "Digitado Parcial", "d": "Digitado", "c": "Conferido",
+}
+
+
+def achar_arquivos_area_tecnica():
+    achados = {}
+    if not PASTA_AREA_TEC.is_dir():
+        return achados
+    for p in sorted(PASTA_AREA_TEC.iterdir()):
+        if not p.is_file() or p.name.startswith(".") or not p.name.lower().endswith((".csv", ".gz", ".enc")):
+            continue
+        nome = _sa(p.name).replace(" ", "_")
+        for papel, inicios in ARQ_AREA_TEC.items():
+            if papel not in achados and nome.startswith(inicios):
+                achados[papel] = _abrir_enc(p)
+                break
+    return achados
+
+
+def _linhas_db2(p: Path):
+    """Export do DB2 (MODIFIED BY STRIPLZEROS DECPLUSBLANK): CSV sem cabeçalho,
+    separado por vírgula, strings entre aspas."""
+    texto = _texto_arquivo(p) if not p.name.lower().endswith(".gz") else gzip.open(p, "rt", encoding="latin-1", errors="ignore").read()
+    return [r for r in csv.reader(texto.splitlines()) if r]
+
+
+def _dbnum(s):
+    """' 665334.' -> 665334; '' -> None (campo DECIMAL do export DB2)."""
+    s = (s or "").strip().rstrip(".")
+    if not s:
+        return None
+    try:
+        return int(s)
+    except ValueError:
+        try:
+            return float(s)
+        except ValueError:
+            return None
+
+
+def _data_db2(s):
+    """20260605 -> '2026-06-05'; 00010101 (data nula do DB2) -> None."""
+    s = (s or "").strip()
+    if not s or s == "00010101" or len(s) != 8:
+        return None
+    return f"{s[0:4]}-{s[4:6]}-{s[6:8]}"
+
+
+def _hora_db2(s):
+    """'0001-01-01-17.00.00.000000' -> '17:00'; sem hora de verdade -> None."""
+    s = (s or "").strip()
+    m = re.search(r"-(\d{2})\.(\d{2})\.\d{2}\.\d+$", s)
+    if not m or s.startswith("0001-01-01-00.00.00"):
+        return None
+    return f"{m.group(1)}:{m.group(2)}"
+
+
+def _data_hora_db2(s):
+    """'2026-06-11-09.39.41.000000' -> '2026-06-11T09:39:41'; data nula -> None."""
+    s = (s or "").strip()
+    if not s or s.startswith("0001-01-01"):
+        return None
+    m = re.match(r"(\d{4}-\d{2}-\d{2})-(\d{2})\.(\d{2})\.(\d{2})", s)
+    return f"{m.group(1)}T{m.group(2)}:{m.group(3)}:{m.group(4)}" if m else None
+
+
+def carregar_area_tecnica():
+    arqs = achar_arquivos_area_tecnica()
+    faltam = [NOME_PAPEL_AT[k] for k in ARQ_AREA_TEC if k not in arqs]
+    if faltam:
+        if arqs:
+            print("AVISO: área técnica ignorada; faltam em data/area_tecnica/: " + "; ".join(faltam))
+        return None
+
+    # quantos atributos obrigatórios cada tipo de exame tem (molde, não muda por requisição)
+    obrig = {}
+    for r in _linhas_db2(arqs["obrigatorios"]):
+        if len(r) >= 2 and r[0].strip():
+            obrig[r[0].strip()] = _dbnum(r[1]) or 0
+
+    # quantos atributos já foram digitados, por exame de verdade (fil+req+seq+cod)
+    digit = {}
+    for r in _linhas_db2(arqs["digitados"]):
+        if len(r) >= 5:
+            chave = (_dbnum(r[0]), _dbnum(r[1]), _dbnum(r[2]), r[3].strip())
+            digit[chave] = _dbnum(r[4]) or 0
+
+    pendentes, aguardando = [], []
+    cont_status = defaultdict(int)
+    cont_setor = defaultdict(int)
+    atrasados = 0
+    agora = datetime.now()
+    for r in _linhas_db2(arqs["exames"]):
+        if len(r) < 18:
+            continue
+        (fil, req, seq, cod, dt_entrada, dt_promessa, hr_promessa, conferido, liberado, cancelado,
+         paciente, exame, strcod, setor, coletado, triado, hr_coleta, hr_triado) = r[:18]
+        fil, req, seq = _dbnum(fil), _dbnum(req), _dbnum(seq)
+        cod = cod.strip()
+        if (liberado or "").strip().upper() == "S" or (cancelado or "").strip().upper() == "S":
+            continue  # não deveria vir na extração, mas por segurança não entra no painel
+        ob, dg = obrig.get(cod, 0), digit.get((fil, req, seq, cod), 0)
+        conferido_s = (conferido or "").strip().upper() == "S"
+        triado_s = (triado or "").strip().upper() == "S"
+        coletado_s = (coletado or "").strip().upper() == "S"
+        if conferido_s:
+            status = "c"
+        elif ob > 0 and dg >= ob:
+            status = "d"
+        elif dg > 0:
+            status = "dp"
+        elif triado_s:
+            status = "t"
+        elif coletado_s:
+            status = "col"
+        else:
+            status = "nc"
+        cont_status[status] += 1
+        setor_nome = (setor or "").strip() or "Sem setor"
+        cont_setor[setor_nome] += 1
+        linha = {
+            "fil": fil, "req": req, "seq": seq, "cod": cod, "exame": (exame or "").strip(),
+            "paciente": (paciente or "").strip(), "setor": setor_nome, "status": status,
+            "entrada": _data_db2(dt_entrada), "coletadoEm": _data_hora_db2(hr_coleta),
+            "triadoEm": _data_hora_db2(hr_triado),
+        }
+        if status == "nc":
+            aguardando.append(linha)
+            continue
+        prazo_data = _data_db2(dt_promessa)
+        prazo_hora = _hora_db2(hr_promessa)
+        linha["prazo"] = prazo_data
+        linha["prazoHora"] = prazo_hora
+        if prazo_data:
+            prazo_dt = datetime.fromisoformat(prazo_data + "T" + (prazo_hora or "23:59") + ":00")
+            atrasado = agora > prazo_dt
+            linha["atrasado"] = atrasado
+            linha["horasRestantes"] = round((prazo_dt - agora).total_seconds() / 3600, 1)
+            if atrasado:
+                atrasados += 1
+        else:
+            linha["atrasado"] = None
+            linha["horasRestantes"] = None
+        if ob:
+            linha["digitados"], linha["obrigatorios"] = dg, ob
+        pendentes.append(linha)
+
+    pendentes.sort(key=lambda r: (r["horasRestantes"] is None, r["horasRestantes"] if r["horasRestantes"] is not None else 0))
+    return {
+        "rows": pendentes,
+        "aguardandoColeta": aguardando,
+        "arquivos": [{"papel": NOME_PAPEL_AT[k], "nome": arqs[k].name} for k in ARQ_AREA_TEC if k in arqs],
+        "resumo": {
+            "total": len(pendentes) + len(aguardando),
+            "emAndamento": len(pendentes), "aguardandoColeta": len(aguardando), "atrasados": atrasados,
+            "porStatus": {k: cont_status.get(k, 0) for k in STATUS_AT},
+            "porSetor": dict(sorted(cont_setor.items(), key=lambda kv: -kv[1])),
+        },
+    }
+
+
 # --------------------------------------------------------------------------- reajustes de preço do DB
 # Estes 2 arquivos são gerados automaticamente pelo próprio script (não são
 # planilhas que você envia), e como o repositório é público, ficam
@@ -1947,6 +2136,11 @@ def main():
         r = dados["apoio"]["resumo"]
         print(f"Laboratório de apoio: {r['exames']} exames da lista, {r['com_db']} com preço DB, {r['com_hp']} com preço HP, {r['ambos']} nos dois")
     dados["precosConv"] = carregar_precos_convenio(dados["apoio"])
+    dados["areaTecnica"] = carregar_area_tecnica()
+    if dados["areaTecnica"]:
+        r = dados["areaTecnica"]["resumo"]
+        print(f"Área técnica: {r['emAndamento']} exames em andamento ({r['atrasados']} atrasados), "
+              f"{r['aguardandoColeta']} aguardando coleta.")
     dados["reajustesDB"] = carregar_reajustes_db()
     if dados["reajustesDB"]:
         ult = dados["reajustesDB"][-1]
