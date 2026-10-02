@@ -580,20 +580,22 @@ function chartBarsX(o){
 function multi(host,cfg){
   host.innerHTML='<div class="ms"><button type="button" class="ms-b"></button><div class="ms-p" hidden><input type="search" class="ms-s" placeholder="Buscar…" aria-label="Buscar"><div class="ms-a"><button type="button" class="lnk">Limpar seleção</button><span></span></div><div class="ms-l"></div></div></div>';
   const btn=$('.ms-b',host),pn=$('.ms-p',host),q=$('.ms-s',host),ls=$('.ms-l',host),cnt=$('.ms-a span',host);
+  const ehNum=cfg.items.length>0&&typeof cfg.items[0].i==='number'; // ids podem ser índice numérico (ex: médico) ou texto (ex: código de exame)
+  const conv=v=>ehNum?+v:v;
   const byI=new Map(cfg.items.map(x=>[x.i,x]));
   cfg.items.forEach(x=>x.k=norm(x.label));
   const lab=()=>!cfg.set.size?cfg.all:cfg.set.size===1?byI.get([...cfg.set][0]).label:cfg.set.size+' selecionados';
   function list(){
     const t=norm(q.value);let h='',n=0,tot=0;
     for(const x of cfg.items){if(t&&!x.k.includes(t))continue;tot++;if(n>=200)continue;n++;
-      h+=`<label class="ms-i"><input type="checkbox" data-i="${x.i}" ${cfg.set.has(x.i)?'checked':''}><span>${esc(x.label)}</span></label>`;}
+      h+=`<label class="ms-i"><input type="checkbox" data-i="${esc(String(x.i))}" ${cfg.set.has(x.i)?'checked':''}><span>${esc(x.label)}</span></label>`;}
     if(tot>n)h+=`<div class="ms-more">Mostrando ${n} de ${tot}. Refine a busca para ver os demais.</div>`;
     ls.innerHTML=h||'<div class="ms-more">Nada encontrado.</div>';cnt.textContent=tot+' opções';
   }
   btn.onclick=()=>{$$('.ms-p').forEach(p=>{if(p!==pn)p.hidden=true;});pn.hidden=!pn.hidden;if(!pn.hidden){list();q.focus();}};
   q.oninput=list;
   $('.lnk',pn).onclick=()=>{cfg.set.clear();btn.textContent=lab();list();cfg.onChange();};
-  ls.onchange=e=>{const i=+e.target.dataset.i;e.target.checked?cfg.set.add(i):cfg.set.delete(i);btn.textContent=lab();cfg.onChange();};
+  ls.onchange=e=>{const i=conv(e.target.dataset.i);e.target.checked?cfg.set.add(i):cfg.set.delete(i);btn.textContent=lab();cfg.onChange();};
   document.addEventListener('click',e=>{if(!host.contains(e.target))pn.hidden=true;});
   btn.textContent=lab();
   return {refresh(){btn.textContent=lab();if(!pn.hidden)list();}};
