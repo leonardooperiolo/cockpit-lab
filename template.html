@@ -1845,6 +1845,17 @@ function atRows(){
   if(tk.length) rows=rows.filter(r=>{const h=atHay(r);return tk.every(t=>h.includes(t));});
   return rows;
 }
+/* nomes de todos os setores que existem para a vista/status/exame/busca atuais, ignorando o filtro de datas
+   (assim um setor sem nada atrasado/para hoje continua aparecendo na tela inicial, só que com 0) */
+function atSetoresTodos(){
+  const AT=D.areaTecnica, base=S.at.vista==='agu'?AT.aguardandoColeta:AT.rows;
+  const qs=normTxt(S.at.q).trim(), tk=qs.split(/\s+/).filter(Boolean);
+  let rows=base;
+  if(S.at.exa.size) rows=rows.filter(r=>S.at.exa.has(r.cod));
+  if(S.at.vista==='and') rows=rows.filter(r=>S.at.sts[r.status]);
+  if(tk.length) rows=rows.filter(r=>{const h=atHay(r);return tk.every(t=>h.includes(t));});
+  return [...new Set(rows.map(r=>r.setor))];
+}
 /* agrupa em setor -> requisição(fil+req) -> exames (ordenados por EXASEQ, numerados 1,2,3... na exibição) */
 function atAgrupar(rows){
   const agu=S.at.vista==='agu';
@@ -1891,7 +1902,7 @@ function atExameLinha(e){
     const dataPill=e.prazo?`<span class="pill" style="margin-left:22px">${atBR(e.prazo)}</span>`:`<span class="cdg" style="margin-left:22px">sem prazo</span>`;
     direita=dataPill+(pill?`<span class="pill ${pill.cls}" style="margin-left:8px">${esc(pill.txt)}</span>`:'');
   }
-  return `<li style="margin-bottom:5px">${rotulo} — ${esc(e.exame)}${direita}</li>`;
+  return `<li style="margin-bottom:5px;white-space:nowrap;overflow-x:auto">${rotulo} — ${esc(e.exame)}${direita}</li>`;
 }
 function atRenderGrupos(reqs,mostrarSetor){
   return reqs.map(g=>{
@@ -1905,6 +1916,7 @@ function atRenderGrupos(reqs,mostrarSetor){
 }
 function atPaginar(lista,container,mostrarSetor){
   const n=lista.length,pgs=Math.max(1,Math.ceil(n/AT_PAGE));
+  if(!n){$(container).innerHTML='<div class="empty" style="margin:0">Nenhuma requisição neste setor com os filtros atuais.</div>';return;}
   S.at.pg=Math.min(S.at.pg,pgs-1);
   const ini=S.at.pg*AT_PAGE,vis=lista.slice(ini,ini+AT_PAGE);
   let h=atRenderGrupos(vis,mostrarSetor!==false);
@@ -1926,7 +1938,10 @@ function renderAreaTecnica(){
     return;
   }
   // nenhuma busca: lista de setores, com drill-down em acordeão (abre embaixo do próprio setor, sem precisar voltar)
-  const setores=atAgrupar(rows);
+  const agrupados=atAgrupar(rows);
+  const nomesTodos=atSetoresTodos();
+  const extras=nomesTodos.filter(n=>!agrupados.some(s=>s.setor===n)).map(n=>({setor:n,reqs:[],total:0,atrasados:0}));
+  const setores=[...agrupados,...extras].sort((a,b)=>b.atrasados-a.atrasados||b.total-a.total||(normTxt(a.setor)<normTxt(b.setor)?-1:1));
   let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(setores.reduce((n,s)=>n+s.total,0))} exames em ${fNum.format(setores.length)} setores · clique num setor para ver as requisições</p>`;
   if(!setores.length){$('#atRes').innerHTML=h+'<div class="empty">Nada por aqui com estes filtros.</div>';return;}
   h+=`<div class="card tw"><table class="aptb"><thead><tr><th class="nm">Setor</th><th class="pc">Exames</th><th class="pc st">Atrasados</th></tr></thead><tbody>`;
