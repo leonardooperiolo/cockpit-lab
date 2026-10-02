@@ -77,6 +77,16 @@ h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(2
 .kpi .l{font-size:12.5px;color:var(--muted);font-weight:600}
 .kpi .v{font-size:clamp(22px,2.3vw,30px);font-weight:800;line-height:1.15;margin:6px 0 4px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .kpi .s{font-size:12.5px;color:var(--muted)}
+.at-kpis{align-items:stretch}
+.at-kpis .card.kpi{text-align:center;display:flex;flex-direction:column}
+.at-kpis .kpi .l{font-size:17px}
+/* número ocupa todo o espaço livre entre o título e a legenda, centralizado ali - assim fica
+   grande "no meio" do quadrado e as legendas descem pra base, alinhadas entre os cards */
+.at-kpis .kpi .v{flex:1;display:flex;align-items:center;justify-content:center;line-height:1;margin:8px 0;white-space:normal}
+.at-kpis .kpi .s{padding-bottom:2px}
+.at-status-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin:10px 0 2px}
+.at-status-grid .n{font-size:30px;font-weight:800;color:var(--blue);line-height:1.15;font-variant-numeric:tabular-nums}
+.at-status-grid .t{font-size:12.5px;color:#334155;margin-top:2px}
 h2{font-size:19px;color:var(--ink);margin:30px 0 4px}
 h2 small{font-size:13px;font-weight:400;color:var(--muted);margin-left:8px}
 h3{font-size:15px;color:var(--ink);margin:0 0 2px}
@@ -1971,11 +1981,17 @@ function viewAreaTecnica(){
   if(!AT)return `<div class="notice warn"><b>Ainda não há dados da área técnica.</b> Rode o <code>coletar_area_tecnica.py</code> na VM e envie os 3 CSVs para a pasta <code>data/area_tecnica</code> do repositório.</div>`;
   if(!S.at.de){const h=new Date(),d=new Date(h);d.setDate(d.getDate()-75);S.at.de=atISO(d);S.at.ate=atISO(h);}
   const R=AT.resumo,c=R.porStatus;
-  const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:28px;color:${cor||'var(--ink)'}">${v}</div><div class="s">${s||''}</div></div>`;
+  const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:58px;color:${cor||'var(--ink)'}">${v}</div><div class="s">${s||''}</div></div>`;
   const dentroPrazo=R.emAndamento-R.atrasados;
-  let h=`<div class="kpis">${k('Exames em andamento',fNum.format(dentroPrazo),'dentro do prazo')}${k('Exames em atraso',fNum.format(R.atrasadosSemColetado),'prazo já vencido (triado, digitado ou digitado parcial)','#b3261e')}
-    ${k('Exames cadastrados e não coletados',fNum.format(R.aguardandoColeta),'amostra ainda não chegou no laboratório','var(--amber)')}
-    ${k('Por status',`<span style="font-size:14px;line-height:1.6;display:block;white-space:normal">Coletado ${fNum.format(c.col)}<br>Triado ${fNum.format(c.t)}<br>Dig. Parc. ${fNum.format(c.dp)}<br>Digitado ${fNum.format(c.d)}</span>`,'exames em andamento')}</div>`;
+  const porStatusCard=`<div class="card kpi"><div class="l">Por status</div><div class="at-status-grid">
+    <div><div class="n">${fNum.format(c.col)}</div><div class="t">Exames em Coletado</div></div>
+    <div><div class="n">${fNum.format(c.t)}</div><div class="t">Exames em Triado</div></div>
+    <div><div class="n">${fNum.format(c.dp)}</div><div class="t">Exames Dig. Parc.</div></div>
+    <div><div class="n">${fNum.format(c.d)}</div><div class="t">Exames Digitado</div></div>
+  </div></div>`;
+  let h=`<div class="kpis at-kpis">${k('Exames em andamento',fNum.format(dentroPrazo),'Exames dentro do prazo e em análise pelo setor técnico')}${k('Exames em atraso',fNum.format(R.atrasadosSemColetado),'Exames com prazo vencido com amostra no setor técnico','#b3261e')}
+    ${k('Cadastrados e não coletados',fNum.format(R.aguardandoColeta),'Cadastros sem coleta do material e entrada no setor técnico','var(--amber)')}
+    ${porStatusCard}</div>`;
   h+=`<div class="apbar" id="atBar" style="justify-content:center">
     <label class="fld" style="flex:0 0 auto"><select id="atVista"><option value="and">Em andamento (${fNum.format(R.emAndamento)})</option><option value="agu">Aguardando coleta (${fNum.format(R.aguardandoColeta)})</option></select></label>
     <label class="fld" style="flex:1 1 240px">Buscar paciente, exame ou requisição<input type="search" id="atQ" placeholder="Nome do paciente, exame, requisição..." autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
