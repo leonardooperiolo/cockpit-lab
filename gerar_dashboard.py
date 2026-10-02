@@ -598,10 +598,22 @@ def _nome_curto(s):
     preenchimento, deixando só o nome de verdade. Nome sem esse padrão não é alterado."""
     if not s:
         return s
+    # apelidos fixos: nomes que vêm compridos demais do sistema e devem aparecer curtos em
+    # todas as telas (ex.: "MEDPREV - CONSURIAL APOIO ADMINIST E CONSULTORIA EMPRESARIAL")
+    up = s.strip().upper()
+    for prefixo, apelido in APELIDOS_NOME:
+        if up == prefixo or up.startswith(prefixo + " ") or up.startswith(prefixo + "-"):
+            return apelido
     t = s.rstrip(". ")
     if t.endswith("-"):
         return t.rstrip("- ").strip() or s.strip()
     return s.strip()
+
+
+# (começo do nome em maiúsculas, como deve aparecer) - vale pra convênio, cliente e fornecedor
+APELIDOS_NOME = [
+    ("MEDPREV", "MEDPREV"),
+]
 
 
 def _preco(v):
