@@ -421,8 +421,12 @@ h1{font-size:26px}
 .aptb .ap-meta .cdg,.aptb .ap-meta .pz{display:inline;margin:0}
 .aptb td{padding:10px 14px}.aptb .pv{font-size:16.5px}
 .kpi.t-neu{border-top:4px solid #94a3b8}
+:root{--c-pag:#9f1239}
+.kpi.t-bad{border-top:4px solid var(--bad)}.kpi.t-bad .v{color:var(--bad)}
+.aptb td.nm.cv{font-weight:400;font-size:14px;color:#334155}
+.tb-set td.part,.tb-set th.part{text-align:left;width:30%}.part-in{display:flex;align-items:center;gap:10px}.part-in .pbar{flex:1;height:10px}.part-in span{min-width:48px;text-align:right;color:var(--ink);font-weight:600}
 .ap-atencao{margin-top:28px}.ap-atencao summary{cursor:pointer;list-style:revert}.ap-atencao summary h2{margin:0}.ap-atencao[open] .card{margin-top:10px}
-.aptb td.pc,.aptb th.pc{width:200px;min-width:180px}
+.aptb.ap-tab td.pc,.aptb.ap-tab th.pc{width:200px;min-width:180px}
 .aptb .rdbline{white-space:nowrap;font-size:11.5px}
 .aptb td.best{background:#eaf6ef}
 th,.aptb th{color:#475569;border-bottom-color:#d5deeb}
@@ -993,12 +997,13 @@ function viewRank(){
   const nome=k=>dim[k].nome;
   let h=perBar(PER)+`<div class="row"><div class="seg" role="group" aria-label="Agrupar por">${[['convenios','Convênios'],['medicos','Médicos'],['unidades','Unidades']].map(([v,t])=>`<button data-r="${v}" aria-pressed="${kind===v}">${t}</button>`).join('')}</div><button class="btn" id="csv">Baixar CSV</button></div>`;
   if(kind==='medicos'&&D.qualidade.pct_fat_medico_sem_nome>0)h+=`<div class="notice warn" style="margin-top:0"><b>Atenção:</b> ${fD1.format(D.qualidade.pct_fat_medico_sem_nome)}% do faturamento está em códigos de médico sem nome na lista enviada. Eles aparecem como “Cód. N”.</div>`;
-  h+=`<div class="card tw" style="margin-top:12px"><table><thead><tr><th>#</th><th class="nm">${kind==='medicos'?'Médico':kind==='unidades'?'Unidade':'Convênio'}</th><th>Faturamento líquido</th><th>% do total</th><th>Exames</th><th>Pacientes</th><th>Ticket médio</th><th>Desconto</th></tr></thead><tbody>`;
-  rows.slice(0,lim).forEach(([k,o],i)=>{const q=kind==='medicos'?D.medicos[k].q:0;
-    h+=`<tr><td>${i+1}</td><td class="nm">${esc(nome(k))}${q===1?'<span class="tag">sem nome</span>':''}${q===2?'<span class="tag w">ambíguo</span>':''}</td><td class="bar" style="--w:${(o.f/mx*100).toFixed(1)}%">${fBRL.format(o.f)}</td><td>${fD1.format(tot.f?o.f/tot.f*100:0)}%</td><td>${fNum.format(o.e)}</td><td>${fNum.format(o.r)}</td><td>${fBRL.format(tk(o))}</td><td>${fD1.format(o.b?o.x/o.b*100:0)}%</td></tr>`;});
-  h+=`<tr class="tot"><td></td><td>Total (${fNum.format(rows.length)} ${{convenios:'convênios',medicos:'médicos',unidades:'unidades'}[kind]})</td><td>${fBRL.format(tot.f)}</td><td>100%</td><td>${fNum.format(tot.e)}</td><td>${fNum.format(tot.r)}</td><td>${fBRL.format(tk(tot))}</td><td>${fD1.format(tot.b?tot.x/tot.b*100:0)}%</td></tr></tbody></table></div>`;
+  // participação em barra (igual à tabela de setores), faturamento sem centavos pra ler mais rápido
+  h+=`<div class="card tw" style="margin-top:12px"><table class="tb-set"><thead><tr><th>#</th><th class="nm">${kind==='medicos'?'Médico':kind==='unidades'?'Unidade':'Convênio'}</th><th>Faturamento líquido</th><th class="part">Participação</th><th>Exames</th><th>Pacientes</th><th>Ticket médio</th><th>Desconto</th></tr></thead><tbody>`;
+  rows.slice(0,lim).forEach(([k,o],i)=>{const q=kind==='medicos'?D.medicos[k].q:0,pc=tot.f?o.f/tot.f*100:0;
+    h+=`<tr><td>${i+1}</td><td class="nm">${esc(nome(k))}${q===1?'<span class="tag">sem nome</span>':''}${q===2?'<span class="tag w">ambíguo</span>':''}</td><td><b>${fBRL0.format(o.f)}</b></td><td class="part"><div class="part-in"><div class="pbar"><b style="width:${(o.f/mx*100).toFixed(1)}%;background:var(--c-fat)"></b></div><span>${fD1.format(pc)}%</span></div></td><td>${fNum.format(o.e)}</td><td>${fNum.format(o.r)}</td><td>${fBRL.format(tk(o))}</td><td>${fD1.format(o.b?o.x/o.b*100:0)}%</td></tr>`;});
+  h+=`<tr class="tot"><td></td><td class="nm">Total (${fNum.format(rows.length)} ${{convenios:'convênios',medicos:'médicos',unidades:'unidades'}[kind]})</td><td>${fBRL0.format(tot.f)}</td><td class="part"></td><td>${fNum.format(tot.e)}</td><td>${fNum.format(tot.r)}</td><td>${fBRL.format(tk(tot))}</td><td>${fD1.format(tot.b?tot.x/tot.b*100:0)}%</td></tr></tbody></table></div>`;
   if(rows.length>25)h+=`<p style="margin-top:12px"><button class="btn" id="todos">${S.todos?'Mostrar só os 25 primeiros':'Mostrar todos ('+fNum.format(rows.length)+')'}</button></p>`;
-  h+=`<p class="sub" style="margin-top:10px">Pacientes por convênio/médico: cada atendimento é contado uma vez, no convênio e médico da primeira linha do cadastro (ver Qualidade dos Dados).</p>`;
+  h+=`<p class="hint" style="margin-top:10px">Cada paciente conta uma vez, no convênio e médico do cadastro.</p>`;
   window.__csv=()=>{const L=[['Posição','Nome','Faturamento líquido','Bruto','Descontos','Exames','Pacientes','Ticket médio']];
     rows.forEach(([k,o],i)=>L.push([i+1,nome(k),o.f.toFixed(2),o.b.toFixed(2),o.x.toFixed(2),o.e,o.r,tk(o).toFixed(2)]));
     return L.map(l=>l.map(c=>'"'+String(c).replace(/"/g,'""').replace(/\./g,(m,off,s)=>/^\d+\.\d+$/.test(s)?',':'.')+'"').join(';')).join('\n');};
@@ -1025,17 +1030,21 @@ function viewExames(){
     let x=byEx.get(B.x[i]);if(!x){x={e:0,l:0};byEx.set(B.x[i],x);}x.e+=B.e[i];x.l+=B.l[i];
   }
   const sets=[...bySet.entries()].sort((a,b)=>b[1].l-a[1].l),mxs=sets.length?Math.max(...sets.map(s=>s[1].l)):1;
-  const ord=S.exOrd,exs=[...byEx.entries()].sort((a,b)=>b[1][ord]-a[1][ord]).slice(0,50);
-  let h=perBar(PER)+`<div class="notice"><b>Como esta aba filtra:</b> usa meses inteiros (${S.ini||S.fim?'datas parciais incluem o mês todo':'ano e mês valem'}), unidade e convênio. O filtro de médico não se aplica aqui.${S.m.size?' <b>Há médicos selecionados: eles estão sendo ignorados nesta aba.</b>':''}</div>`;
-  h+=`<h2>Faturamento por setor</h2><div class="card tw"><table><thead><tr><th>Setor</th><th>Faturamento líquido</th><th>% do total</th><th>Exames</th><th>% dos exames</th><th>Valor médio por exame</th></tr></thead><tbody>`;
-  sets.forEach(([k,o])=>{h+=`<tr><td>${esc(D.setores[k].nome)}</td><td class="bar" style="--w:${(o.l/mxs*100).toFixed(1)}%">${fBRL.format(o.l)}</td><td>${fD1.format(tot.l?o.l/tot.l*100:0)}%</td><td>${fNum.format(o.e)}</td><td>${fD1.format(tot.e?o.e/tot.e*100:0)}%</td><td>${fBRL.format(o.e?o.l/o.e:0)}</td></tr>`;});
-  h+=`<tr class="tot"><td>Total</td><td>${fBRL.format(tot.l)}</td><td>100%</td><td>${fNum.format(tot.e)}</td><td>100%</td><td>${fBRL.format(tot.e?tot.l/tot.e:0)}</td></tr></tbody></table></div>`;
-  h+=`<div class="row"><h2 style="margin:0">Top 50 exames</h2><div class="seg" role="group" aria-label="Ordenar"><button data-o="l" aria-pressed="${ord==='l'}">Por faturamento</button><button data-o="e" aria-pressed="${ord==='e'}">Por volume</button></div></div>
+  // mostra os 20 primeiros; o botão embaixo abre até 50 (lista longa cansa quem só quer bater o olho)
+  const ord=S.exOrd,exsAll=[...byEx.entries()].sort((a,b)=>b[1][ord]-a[1][ord]).slice(0,50),exs=S.exTodos?exsAll:exsAll.slice(0,20);
+  let h=perBar(PER)+`<p class="hint" style="margin:6px 0 0">Esta aba usa meses inteiros; o filtro de médico não vale aqui.${S.m.size?' <b>Os médicos selecionados estão sendo ignorados.</b>':''}</p>`;
+  // participação como barra (mais fácil de ler que só o %); a cor é a do faturamento
+  h+=`<h2>Faturamento por setor</h2><div class="card tw"><table class="tb-set"><thead><tr><th>Setor</th><th>Faturamento líquido</th><th class="part">Participação no faturamento</th><th>Exames</th><th>Valor médio por exame</th></tr></thead><tbody>`;
+  sets.forEach(([k,o])=>{const pc=tot.l?o.l/tot.l*100:0;h+=`<tr><td>${esc(D.setores[k].nome)}</td><td><b>${fBRL0.format(o.l)}</b></td><td class="part"><div class="part-in"><div class="pbar"><b style="width:${(o.l/mxs*100).toFixed(1)}%;background:var(--c-fat)"></b></div><span>${fD1.format(pc)}%</span></div></td><td>${fNum.format(o.e)}</td><td>${fBRL.format(o.e?o.l/o.e:0)}</td></tr>`;});
+  h+=`<tr class="tot"><td>Total</td><td>${fBRL0.format(tot.l)}</td><td class="part"></td><td>${fNum.format(tot.e)}</td><td>${fBRL.format(tot.e?tot.l/tot.e:0)}</td></tr></tbody></table></div>`;
+  h+=`<div class="row"><h2 style="margin:0">Exames que mais ${ord==='l'?'faturaram':'foram feitos'}<small>${S.exTodos?'top 50':'top 20'}</small></h2><div class="seg" role="group" aria-label="Ordenar"><button data-o="l" aria-pressed="${ord==='l'}">Por faturamento</button><button data-o="e" aria-pressed="${ord==='e'}">Por volume</button></div></div>
    <div class="card tw"><table><thead><tr><th>#</th><th>Código</th><th class="nm">Exame</th><th>Setor</th><th>Exames</th><th>Faturamento líquido</th><th>% do total</th><th>Valor médio</th></tr></thead><tbody>`;
   exs.forEach(([k,o],n)=>{const ex=D.exames[k];h+=`<tr><td>${n+1}</td><td>${esc(ex.cod)}</td><td class="nm">${esc(ex.nome)}</td><td>${esc(D.setores[ex.s].nome)}</td><td>${fNum.format(o.e)}</td><td>${fBRL.format(o.l)}</td><td>${fD1.format(tot.l?o.l/tot.l*100:0)}%</td><td>${fBRL.format(o.e?o.l/o.e:0)}</td></tr>`;});
-  return h+'</tbody></table></div>';
+  h+='</tbody></table></div>';
+  if(exsAll.length>20)h+=`<p style="margin:10px 0 0;text-align:center"><button class="btn" id="exTodos">${S.exTodos?'Mostrar só os 20 primeiros':'Mostrar os 50 primeiros'}</button></p>`;
+  return h;
 }
-function bindExames(){$$('[data-o]').forEach(b=>b.onclick=()=>{S.exOrd=b.dataset.o;go();});}
+function bindExames(){$$('[data-o]').forEach(b=>b.onclick=()=>{S.exOrd=b.dataset.o;go();});const bt=$('#exTodos');if(bt)bt.onclick=()=>{S.exTodos=!S.exTodos;go();};}
 
 /* ---------- saúde do negócio ---------- */
 function ytdMask(y){return dayMask(i=>diaAno[i]===y&&(diaMes[i]<um||(diaMes[i]===um&&diaDom[i]<=ULTDOM)));}
@@ -1155,16 +1164,16 @@ function viewFinanceiro(){
   const F=D.financeiro;
   if(!F)return `<div class="notice warn"><b>Ainda não há dados financeiros.</b> Envie os arquivos de contas a pagar (aberto.csv e categoria.csv) para a pasta <code>data/financeiro</code> do repositório.</div>`;
   const R=F.resumo;
-  const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
+  const k=(l,v,s,cor)=>`<div class="card kpi" style="border-top:4px solid ${cor||'#94a3b8'}"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
   let h=`<div class="secao-topo fin-tab">
-   <div class="secao-head"><h2 style="margin:0">Contas a pagar — visão geral</h2><span class="sub">${WDL[wdOf(F.hoje)]}, ${isoBR(F.hoje)}</span></div>
+   <div class="secao-head"><h2 style="margin:0">Contas a pagar · visão geral</h2><span class="sub">${WDL[wdOf(F.hoje)]}, ${isoBR(F.hoje)}</span></div>
    <div class="kpis-dia" style="grid-template-columns:repeat(3,1fr)">
     ${k('Vencidas',fBRL0.format(R.vencidas.v),`${fNum.format(R.vencidas.n)} conta(s) em atraso`,'var(--red)')}
     ${k('Vencendo hoje',fBRL0.format(R.hoje.v),`${fNum.format(R.hoje.n)} conta(s)`,'var(--amber)')}
     ${k('Próximos pagamentos',fBRL0.format(R.restoMes.v),`${fNum.format(R.restoMes.n)} conta(s) · resto de ${mesLabelDe(F.hoje)}`)}
    </div>
   </div>`;
-  h+=`<h2 style="margin-top:24px">Vencidas e vencendo hoje<small>vencendo hoje primeiro, depois as mais atrasadas · clique num título da tabela pra ordenar por ele</small></h2>`;
+  h+=`<h2 style="margin-top:24px">Vencidas e vencendo hoje<small>as que vencem hoje aparecem primeiro · clique no título da coluna para ordenar</small></h2>`;
   if(!F.tabela.length){
     h+='<div class="empty">Nenhuma conta vencida ou vencendo hoje.</div>';
   }else{
@@ -1172,7 +1181,7 @@ function viewFinanceiro(){
   }
   h+=`<h2 style="margin-top:28px">Fechamento de ${mesLabelDe(F.hoje)}</h2>
    <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
-    ${k('A pagar até fim do mês',fBRL0.format(R.aPagarMes.v),`${fNum.format(R.aPagarMes.n)} conta(s) · inclui as já vencidas`,'var(--blue)')}
+    ${k('A pagar até fim do mês',fBRL0.format(R.aPagarMes.v),`${fNum.format(R.aPagarMes.n)} conta(s) · inclui as já vencidas`,'var(--c-pag)')}
     ${R.recebimentosMes==null?`<div class="card kpi"><div class="l">Recebimentos até fim do mês</div><div class="v" style="color:var(--muted);font-size:17px">Sem dados ainda</div><div class="s">aguardando extração de contas a receber</div></div>`:k('Recebimentos até fim do mês',fBRL0.format(R.recebimentosMes.v),`${fNum.format(R.recebimentosMes.n)} recebimento(s)`,'var(--green)')}
     ${k('Recorrentes sem lançamento',fNum.format(F.recorrencia.n),'fornecedor/categoria que sempre aparece e ainda não tem lançamento neste mês','var(--amber)')}
    </div>`;
@@ -1293,13 +1302,13 @@ function viewFinPagar(){
   const F=D.financeiro;
   if(!F)return `<div class="notice warn"><b>Ainda não há dados financeiros.</b> Envie os arquivos de contas a pagar para a pasta <code>data/financeiro</code> do repositório.</div>`;
   const R=F.resumo;
-  const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
+  const k=(l,v,s,cor)=>`<div class="card kpi" style="border-top:4px solid ${cor||'#94a3b8'}"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
   const semDados=(l,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:var(--muted);font-size:17px">Sem dados ainda</div><div class="s">${s}</div></div>`;
   let h=`<div class="kpis kpis-5">
-   ${k('Em aberto até fim do mês',fBRL0.format(R.aPagarMes.v),`${fNum.format(R.aPagarMes.n)} conta(s) · inclui as já vencidas`,'var(--blue)')}
+   ${k('Em aberto até fim do mês',fBRL0.format(R.aPagarMes.v),`${fNum.format(R.aPagarMes.n)} conta(s) · inclui as já vencidas`,'var(--c-pag)')}
    ${R.pagoMes==null?semDados('Pago até hoje','aguardando extração de baixas (MOVTITULO)'):k('Pago até hoje',fBRL0.format(R.pagoMes),`em ${mesLabelDe(F.hoje)}`,'var(--green)')}
    ${k('A pagar em 7 dias',fBRL0.format(R.aPagar7d.v),`${fNum.format(R.aPagar7d.n)} conta(s) · inclui as já vencidas`,'var(--amber)')}
-   ${k('A pagar em 15 dias',fBRL0.format(R.aPagar15d.v),`${fNum.format(R.aPagar15d.n)} conta(s) · inclui as já vencidas`,'var(--amber)')}
+   ${k('A pagar em 15 dias',fBRL0.format(R.aPagar15d.v),`${fNum.format(R.aPagar15d.n)} conta(s) · inclui as já vencidas`)}
    ${R.projecaoMes==null?semDados('Projeção do mês','média dos últimos 2 anos · aguardando extração de baixas'):k('Projeção do mês',fBRL0.format(R.projecaoMes),'média dos últimos 2 anos (mesmo mês)','var(--ink)')}
   </div>`;
   h+=`<h2 style="margin-top:28px">Consultar títulos</h2>
@@ -1501,14 +1510,14 @@ function viewFinReceber(){
   const F=D.financeiro;
   if(!F||!F.receber)return `<div class="notice warn"><b>Ainda não há dados de contas a receber.</b> Envie os arquivos <code>contas_receber_aberto</code> e <code>contas_receber_baixas</code> para a pasta <code>data/financeiro</code> do repositório.</div>`;
   const R=F.receber.resumo,NI=F.naoIntegrados;
-  const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
+  const k=(l,v,s,cor)=>`<div class="card kpi" style="border-top:4px solid ${cor||'#94a3b8'}"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
   const semDados=(l,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:var(--muted);font-size:17px">Sem dados ainda</div><div class="s">${s}</div></div>`;
   let h='';
   h+=`<div class="kpis kpis-5">
-   ${k('Em aberto até fim do mês',fBRL0.format(R.aReceberMes.v),`${fNum.format(R.aReceberMes.n)} título(s) · inclui vencidos há até 15 dias`,'var(--blue)')}
+   ${k('Em aberto até fim do mês',fBRL0.format(R.aReceberMes.v),`${fNum.format(R.aReceberMes.n)} título(s) · inclui vencidos há até 15 dias`,'var(--green)')}
    ${R.recebidoMes==null?semDados('Recebido até hoje','aguardando extração de baixas (MOVTITULO)'):k('Recebido até hoje',fBRL0.format(R.recebidoMes),`em ${mesLabelDe(F.hoje)}`,'var(--green)')}
    ${k('A receber em 7 dias',fBRL0.format(R.aReceber7d.v),`${fNum.format(R.aReceber7d.n)} título(s) · inclui vencidos há até 15 dias`,'var(--amber)')}
-   ${k('A receber em 15 dias',fBRL0.format(R.aReceber15d.v),`${fNum.format(R.aReceber15d.n)} título(s) · inclui vencidos há até 15 dias`,'var(--amber)')}
+   ${k('A receber em 15 dias',fBRL0.format(R.aReceber15d.v),`${fNum.format(R.aReceber15d.n)} título(s) · inclui vencidos há até 15 dias`)}
    ${R.projecaoMes==null?semDados('Projeção do mês','média dos últimos 2 anos · aguardando extração de baixas'):k('Projeção do mês',fBRL0.format(R.projecaoMes),'média dos últimos 2 anos (mesmo mês)','var(--ink)')}
   </div>`;
   h+=`<h2 style="margin-top:28px">Consultar títulos</h2>
@@ -1685,7 +1694,7 @@ function renderDreTab(){
   const totalReceita=receitaBruta?receitaBruta.valor:0;
   const resultado=ultimaFormula?ultimaFormula.valor:0;
   const totalDespesa=totalReceita-resultado;
-  const k=(l,v,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor};${fitTxt(fBRL0.format(v))}">${fBRL0.format(v)}</div></div>`;
+  const k=(l,v,cor)=>`<div class="card kpi" style="border-top:4px solid ${cor}"><div class="l">${l}</div><div class="v" style="color:${cor};${fitTxt(fBRL0.format(v))}">${fBRL0.format(v)}</div></div>`;
   let h=`<div class="kpis" style="grid-template-columns:repeat(3,1fr)">
    ${k('Receitas',totalReceita,'var(--green)')}
    ${k('Despesas',totalDespesa,'var(--red)')}
@@ -1715,7 +1724,7 @@ function viewFinDRE(){
    <label class="fld" style="margin-left:auto">Mês<select id="dreMes">${DRE.meses.slice().reverse().map(m=>`<option value="${m}">${esc(mesLabelDe(m))}</option>`).join('')}</select></label>
    <button class="btn" id="dreCsv" type="button">Exportar CSV</button>
   </div>
-  <p class="sub">Regime de caixa: cada baixa (pagamento/recebimento) entra no mês em que foi paga, rateada proporcionalmente quando o título foi pago em mais de uma parcela. Clique numa conta pra ver os lançamentos que a compõem.</p>
+  <p class="hint">Cada pagamento ou recebimento entra no mês em que foi pago (regime de caixa). Clique numa conta para ver os lançamentos.</p>
   <div id="dreTabWrap"></div>`;
   return h;
 }
@@ -1743,10 +1752,11 @@ function bindFinDRE(){
 
 function viewQualidade(){
   const Q=D.qualidade;
-  const k=(l,v,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:26px;color:var(--ink)">${v}</div><div class="s">${s||''}</div></div>`;
-  let h=`<div class="kpis">${k('Linhas de exame lidas',fNum.format(Q.linhas),'cada linha = 1 exame')}${k('Atendimentos (requisições)',fNum.format(Q.requisicoes),'códigos de requisição únicos')}
-   ${k('Exames com médico sem nome',fD1.format(Q.pct_linhas_medico_sem_nome)+'%',fD1.format(Q.pct_fat_medico_sem_nome)+'% do faturamento · '+fNum.format(Q.medicos_sem_nome)+' de '+fNum.format(Q.medicos_usados)+' códigos')}
-   ${k('Exames com médico ambíguo',fD1.format(Q.pct_linhas_medico_ambiguo)+'%','o mesmo código aparece com mais de um nome na lista')}</div>
+  // cinza = informativo; laranja = tem algo a corrigir
+  const k=(l,v,s,tc)=>`<div class="card kpi ${tc||'t-neu'}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s||''}</div></div>`;
+  let h=`<div class="kpis-dia" style="margin-top:22px">${k('Linhas de exame lidas',fNum.format(Q.linhas),'cada linha = 1 exame','t-exa')}${k('Atendimentos (requisições)',fNum.format(Q.requisicoes),'códigos de requisição únicos','t-atd')}
+   ${k('Exames com médico sem nome',fD1.format(Q.pct_linhas_medico_sem_nome)+'%',fD1.format(Q.pct_fat_medico_sem_nome)+'% do faturamento · '+fNum.format(Q.medicos_sem_nome)+' de '+fNum.format(Q.medicos_usados)+' códigos',Q.pct_linhas_medico_sem_nome>=0.05?'t-prj':'t-neu')}
+   ${k('Exames com médico ambíguo',fD1.format(Q.pct_linhas_medico_ambiguo)+'%','o mesmo código aparece com mais de um nome na lista',Q.pct_linhas_medico_ambiguo>=0.05?'t-prj':'t-neu')}</div>
    <h2>O que precisa de atenção</h2><div class="card"><ul class="notes">`;
   if(Q.pct_linhas_medico_sem_nome>0)h+=`<li><b>Lista de médicos incompleta.</b> ${fNum.format(Q.medicos_sem_nome)} dos ${fNum.format(Q.medicos_usados)} códigos de médico usados na planilha não existem na lista enviada. Reexporte a lista completa do sistema (coluna A = código, B = nome) e substitua <code>data/lista_medico.xlsx</code>: o painel passa a mostrar os nomes no próximo ciclo.</li>`;
   if(Q.pct_linhas_medico_ambiguo>0)h+=`<li><b>Códigos de médico repetidos com nomes diferentes.</b> Nesses casos o painel mostra os nomes juntos (marcados “ambíguo”). Vale conferir com o cadastro do sistema.</li>`;
@@ -1754,8 +1764,8 @@ function viewQualidade(){
   if(X&&X.linhas)h+=`<li><b>Linhas desconsideradas de propósito (${fNum.format(X.linhas)} linhas, ${fBRL.format(X.valor)}):</b> não entram em nenhum número do painel. ${X.unidades.length?`Unidades que não existem mais: ${X.unidades.map(u=>`código ${esc(u.cod)} (${fNum.format(u.linhas)} exames, ${fBRL.format(u.valor)})`).join('; ')}. `:''}${X.setores.length?`Setores fora da lista, que são taxas de coleta domiciliar e não exames: ${X.setores.map(u=>`setor ${u.id} “${esc(u.nome)}” (${fNum.format(u.linhas)} linhas, ${fBRL.format(u.valor)})`).join('; ')}. `:''}Se aparecer aqui algo que é exame de verdade, inclua o setor ou a unidade nos dicionários do <code>gerar_dashboard.py</code>.</li>`;
   if(Q.convenios_nome_repetido.length)h+=`<li><b>Convênios com o mesmo nome e códigos diferentes:</b> ${Q.convenios_nome_repetido.map(esc).join(', ')}. É o esperado: o painel mostra o código entre parênteses para você distinguir.</li>`;
   h+=`<li><b>Linhas com valor zero:</b> ${fNum.format(Q.linhas_valor_zero)}${Q.zero_por_convenio.length?' ('+Q.zero_por_convenio.map(z=>esc(z.nome)+': '+fNum.format(z.linhas)).join(', ')+')':''}. Cortesia não gera valor, então fica em R$ 0; CORTESIA é tratada como um convênio comum, e essas linhas contam como exame e atendimento.</li></ul></div>
-   <h2>Arquivos lidos</h2><div class="card tw"><table><thead><tr><th class="nm">Arquivo</th><th>Tipo</th><th>Linhas</th><th>Primeiro dia</th><th>Último dia</th></tr></thead><tbody>${Q.arquivos.map(a=>`<tr><td class="nm">${esc(a.nome)}</td><td>${a.tipo==='dia'?'dia':'ano'}</td><td>${fNum.format(a.linhas)}</td><td>${isoBR(a.de)}</td><td>${isoBR(a.ate)}</td></tr>`).join('')}</tbody></table></div>${Q.linhas_substituidas?`<p class="sub" style="margin-top:10px">${fNum.format(Q.linhas_substituidas)} linhas de arquivos mais antigos foram trocadas pela versão mais nova do mesmo atendimento e dia (por exemplo, um dia reenviado).</p>`:''}
-   <h2>Como os números são calculados</h2><div class="card"><ul class="notes">
+   <details class="ap-atencao"><summary><h2 style="display:inline">Arquivos lidos</h2> <span class="sub">clique para abrir</span></summary><div class="card tw"><table><thead><tr><th class="nm">Arquivo</th><th>Tipo</th><th>Linhas</th><th>Primeiro dia</th><th>Último dia</th></tr></thead><tbody>${Q.arquivos.map(a=>`<tr><td class="nm">${esc(a.nome)}</td><td>${a.tipo==='dia'?'dia':'ano'}</td><td>${fNum.format(a.linhas)}</td><td>${isoBR(a.de)}</td><td>${isoBR(a.ate)}</td></tr>`).join('')}</tbody></table></div>${Q.linhas_substituidas?`<p class="sub" style="margin-top:10px">${fNum.format(Q.linhas_substituidas)} linhas de arquivos mais antigos foram trocadas pela versão mais nova do mesmo atendimento e dia (por exemplo, um dia reenviado).</p>`:''}</details>
+   <details class="ap-atencao"><summary><h2 style="display:inline">Como os números são calculados</h2> <span class="sub">clique para abrir</span></summary><div class="card"><ul class="notes">
    <li><b>Faturamento</b> = coluna Líquido (Total Bruto − Descontos). O bruto e os descontos aparecem à parte.</li>
    <li><b>Exames</b> = número de linhas da planilha (Qtde é sempre 1).</li>
    <li><b>Pacientes atendidos / atendimentos</b> = códigos de requisição únicos. Cada cadastro no sistema conta uma vez, mesmo com muitos exames. Não é um CPF único: a mesma pessoa que volta em outro dia conta de novo.</li>
@@ -1764,7 +1774,7 @@ function viewQualidade(){
    <li><b>Data</b> = coluna Entrada (dia do cadastro do exame).</li>
    <li>Alguns cadastros têm linhas com convênio, médico ou dia diferentes (${fNum.format(Q.req_multi_convenio)} com mais de um convênio, ${fNum.format(Q.req_multi_medico)} com mais de um médico, ${fNum.format(Q.req_multi_dia)} com mais de um dia). Faturamento e exames seguem cada linha; o atendimento é contado uma vez, na primeira linha do cadastro. Por isso, ao filtrar por convênio ou médico, a contagem de pacientes pode diferir em poucos casos.</li>
    <li>Ficam de fora: unidades que não existem mais, setores fora da lista (taxas de coleta domiciliar) e linhas sem código de exame. O total aparece na lista “O que precisa de atenção”, acima.</li>
-   <li>Dados pessoais de pacientes (nome) não entram neste painel.</li></ul></div>`;
+   <li>Dados pessoais de pacientes (nome) não entram neste painel.</li></ul></div></details>`;
   return h;
 }
 
@@ -1774,7 +1784,7 @@ S.ap={q:'',f:'todos',ord:null,dir:1,pg:0,ex:false};
 const AP_PAGE=50;
 S.pc={q:'',conv:'1',ativos:true,ord:null,dir:1,pg:0};  /* conv 1 = Particular */
 const PC_PAGE=50;
-const AP_F=[['todos','Todos os exames'],['ambos','Com os dois preços'],['d','DB mais em conta'],['h','HP mais em conta'],['=','Preços iguais'],['?','Conferir (mais de um preço)'],['sd','Só o DB tem preço'],['sh','Só o HP tem preço'],['sp','Mapeado, sem preço na tabela'],['nm','Sem mapeamento']];
+const AP_F=[['todos','Todos os exames'],['ambos','Com os dois preços'],['d','DB mais barato'],['h','HP mais barato'],['=','Preços iguais'],['?','Conferir (mais de um preço)'],['sd','Só o DB tem preço'],['sh','Só o HP tem preço'],['sp','Mapeado, sem preço na tabela'],['nm','Sem mapeamento']];
 const apHay=r=>r._h||(r._h=normTxt([r.c,r.n,r.m,r.d&&r.d.c,r.d&&r.d.n,r.h&&r.h.c,r.h&&r.h.n].join(' ')));
 const apPreco=o=>o&&o.p?o.p[0]:null;
 function apRows(){
@@ -1836,7 +1846,7 @@ function renderApoio(){
   const ini=S.ap.pg*AP_PAGE,vis=rows.slice(ini,ini+AP_PAGE);
   let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.ap.q.trim()?` para “${esc(S.ap.q.trim())}”`:''}${!S.ap.q.trim()&&!S.ap.ord?' · ordenado pelos exames mais feitos no ano':''} · ✔ verde = mais barato · clique no título da coluna para ordenar</p>`;
   if(!n){$('#apRes').innerHTML=h+'<div class="empty">Nenhum exame encontrado. Tente outra parte do nome ou o código.</div>';return;}
-  h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('c','Cód.','cd')}${th('n','Exame','nm')}${th('pd','<span style="color:var(--c-db)">Preço DB</span>','pc')}${th('ph','<span style="color:var(--c-hp)">Preço HP</span>','pc')}${th('x','Mais barato','pc st')}</tr></thead><tbody>`;
+  h+=`<div class="card tw"><table class="aptb ap-tab"><thead><tr>${th('c','Cód.','cd')}${th('n','Exame','nm')}${th('pd','<span style="color:var(--c-db)">Preço DB</span>','pc')}${th('ph','<span style="color:var(--c-hp)">Preço HP</span>','pc')}${th('x','Mais barato','pc st')}</tr></thead><tbody>`;
   vis.forEach(r=>{
     const mt=(r.m?'Material: '+esc(r.m):'')+(r.l?'':(r.m?' · ':'')+'<span class="tag w" style="margin-left:0" title="Este exame não está na lista de apoio do CONCENT">fora da lista de apoio</span>');
     h+=`<tr><td class="cd" data-l="Cód.">${esc(r.c)}</td><td class="nm">${esc(r.n)}${mt?`<span class="mt">${mt}</span>`:''}</td>
@@ -1928,13 +1938,15 @@ function viewPrecosConv(){
   const comCusto=PC.exames.filter((_,i)=>PC.custoDB[i]!=null||PC.custoHP[i]!=null).length;
   const convs=[...PC.convenios].sort((a,b)=>normTxt(a.n)<normTxt(b.n)?-1:1);
   const particular=PC.convenios.find(c=>normTxt(c.n)==='particular');
-  const k=(l,v,s2,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:28px;color:${cor||'var(--ink)'}">${v}</div><div class="s">${s2||''}</div></div>`;
-  let h=`<div class="kpis">${k('Exames no relatório',fNum.format(PC.exames.length),'do CONCENT')}${k('Com custo de apoio para comparar',fNum.format(comCusto),'DB ou HP cadastrado','var(--blue)')}${k('Convênios',fNum.format(PC.convenios.length),'na tabela de preços')}${k('Preços no total',fNum.format(PC.linhas.length),'exame × convênio, melhor plano')}</div>`;
+  // "abaixo do custo": combinações exame × convênio (convênio ativo) em que o preço pago não cobre o custo do apoio
+  let abaixo=0;for(const [ei,ci,ativo,valor] of PC.linhas){if(!ativo||!(valor>0))continue;const cs=[PC.custoDB[ei],PC.custoHP[ei]].filter(v=>v!=null);if(cs.length&&valor<Math.min(...cs))abaixo++;}
+  const k=(l,v,s2,tc)=>`<div class="card kpi ${tc}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s2||''}</div></div>`;
+  let h=`<div class="kpis-dia" style="margin-top:22px">${k('Exames no relatório',fNum.format(PC.exames.length),'do CONCENT','t-exa')}${k('Com custo de apoio',fNum.format(comCusto),'têm preço no DB ou no HP','t-db')}${k('Convênios',fNum.format(PC.convenios.length),'na tabela de preços','t-neu')}${k('Preço abaixo do custo',fNum.format(abaixo),'exame × convênio ativo que dá prejuízo','t-bad')}</div>`;
   h+=`<div class="apbar" id="pcBar"><label class="fld" style="flex:1 1 320px">Buscar exame<input type="search" id="pcQ" placeholder="Nome do exame..." autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
     <label class="fld">Convênio<select id="pcConv" style="max-width:260px">${convs.map(c=>`<option value="${esc(c.c)}">${esc(c.n)}</option>`).join('')}<option value="">Todos os convênios</option></select></label>
     <label class="apck"><input type="checkbox" id="pcAtivos"> Somente convênios ativos</label>
     <button class="btn" id="pcCsv" type="button">Baixar CSV</button></div>
-    <p class="sub">Um convênio pode ter mais de um plano cadastrado para o mesmo exame; aqui sempre aparece o de maior valor. Custo de apoio = menor preço entre DB e HP (aba Laboratório de Apoio). Margem = quanto sobra do valor pago pelo convênio depois de descontar esse custo. Sem busca, a ordem padrão é pelos exames mais feitos no ano; use as páginas abaixo da tabela para ver o restante, ou clique em "Exame" para ir em ordem alfabética.</p><div id="pcRes"></div>`;
+    <p class="hint">Margem = quanto sobra do preço pago depois do custo do apoio (o mais barato entre DB e HP).</p><div id="pcRes"></div>`;
   return h;
 }
 function pcCel(v){return v==null?`<span class="mut">—</span>`:fBRL.format(v);}
@@ -1945,13 +1957,13 @@ function renderPrecosConv(){
   const th=(k,t,cls='')=>`<th class="${cls}" data-pc-ord="${k}" style="cursor:pointer" aria-sort="${ord===k?(S.pc.dir>0?'ascending':'descending'):'none'}">${t}${seta(k)}</th>`;
   const ini=S.pc.pg*PC_PAGE,vis=rows.slice(ini,ini+PC_PAGE);
   const padraoTop50=!S.pc.ord&&!S.pc.q.trim();
-  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.pc.q.trim()?` para “${esc(S.pc.q.trim())}”`:''}${padraoTop50?' · ordenado pelos exames mais feitos no ano':''} · clique no título de uma coluna para ordenar · verde = sobra dinheiro sobre o custo de apoio, vermelho = fica no prejuízo</p>`;
+  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.pc.q.trim()?` para “${esc(S.pc.q.trim())}”`:''}${padraoTop50?' · ordenado pelos exames mais feitos no ano':''} · verde = sobra dinheiro, vermelho = prejuízo · clique no título da coluna para ordenar</p>`;
   if(!n){$('#pcRes').innerHTML=h+'<div class="empty">Nenhum preço encontrado. Tente outro nome, ou troque o convênio.</div>';return;}
-  h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('cod','Cód.','cd')}${th('exame','Exame','nm')}${th('conv','Convênio','nm')}${th('valor','Preço pago','pc')}${th('db','Preço DB','pc')}${th('hp','Preço HP','pc')}${th('marg','Margem','pc st')}</tr></thead><tbody>`;
+  h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('cod','Cód.','cd')}${th('exame','Exame','nm')}${th('conv','Convênio','nm')}${th('valor','Preço pago','pc')}${th('db','<span style="color:var(--c-db)">Preço DB</span>','pc')}${th('hp','<span style="color:var(--c-hp)">Preço HP</span>','pc')}${th('marg','Margem','pc st')}</tr></thead><tbody>`;
   vis.forEach(r=>{
     const boa=r.marg!=null&&r.marg>=0, ruim=r.marg!=null&&r.marg<0;
     h+=`<tr><td class="cd" data-l="Cód.">${esc(r.cod)}</td><td class="nm" data-l="Exame">${esc(r.nome)}${r.ativo?'':' <span class="tag w" title="Convênio marcado como inativo no CONCENT para este exame">inativo</span>'}</td>
-     <td class="nm" data-l="Convênio">${esc(r.cv.n)}</td>
+     <td class="nm cv" data-l="Convênio">${esc(r.cv.n)}</td>
      <td data-l="Preço pago" class="pc"><span class="pv">${pcCel(r.valor)}</span></td>
      <td data-l="Preço DB" class="pc">${pcCel(r.cDB)}</td>
      <td data-l="Preço HP" class="pc">${pcCel(r.cHP)}</td>
