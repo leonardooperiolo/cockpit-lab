@@ -1821,7 +1821,7 @@ function atISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'
 function atHojeISO(){return atISO(new Date());}
 S.at={q:'',vista:'and',aberto:'',pg:0,de:'',ate:'',sts:{t:true,col:true,dp:true,d:true,c:false},exa:new Set()};
 const AT_PAGE=25;
-const AT_STATUS={t:'Triado',col:'Coletado',dp:'Digitado Parcial',d:'Digitado',c:'Conferido'};
+const AT_STATUS={col:'Coletado',t:'Triado',dp:'Digitado Parcial',d:'Digitado',c:'Conferido'};
 function atBR(iso){ if(!iso)return ''; const [a,m,d]=iso.split('-'); return `${d}/${m}/${a}`; }
 function atHay(r){ return r._h||(r._h=normTxt([r.paciente,r.exame,r.cod,r.req,r.setor].join(' '))); }
 /* lista de exames (código + nome) pra alimentar o filtro multiselect-com-busca, igual
@@ -1972,9 +1972,10 @@ function viewAreaTecnica(){
   if(!S.at.de){const h=new Date(),d=new Date(h);d.setDate(d.getDate()-75);S.at.de=atISO(d);S.at.ate=atISO(h);}
   const R=AT.resumo,c=R.porStatus;
   const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:28px;color:${cor||'var(--ink)'}">${v}</div><div class="s">${s||''}</div></div>`;
-  let h=`<div class="kpis">${k('Em andamento',fNum.format(R.emAndamento),'ainda não liberados')}${k('Atrasados',fNum.format(R.atrasados),'prazo já vencido','#b3261e')}
-    ${k('Aguardando coleta',fNum.format(R.aguardandoColeta),'amostra ainda não chegou no laboratório','var(--amber)')}
-    ${k('Por status',`<span style="font-size:15px">Triado ${fNum.format(c.t)} · Coletado ${fNum.format(c.col)} · Dig. Parcial ${fNum.format(c.dp)} · Digitado ${fNum.format(c.d)} · Conferido ${fNum.format(c.c)}</span>`,'exames em andamento')}</div>`;
+  const dentroPrazo=R.emAndamento-R.atrasados;
+  let h=`<div class="kpis">${k('Exames em andamento',fNum.format(dentroPrazo),'dentro do prazo')}${k('Exames em atraso',fNum.format(R.atrasadosSemColetado),'prazo já vencido (triado, digitado ou digitado parcial)','#b3261e')}
+    ${k('Exames cadastrados e não coletados',fNum.format(R.aguardandoColeta),'amostra ainda não chegou no laboratório','var(--amber)')}
+    ${k('Por status',`<span style="font-size:14px;line-height:1.6;display:block;white-space:normal">Coletado ${fNum.format(c.col)}<br>Triado ${fNum.format(c.t)}<br>Dig. Parc. ${fNum.format(c.dp)}<br>Digitado ${fNum.format(c.d)}</span>`,'exames em andamento')}</div>`;
   h+=`<div class="apbar" id="atBar" style="justify-content:center">
     <label class="fld" style="flex:0 0 auto"><select id="atVista"><option value="and">Em andamento (${fNum.format(R.emAndamento)})</option><option value="agu">Aguardando coleta (${fNum.format(R.aguardandoColeta)})</option></select></label>
     <label class="fld" style="flex:1 1 240px">Buscar paciente, exame ou requisição<input type="search" id="atQ" placeholder="Nome do paciente, exame, requisição..." autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>

@@ -1025,6 +1025,10 @@ def carregar_area_tecnica():
     cont_status = defaultdict(int)
     cont_setor = defaultdict(int)
     atrasados = 0
+    # contagem separada pra não considerar "coletado e atrasado" como atraso real no
+    # card do painel - só triado/digitado parcial/digitado (quem já passou da coleta e
+    # está represado na própria análise) conta como "exame em atraso" pro usuário
+    atrasados_sem_coletado = 0
     # datetime.now() sozinho pega a hora do servidor do GitHub Actions, que roda em UTC
     # (3h à frente do horário de Brasília) - sem isso, exame com prazo às 17:30 aparecia
     # "atrasado" já no início da tarde. RQEXDTPROMESSA/RQEXHRPROMESSA vêm do DB2 como
@@ -1118,6 +1122,8 @@ def carregar_area_tecnica():
             linha["horasRestantes"] = round((prazo_dt - agora).total_seconds() / 3600, 1)
             if atrasado:
                 atrasados += 1
+                if status in ("t", "dp", "d"):
+                    atrasados_sem_coletado += 1
         else:
             linha["atrasado"] = None
             linha["horasRestantes"] = None
@@ -1133,6 +1139,7 @@ def carregar_area_tecnica():
         "resumo": {
             "total": len(pendentes) + len(aguardando),
             "emAndamento": len(pendentes), "aguardandoColeta": len(aguardando), "atrasados": atrasados,
+            "atrasadosSemColetado": atrasados_sem_coletado,
             "porStatus": {k: cont_status.get(k, 0) for k in STATUS_AT},
             "porSetor": dict(sorted(cont_setor.items(), key=lambda kv: -kv[1])),
         },
