@@ -6,29 +6,24 @@
 <title>Cockpit Executivo — Faturamento & Atendimentos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#f3f7fe; --card:#ffffff; --ink:#0f1f3d; --text:#1e293b; --muted:#64748b; --line:#e3eaf5;
-  --blue:#2563eb; --blue-soft:#9db4e0; --green:#1f9d6b; --red:#d64545; --amber:#c9791f;
-  --info-bg:#dfe9fb; --info-line:#c3d3f2;
-}
+:root{--blue-soft:#9db4e0}
 *{box-sizing:border-box}
 html{scroll-padding-top:150px}
-body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+body{margin:0;font:15px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
 .wrap{max-width:1240px;margin:0 auto;padding:22px 24px 60px}
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap}
-.eyebrow{font-size:13px;font-weight:600;color:var(--blue);letter-spacing:.02em}
-h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(28px,4vw,42px);line-height:1.12;margin:6px 0 0;color:var(--ink)}
-.stamp{font-size:12.5px;color:var(--muted);text-align:right}
-.stamp b{display:block;font-size:14px;color:var(--ink)}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:26px 0 0}
-.tabs button{background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:10px 16px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}
-.tabs button:hover{color:var(--ink)}
-.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--blue)}
+
+h1{line-height:1.12;margin:6px 0 0;color:var(--ink)}
+.stamp{color:var(--muted);text-align:right}
+.stamp b{color:var(--ink)}
+.tabs{display:flex;margin:26px 0 0}
+.tabs button{background:none;border-bottom:2px solid transparent;font:inherit;font-weight:600;cursor:pointer}
+
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-.filters{position:sticky;top:0;z-index:20;background:rgba(243,247,254,.94);backdrop-filter:blur(6px);padding:14px 0 12px;display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end}
+.filters{position:sticky;top:0;z-index:20;backdrop-filter:blur(6px);display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end}
 .fgroup{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
 .fld{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);font-weight:600}
 .fld select,.fld input[type=date],.ms-b{font:inherit;font-size:14px;color:var(--text);background:#fff;border:1px solid #cfdaee;border-radius:9px;padding:7px 10px;min-width:104px;height:36px}
@@ -46,14 +41,14 @@ h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(2
 .ms-i input{margin-top:3px}
 .ms-more{padding:8px 4px;font-size:12.5px;color:var(--muted)}
 .btn{font:inherit;font-size:13.5px;font-weight:600;color:var(--blue);background:#fff;border:1px solid #cfdaee;border-radius:9px;padding:0 14px;height:36px;cursor:pointer}
-.btn:hover{background:#eef3fd}
+
 .fhint{flex-basis:100%;font-size:12.5px;color:var(--muted)}
 
 .notice{background:var(--info-bg);border:1px solid var(--info-line);border-radius:12px;padding:12px 16px;margin:14px 0 0;font-size:14px}
 .notice b{color:var(--blue)}
-.notice.warn{background:#fff3e2;border-color:#f0d5a8}
+.notice.warn{border-color:#f0d5a8}
 .notice.warn b{color:var(--amber)}
-.notice.danger{background:#fdecec;border-color:#f2b8b8}
+.notice.danger{border-color:#f2b8b8}
 .notice.danger b{color:var(--red)}
 .ni-heat{border-collapse:separate;border-spacing:0;font-size:13px;width:auto}
 .ni-heat th,.ni-heat td{padding:7px 12px;text-align:center;white-space:nowrap}
@@ -74,9 +69,9 @@ h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(2
 .saude-grid th,.saude-grid td{padding:7px 4px}
 @media (max-width:820px){.saude-grid{grid-template-columns:1fr}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
-.kpi .l{font-size:12.5px;color:var(--muted);font-weight:600}
-.kpi .v{font-size:clamp(22px,2.3vw,30px);font-weight:800;line-height:1.15;margin:6px 0 4px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.kpi .s{font-size:12.5px;color:var(--muted)}
+
+.kpi .v{line-height:1.15;margin:6px 0 4px;font-variant-numeric:tabular-nums;white-space:nowrap}
+
 .at-kpis{align-items:stretch}
 .at-kpis .card.kpi{text-align:center;display:flex;flex-direction:column}
 .at-kpis .kpi .l{font-size:17px}
@@ -87,24 +82,24 @@ h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(2
 .at-status-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin:10px 0 2px}
 .at-status-grid .n{font-size:30px;font-weight:800;color:var(--blue);line-height:1.15;font-variant-numeric:tabular-nums}
 .at-status-grid .t{font-size:12.5px;color:#334155;margin-top:2px}
-h2{font-size:19px;color:var(--ink);margin:30px 0 4px}
+h2{color:var(--ink);margin:30px 0 4px}
 h2 small{font-size:13px;font-weight:400;color:var(--muted);margin-left:8px}
 h3{font-size:15px;color:var(--ink);margin:0 0 2px}
 .sub{font-size:13px;color:var(--muted);margin:0 0 10px}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px;margin-top:12px}
 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin-top:12px}
 .ch{width:100%;height:auto;display:block}
-.gr{stroke:#e8eef8;stroke-width:1}
-.ax{fill:#64748b;font-size:12px}
-.vl{fill:#0f1f3d;font-size:11px;font-weight:700}
+.gr{stroke-width:1}
+.ax{font-size:12px}
+.vl{fill:#0f1f3d}
 .ax2{font-size:10.5px;opacity:.8}
 .vlb{font-size:12.5px}
 .axb{font-size:13px;font-weight:600;fill:#334155}
 .ax2.axb{font-size:9.5px;font-weight:500;fill:#64748b}
 .dlt{font-size:13px;font-weight:800}
 .dlt.up{fill:#1f9d6b}.dlt.dn{fill:#d64545}.dlt.eq{fill:#64748b}
-.perbar{margin:16px 0 0;padding:10px 14px;background:var(--info-bg);border:1px solid var(--info-line);border-radius:10px;font-size:14px;color:var(--ink)}
-.perbar span{color:#475569}
+.perbar{margin:16px 0 0;border:1px solid var(--info-line)}
+
 body.locked>*:not(.gate){display:none}
 .gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:999;padding:20px}
 .gate-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px 26px;max-width:360px;width:100%;box-shadow:0 8px 30px rgba(15,31,61,.08);display:flex;flex-direction:column;gap:12px}
@@ -119,20 +114,20 @@ body.locked>*:not(.gate){display:none}
 .apck{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--text);height:40px}
 .aptb{border-collapse:separate;border-spacing:0}
 .aptb th{padding:12px 14px;background:#f6f9ff;text-align:left;font-size:12.5px;color:#475569;border-bottom:1px solid #dfe8f6}
-.aptb td{padding:13px 14px;border-bottom:1px solid #edf2f9;vertical-align:middle;white-space:normal;text-align:left}
+.aptb td{border-bottom:1px solid #edf2f9;vertical-align:middle;white-space:normal;text-align:left}
 .aptb tbody tr:last-child td{border-bottom:0}
 .aptb td.cd,.aptb th.cd{width:64px;color:#64748b;font-size:13px}
 .aptb td.nm{min-width:230px;font-weight:600;color:var(--ink);font-size:14.5px}
 .aptb td.nm .mt{display:block;margin-top:3px;font-weight:400;font-size:12px;color:var(--muted)}
 .aptb td.pc,.aptb th.pc{min-width:140px;width:150px}
 .aptb td.st,.aptb th.st{min-width:190px}
-.aptb .pv{display:block;font-size:16px;font-weight:700;color:var(--ink);white-space:nowrap}
+.aptb .pv{display:block;font-weight:700;color:var(--ink);white-space:nowrap}
 .aptb .cdg{display:block;margin-top:1px;font-size:11.5px;color:#94a3b8;text-decoration:none}
 .aptb .pz{display:block;margin-top:1px;font-size:11px;color:#94a3b8}
 a.cdg:hover{text-decoration:underline;color:#2563eb}
 .aptb td small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:3px;font-weight:400}
 .aptb td small.aviso{color:#8a5a00}
-.aptb td.best{background:#eaf7f0}
+
 .aptb td.best .pv{color:#0f6b44}
 .aptb .ck{color:#1f9d6b}
 .aptb .mut{color:#94a3b8;font-size:13px}
@@ -160,20 +155,20 @@ a.cdg:hover{text-decoration:underline;color:#2563eb}
 .empty{padding:34px 10px;text-align:center;color:var(--muted);font-size:14px}
 
 .tw{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:13.5px}
+table{border-collapse:collapse;width:100%}
 th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 th:first-child,td:first-child{text-align:left}
 th{font-size:12px;color:var(--muted);font-weight:600;background:#fafcff;position:sticky;top:0}
-tr.tot td{font-weight:700;border-top:2px solid var(--line);background:#fafcff}
+tr.tot td{font-weight:700;border-top:2px solid var(--line)}
 td.nm,th.nm{white-space:normal;min-width:220px;text-align:left}
-.bar{background:linear-gradient(#9db4e0,#9db4e0) left bottom/var(--w) 4px no-repeat}
+.bar{background:linear-gradient(#a9c3ec,#a9c3ec) left bottom/var(--w) 4px no-repeat}
 .dl{font-weight:700;font-size:12.5px}
 .dl.up{color:var(--green)} .dl.dn{color:var(--red)} .dl.eq,.dl.na{color:var(--muted)}
 .tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;background:#eef1f7;color:var(--muted);margin-left:6px}
 .tag.w{background:#fff3e2;color:var(--amber)}
 .seg{display:inline-flex;border:1px solid #cfdaee;border-radius:10px;overflow:hidden;background:#fff}
 .seg button{font:inherit;font-size:13.5px;font-weight:600;border:0;background:none;padding:7px 16px;cursor:pointer;color:var(--muted)}
-.seg button[aria-pressed=true]{background:var(--blue);color:#fff}
+.seg button[aria-pressed=true]{color:#fff}
 .row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin:26px 0 8px}
 .pick{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
 .pick .card{flex:1 1 320px}
@@ -184,13 +179,12 @@ td.nm,th.nm{white-space:normal;min-width:220px;text-align:left}
 .notes li{margin:6px 0}
 .notes{font-size:14px;max-width:88ch}
 @media(max-width:900px){.filters{position:static}}
-@media(max-width:700px){.wrap{padding:16px 14px 50px}.grid2{grid-template-columns:1fr}.ms-b{width:100%}.fld{flex:1 1 140px}.stamp{text-align:left}}
+@media(max-width:700px){.wrap{padding:16px 14px 50px}.grid2{grid-template-columns:1fr}.ms-b{width:100%}.stamp{text-align:left}}
 
-/* ===== modo simples (teste - sugestoes do Gemini) ===== */
-body{font-family:'Inter',system-ui,-apple-system,Arial,sans-serif;color:#0b1220}
-.kpi .l{font-size:15px;font-weight:700;color:#334155}
+
+
 .kpi .v{font-size:clamp(30px,3.4vw,42px)}
-.kpi .s{font-size:14px;color:#334155}
+
 .kpis-5{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
 .kpis-5 .v{font-size:clamp(17px,1.7vw,24px);white-space:nowrap}
 /* tabela de "Consultar títulos": largura fixa por coluna (via colgroup no HTML) em vez de
@@ -202,18 +196,18 @@ body{font-family:'Inter',system-ui,-apple-system,Arial,sans-serif;color:#0b1220}
 /* todas as colunas centralizadas, incluindo Valor */
 .cp-tab table td,.cp-tab table th{text-align:center}
 .cp-tab table tfoot td{border-top:2px solid var(--line);font-weight:700;background:#fafcff}
-.tabs button{font-size:16px;padding:14px 20px}
-.tabs button[aria-selected=true]{color:#fff;background:var(--blue);border-radius:10px 10px 0 0;border-bottom-color:var(--blue)}
-.subtabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
-.subtabs button{font:inherit;font-size:14px;font-weight:600;color:var(--muted);background:#eef3fd;border:1px solid #cfdaee;border-radius:20px;padding:7px 16px;cursor:pointer}
-.subtabs button[aria-selected=true]{color:#fff;background:var(--blue);border-color:var(--blue)}
+
+.tabs button[aria-selected=true]{border-bottom-color:var(--blue)}
+.subtabs{display:flex;flex-wrap:wrap;margin:10px 0 0}
+.subtabs button{font:inherit;font-weight:600;cursor:pointer}
+
 .fgroup#fgAtalhos{gap:10px}
 .btn.atalho{font-size:15px;font-weight:700;height:48px;padding:0 20px;border-radius:12px;border-width:2px}
 select.simple-sel{font-size:16px;height:48px;min-width:220px;border-radius:12px;border:2px solid #cfdaee;padding:8px 12px}
 .kpis-simples{grid-template-columns:repeat(3,1fr)}
 @media(max-width:820px){.kpis-simples{grid-template-columns:1fr}}
 
-/* ===== rodada 2: Visao Geral (hoje/mes/projecao) + Saude do Negocio (insight) ===== */
+
 .cards-hoje{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0 0}
 @media(max-width:820px){.cards-hoje{grid-template-columns:1fr}}
 .card-hoje{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
@@ -236,28 +230,23 @@ select.simple-sel{font-size:16px;height:48px;min-width:220px;border-radius:12px;
 .efeito.pos .v{color:#0f6b44}
 .efeito.neg .v{color:#b3261e}
 
-/* ===== rodada 3 (teste - design system sugerido pelo Gemini) ===== */
-:root{
-  --r3-bg:#F8FAFC; --r3-surface:#FFFFFF; --r3-border:#E2E8F0; --r3-ink:#0F172A; --r3-muted:#64748B;
-  --r3-brand:#0284C7; --r3-ok-bg:#DCFCE7; --r3-ok-tx:#16A34A; --r3-warn-bg:#FEF3C7; --r3-warn-tx:#D97706;
-  --r3-err-bg:#FEE2E2; --r3-err-tx:#DC2626; --r3-info-bg:#DBEAFE; --r3-info-tx:#2563EB;
-}
-body{font-family:'Inter',system-ui,-apple-system,Arial,sans-serif}
+
+:root{--r3-bg:#F8FAFC;--r3-surface:#FFFFFF;--r3-ok-bg:#DCFCE7;--r3-ok-tx:#16A34A;--r3-warn-bg:#FEF3C7;--r3-warn-tx:#D97706;--r3-err-bg:#FEE2E2;--r3-err-tx:#DC2626;--r3-info-bg:#DBEAFE;--r3-info-tx:#2563EB}
+
 .card,.card-hoje,.kpi{font-variant-numeric:tabular-nums}
-.card,.card-hoje{border-radius:12px;border:1px solid var(--r3-border);transition:box-shadow .2s ease-in-out,border-color .2s ease-in-out}
-.card:hover,.card-hoje:hover{box-shadow:0 4px 12px rgba(0,0,0,.06);border-color:#CBD5E1}
-table tr:hover td{background:#F8FAFC}
+.card,.card-hoje{border:1px solid var(--r3-border)}
+
 .btn:focus-visible,select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--r3-brand);outline-offset:2px}
 .badge{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:6px}
 .badge.ok{background:var(--r3-ok-bg);color:var(--r3-ok-tx)}
 .badge.off{background:#f1f5f9;color:var(--r3-muted)}
 .live-dot{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--r3-ok-tx);background:var(--r3-ok-bg);padding:3px 10px;border-radius:99px;margin-left:10px;vertical-align:middle}
-.live-dot::before{content:'';width:7px;height:7px;border-radius:99px;background:var(--r3-ok-tx);animation:r3pulse 1.4s infinite}
+.live-dot::before{content:'';width:7px;height:7px;border-radius:99px;background:var(--r3-ok-tx)}
 @keyframes r3pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .secao-topo{margin-top:6px}
 .secao-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .secao-head .sub{color:var(--r3-muted);font-size:13px}
-.kpis-dia{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:14px 0 18px}
+.kpis-dia{display:grid;gap:14px;margin:14px 0 18px}
 @media(max-width:820px){.kpis-dia{grid-template-columns:1fr}}
 .grid-dia{display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start}
 @media(max-width:900px){.grid-dia{grid-template-columns:1fr}}
@@ -265,30 +254,30 @@ table tr:hover td{background:#F8FAFC}
 .pbar b{display:block;height:100%;background:var(--r3-brand);border-radius:99px}
 .rank-conv-dia{display:flex;flex-direction:column;gap:10px}
 .rc-row{display:grid;grid-template-columns:1fr;gap:3px}
-.rc-nome{font-size:13px;font-weight:600;color:var(--r3-ink)}
+
 .rc-bar{background:#eef2f7;border-radius:99px;height:7px;overflow:hidden}
 .rc-bar b{display:block;height:100%;background:var(--r3-brand);border-radius:99px}
-.rc-val{font-size:12px;color:var(--r3-muted)}
+.rc-val{font-size:12px}
 .rc-n{color:#94a3b8}
 .rc-outros .rc-nome,.rc-outros .rc-val{color:var(--r3-muted);font-style:italic}
 .shortcut-card p.sub{margin:2px 0 12px;font-size:13px;color:var(--r3-muted)}
 .shortcut-card .btn{width:100%;justify-content:center}
 
-/* ===== rodada 4 (teste - 4 kpis no topo, sem a secao Saude do Negocio na Visao Geral) ===== */
+
 .kpis-dia{grid-template-columns:repeat(4,1fr)}
 @media(max-width:1100px){.kpis-dia{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.kpis-dia{grid-template-columns:1fr}}
 .kpi-proj{padding-bottom:12px}
-.kpi-proj .proj-linha{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:5px;padding-top:5px;border-top:1px dashed var(--line)}
+.kpi-proj .proj-linha{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .kpi-proj .proj-linha:first-of-type{border-top:0;margin-top:2px;padding-top:0}
-.kpi-proj .proj-lb{font-size:11.5px;color:var(--muted);white-space:nowrap}
-.kpi-proj .proj-vv{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
-.kpi-proj .s{margin-top:6px}
+.kpi-proj .proj-lb{white-space:nowrap}
+.kpi-proj .proj-vv{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+
 .kpi-proj .meta-input-sm{width:100%;font:inherit;font-size:12.5px;border:1px solid #cfdaee;border-radius:8px;padding:5px 8px;margin-top:8px}
 .kpi-proj .meta-bar-sm{height:7px;border-radius:5px;background:#e3eaf5;margin-top:7px;overflow:hidden}
 .kpi-proj .meta-bar-sm b{display:block;height:100%;background:var(--green);border-radius:5px}
 
-.aptb .rdbline{display:block;margin-top:2px;font-size:11px;font-weight:600}
+.aptb .rdbline{display:block;margin-top:2px;font-weight:600}
 
 .pill.venc{background:#fee2e2;color:#b91c1c}
 .fin-tab table td.num,.fin-tab table th.num{text-align:center}
@@ -309,6 +298,164 @@ table tr:hover td{background:#F8FAFC}
 .fin-selecao .fin-total-val.receita{color:var(--green)}
 .fin-selecao button{margin-left:auto;border:1px solid #bfdbfe;background:#fff;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;color:#1d4ed8}
 .fin-selecao button:hover{background:#dbeafe}
+
+/* ===== sistema visual v2: uma paleta, uma fonte, cor só quando significa algo =====
+   (vem por último de propósito: substitui as cores/fontes das "rodadas" de cima) */
+:root{--card:#ffffff;--ink:#1b2430;--text:#2b3440;--good:#2f7d4f;--bad:#b42318;--warn:#b45309;--blue:var(--accent);--green:var(--good);--red:var(--bad);--amber:var(--warn);--r3-brand:var(--accent);--r3-border:var(--line);--r3-ink:var(--ink);--r3-muted:var(--muted);--info-bg:transparent;--info-line:var(--line)}
+body{background:var(--bg);color:var(--text);font-family:'Source Sans 3','Noto Sans CJK JP',system-ui,-apple-system,'Segoe UI',sans-serif}
+.fin-tab table td:nth-child(2),.fin-fil{font-family:inherit}
+/* cabeçalho */
+
+h1{font-family:inherit;font-weight:700;margin-top:2px}
+.stamp{font-size:12.5px;line-height:1.7}.stamp b{display:inline;font-size:12.5px;font-weight:600}
+/* abas: uma linha só, sublinhado na ativa */
+.tabs{flex-wrap:nowrap;overflow-x:auto;margin-top:18px;scrollbar-width:none}
+.tabs button{white-space:nowrap}
+.tabs button[aria-selected=true]{border-bottom:2px solid var(--accent)}
+.subtabs{gap:4px;margin-top:12px}
+
+.seg{border-color:#d6d6cf}.seg button[aria-pressed=true]{background:var(--accent)}
+/* filtros: mesma altura e mesmo peso em tudo */
+.btn,.btn.atalho{height:36px;font-size:14px;font-weight:600;border-width:1px;border-radius:8px;padding:0 14px;color:var(--ink);border-color:#d6d6cf}
+.btn:hover{background:#efefea}
+.fld select,.fld input[type=date],.ms-b,select.simple-sel{height:36px;font-size:14px;font-weight:400;border:1px solid #d6d6cf;border-radius:8px}
+.filters{padding:12px 0}
+/* cartões retos, sem sombra de "hover" em coisa que não é clicável */
+.card,.card-hoje{transition:none}
+.card:hover,.card-hoje:hover{border-color:var(--line)}
+.card-tit{margin:0 0 10px;font-size:15px;font-weight:700;color:var(--ink)}
+.kpi .l{font-weight:600}
+.kpi .v{font-weight:700;color:var(--ink)}
+.kpi .s{color:var(--muted)}
+.kpi .s b{color:var(--ink);font-weight:600}
+.kpi-extra{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+/* aviso de período: uma linha discreta em vez de caixa azul */
+.perbar,.notice{background:none;border:0;border-left:3px solid var(--accent);border-radius:0;padding:3px 12px;font-size:13.5px;color:var(--muted)}
+.perbar b,.notice b{color:var(--ink)}
+.perbar span{color:var(--muted)}
+.notice.warn{background:none;border-left-color:var(--warn)}.notice.danger{background:none;border-left-color:var(--bad)}
+h2{font-size:18px;font-weight:700}
+/* tabelas */
+th,.aptb th{background:none;font-weight:600;border-bottom:1px solid #cfcfc7}
+table tr:hover td{background:#fafaf7}
+tr.tot td{background:none}
+
+.pbar b,.rc-bar b{background:var(--accent)}
+.rc-nome{font-weight:500;color:var(--ink)}
+.rc-val{color:var(--muted)}
+.pill,.badge,.tag{border-radius:4px}
+.live-dot::before{animation:none}
+.saude-top table{font-size:13.5px}.saude-top th,.saude-top td{padding:7px 6px}.saude-top td.nm{min-width:0}
+.saude-top table{table-layout:fixed}.saude-top th.nm{width:34%}.saude-top td.nm{font-size:13.5px}
+.saude-top .st-var{display:block;margin-top:1px}.saude-top .st-var .dl{font-size:13px}
+.saude-top td{white-space:normal;vertical-align:middle}
+.saude-top .st-v{display:block;color:var(--ink);font-weight:700;font-size:15px}
+.saude-top .st-era{display:block;font-size:12.5px;color:var(--muted);margin-top:1px}.saude-top .st-era .dl{font-size:12.5px;white-space:nowrap}
+/* gráficos */
+.ax{fill:#80868b}.vl{font-weight:700}
+
+/* ===== v3 "acolhedor": pensado pro dono de laboratório pequeno/médio (mais velho, técnico,
+   pouca intimidade com número e tela). Clareza pelo desenho, não por texto explicativo:
+   cada assunto tem a SUA cor (faturamento sempre azul, atendimentos sempre roxo...),
+   verde/vermelho só nas setas de melhora/piora, letra maior, aba ativa bem marcada. */
+:root{--bg:#f1f5fb;--line:#e0e7f1;--accent:#1f63c6;--accent-soft:#e3edfb;--muted:#5f6b7a;--c-fat:#1f63c6;--c-atd:#7a3fd1;--c-exa:#0e7490;--c-prj:#b45309}
+body{font-size:16px}
+.filters{background:rgba(241,245,251,.95)}
+.eyebrow{color:var(--accent);text-transform:none;letter-spacing:.01em;font-size:13px;font-weight:700}
+h1{font-size:26px}
+.tabs{gap:4px;border-bottom:2px solid var(--accent)}
+.tabs button{font-size:16px;padding:11px 16px;color:#475569;border-radius:10px 10px 0 0;border:0;margin-bottom:0}
+.tabs button:hover{background:#e3edfb;color:var(--ink)}
+.tabs button[aria-selected=true]{background:var(--accent);color:#fff;border-radius:10px 10px 0 0;border:0}
+.subtabs button{font-size:15px;padding:7px 14px;border:1px solid #cfdcef;border-radius:20px;background:#fff;color:#475569}
+.subtabs button[aria-selected=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.card,.card-hoje{border-radius:12px;border-color:var(--line);box-shadow:0 1px 3px rgba(15,31,61,.05)}
+.card:hover,.card-hoje:hover{box-shadow:0 1px 3px rgba(15,31,61,.05)}
+.kpi .l{font-size:15px;color:#334155}
+.kpi .s{font-size:14px}
+.perbar{background:var(--accent-soft);border-left:4px solid var(--accent);border-radius:8px;padding:8px 14px;font-size:14px;color:#334155}
+/* cor por assunto: faixa no topo do card + número na mesma cor */
+.kpi.t-fat,.kpi.t-atd,.kpi.t-exa,.kpi.t-prj{border-top-width:4px}
+.kpi.t-fat{border-top-color:var(--c-fat)}.kpi.t-fat .v{color:var(--c-fat)}
+.kpi.t-atd{border-top-color:var(--c-atd)}.kpi.t-atd .v{color:var(--c-atd)}
+.kpi.t-exa{border-top-color:var(--c-exa)}.kpi.t-exa .v{color:var(--c-exa)}
+.kpi.t-prj{border-top-color:var(--c-prj)}.kpi.t-prj .v{color:var(--c-prj)}
+/* card de projeção no formato de linhas (acumulado / projeção) */
+.kpi-proj .proj-linha{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.kpi-proj .l+.proj-linha{margin-top:12px;padding-top:0;border-top:0}
+.kpi-proj .proj-lb{font-size:14px;color:var(--muted)}
+.kpi-proj .proj-vv{font-size:19px;color:var(--ink)}
+.kpi-proj .proj-vv.proj-dest{font-size:24px;color:var(--c-prj)}
+.kpi-proj .s{margin-top:10px}
+.pbar,.rc-bar{background:#e8eef7}
+.rc-nome{font-size:14px}
+/* botão de ajuda "?" e balão */
+.ajuda{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid #b8c6dc;background:#fff;color:#4b5b73;font:700 11.5px/1 inherit;cursor:pointer;padding:0;margin-left:4px;vertical-align:2px}
+.ajuda:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.ajuda-bal{position:absolute;z-index:999;background:#1b2430;color:#fff;font-size:13.5px;line-height:1.45;padding:10px 12px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);text-align:left;font-weight:400}
+.cfg-lnk{margin-top:4px;font-size:12.5px}
+.btn-print{margin-left:auto}
+/* impressão: só o conteúdo, sem abas, filtros e botões */
+@media print{
+  body{background:#fff!important;font-size:12px}
+  .tabs,.subtabs,.filters,.btn,.ajuda,.ajuda-bal,.cfg-lnk,.perbar{display:none!important}
+  .wrap{max-width:none;padding:0;zoom:.6}
+  h2{break-after:avoid}
+  svg.ch{max-height:300px;width:auto;max-width:100%;display:block;margin:0 auto}
+  .card,.card-hoje{box-shadow:none!important;break-inside:avoid}
+  .card.saude-top,.card.tw{break-inside:auto}tr{break-inside:avoid}
+  .kpis-dia{grid-template-columns:repeat(4,1fr)!important}
+  .grid-dia{grid-template-columns:2fr 1fr!important}
+  .saude-grid{grid-template-columns:1fr 1fr!important}
+  @page{size:A4 landscape;margin:10mm}
+}
+#fToggle{display:none}
+/* celular: nada pode passar da largura da tela (senão o navegador "afasta" a página toda e fica tudo miúdo) */
+@media(max-width:700px){
+  .fld select,.fld input,select.simple-sel,.ms-b,.apbar input[type=search]{width:100%!important;max-width:100%;min-width:0!important}
+  .fld{flex:1 1 100%!important;min-width:0}
+  .kpis,.kpis-dia,.cmpk,.at-kpis{grid-template-columns:1fr!important}
+  .apbar,.row{flex-wrap:wrap}
+  .apbar>*,.row>*{min-width:0;max-width:100%}
+  .subtabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .subtabs button{white-space:nowrap}
+  h1{font-size:22px}
+  .card{padding:14px 14px}
+  .tw{max-width:100%}
+  #fToggle{display:inline-flex;align-items:center}
+  /* tabela de setores da Área Técnica continua tabela no celular (são só 3 colunas) */
+  .aptb.keep{display:table}.aptb.keep thead{display:table-header-group}.aptb.keep tbody{display:table-row-group}
+  .aptb.keep tr{display:table-row;padding:0}.aptb.keep>tbody>tr>td,.aptb.keep>thead>tr>th{display:table-cell;width:auto!important;padding:10px 8px!important}
+  .aptb.keep>tbody>tr>td{border-bottom:1px solid #edf2f9!important}.aptb.keep td::before{display:none}
+  .aptb.keep td,.aptb.keep th{min-width:0!important}
+  /* Saúde do Negócio: a tabela rola de lado em vez de espremer as colunas */
+  .saude-top{overflow-x:auto}.saude-top table{table-layout:auto;min-width:470px}.saude-top th{white-space:nowrap}
+  .saude-top th.nm{width:auto}.saude-top td.nm{max-width:120px;font-size:12.5px}
+  .filters:not(.aberto) #fgPeriodo,.filters:not(.aberto) .fg-dims{display:none!important}
+}
+/* Laboratório de Apoio: DB anil, HP laranja */
+:root{--c-db:#4338ca;--c-hp:#c2410c}
+.kpi.t-db,.kpi.t-hp{border-top-width:4px}
+.kpi.t-db{border-top-color:var(--c-db)}.kpi.t-db .v{color:var(--c-db)}
+.kpi.t-hp{border-top-color:var(--c-hp)}.kpi.t-hp .v{color:var(--c-hp)}
+.pill.ap-db{background:#e7e6fb;color:var(--c-db)}.pill.ap-hp{background:#fde9df;color:var(--c-hp)}
+.aptb .ap-meta{display:block;margin-top:2px;font-size:11.5px;color:#94a3b8}
+.aptb .ap-meta .cdg,.aptb .ap-meta .pz{display:inline;margin:0}
+.aptb td{padding:10px 14px}.aptb .pv{font-size:16.5px}
+.kpi.t-neu{border-top:4px solid #94a3b8}
+:root{--c-pag:#9f1239}
+.kpi.t-bad{border-top:4px solid var(--bad)}.kpi.t-bad .v{color:var(--bad)}
+.aptb td.nm.cv{font-weight:400;font-size:14px;color:#334155}
+.tb-set td.part,.tb-set th.part{text-align:left;width:30%}.part-in{display:flex;align-items:center;gap:10px}.part-in .pbar{flex:1;height:10px}.part-in span{min-width:48px;text-align:right;color:var(--ink);font-weight:600}
+.ap-atencao{margin-top:28px}.ap-atencao summary{cursor:pointer;list-style:revert}.ap-atencao summary h2{margin:0}.ap-atencao[open] .card{margin-top:10px}
+.aptb.ap-tab td.pc,.aptb.ap-tab th.pc{width:200px;min-width:180px}
+.aptb .rdbline{white-space:nowrap;font-size:11.5px}
+.aptb td.best{background:#eaf6ef}
+th,.aptb th{color:#475569;border-bottom-color:#d5deeb}
+table{font-size:14.5px}
+.gr{stroke:#e6ecf5}.vl{font-size:13px}
+/* contorno branco nos números dos gráficos: continuam legíveis quando passam por cima de outra barra/linha */
+.vl{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
 </style>
 </head>
 <body>
@@ -318,7 +465,7 @@ table tr:hover td{background:#F8FAFC}
       <div class="eyebrow">Laboratório · Cockpit executivo</div>
       <h1>Painel de Faturamento &amp; Atendimentos</h1>
     </div>
-    <div class="stamp">Dados até<b id="stDados"></b><span style="display:block;margin-top:6px">Painel gerado em</span><b id="stGerado"></b></div>
+    <div class="stamp">Dados até <b id="stDados"></b><br>Atualizado em <b id="stGerado"></b><br><button class="lnk cfg-lnk" type="button" data-go="qualidade">⚙ Configurações e qualidade dos dados</button></div>
   </header>
 
   <nav class="tabs" id="tabs" role="tablist">
@@ -327,12 +474,13 @@ table tr:hover td{background:#F8FAFC}
     <button role="tab" data-group="apoio">Laboratório de Apoio</button>
     <button role="tab" data-group="areaTecnica">Área Técnica</button>
     <button role="tab" data-group="fat">Faturamento e Exames</button>
-    <button role="tab" data-group="custos">Tabelas por Exame</button>
+    <button role="tab" data-group="custos">Preços por Convênio</button>
     <button role="tab" data-group="financeiro">Financeiro</button>
   </nav>
   <nav class="subtabs" id="subtabs" role="tablist"></nav>
 
   <section class="filters" id="filters">
+    <button class="btn" id="fToggle" type="button">Filtros ▾</button>
     <div class="fgroup" id="fgAtalhos">
       <button class="btn atalho" type="button" data-atalho="mes">Este Mês</button>
       <button class="btn atalho" type="button" data-atalho="mesAnterior">Mês Passado</button>
@@ -344,7 +492,7 @@ table tr:hover td{background:#F8FAFC}
       <label class="fld">Data inicial<input type="date" id="fIni"></label>
       <label class="fld">Data final<input type="date" id="fFim"></label>
     </div>
-    <div class="fgroup">
+    <div class="fgroup fg-dims">
       <div class="fld">Unidade<div id="msU"></div></div>
       <div class="fld">Convênio<div id="msC"></div></div>
       <div class="fld" id="fgMedico">Médico solicitante<div id="msM"></div></div>
@@ -408,6 +556,7 @@ const fBRL=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const fBRL0=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
 const fNum=new Intl.NumberFormat('pt-BR');
 const fD1=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const fD2=new Intl.NumberFormat("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 const fCmp=new Intl.NumberFormat('pt-BR',{notation:'compact',maximumFractionDigits:1});
 const MES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const MESL=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -459,7 +608,7 @@ function monthBack(iso){
 const uy=+ULT.slice(0,4), um=+ULT.slice(5,7), [py,pm]=addMonths(uy,um,-1);
 const S={tab:'geral',ano:'',mes:'',ini:'',fim:'',u:new Set(),c:new Set(),m:new Set(),
   anoB:ANOS[ANOS.length-1], anoA:ANOS.length>1?ANOS[ANOS.length-2]:ANOS[0],
-  pa:{ini:isoAdd(ULT,-14),fim:ULT}, pb:{ini:monthBack(isoAdd(ULT,-14)),fim:monthBack(ULT)}, anMode:'m24',
+  pa:{ini:isoAdd(ULT,-42),fim:isoAdd(ULT,-28)}, pb:{ini:isoAdd(ULT,-14),fim:ULT}, anMode:'m24',
   rank:'convenios', todos:false, exOrd:'l', cmpCum:0};
 
 const maskOf=(set,len)=>{if(!set.size)return null;const a=new Uint8Array(len);set.forEach(i=>a[i]=1);return a;};
@@ -488,7 +637,7 @@ function periodo(){
   return {def:false,mask,nome:'Período escolhido',det:bits.join(' · ')};
 }
 const maskPeriodo=()=>periodo().mask;
-const perBar=P=>`<div class="perbar">Período exibido: <b>${P.nome}</b> <span>(${P.det})</span>${P.def?' <span>· é o padrão desta aba; use os filtros acima para ver outro período.</span>':' <span>· para voltar ao padrão, clique em “Limpar filtros”.</span>'}</div>`;
+const perBar=P=>`<div class="perbar">Mostrando <b>${P.nome}</b> <span>(${P.det})</span>${P.def?'':' <span>· “Limpar filtros” volta ao padrão</span>'}</div>`;
 const maskAno=y=>dayMask(i=>diaAno[i]===y);
 
 function agg(dm,dd,keyFn){
@@ -532,12 +681,30 @@ function chartLine(o){
   const f=frame(o,n,mx),X=i=>f.ml+(n>1?i*f.iw/(n-1):f.iw/2),Y=v=>f.mt+f.ih-(v/f.top)*f.ih;
   let s=`<svg class="ch" viewBox="0 0 ${f.W} ${f.H}" role="img" aria-label="${esc(o.aria||'gráfico de linhas')}">${f.g}`;
   o.series.forEach((se,si)=>{
-    let d='',seg=[];const flush=()=>{if(seg.length>1){d+=`M${seg[0][0]},${seg[0][1]}`;for(let k=1;k<seg.length;k++){const [x0,y0]=seg[k-1],[x1,y1]=seg[k],xm=(x0+x1)/2;d+=`C${xm},${y0} ${xm},${y1} ${x1},${y1}`;}}seg=[];};
-    se.values.forEach((v,i)=>{if(v==null){flush();}else seg.push([X(i),Y(v)]);});flush();
-    if(o.area&&si===0&&!se.values.includes(null)&&n>1){const b=f.mt+f.ih;s+=`<path d="${d}L${X(n-1)},${b}L${X(0)},${b}Z" fill="${se.color}" opacity=".10"/>`;}
-    s+=`<path d="${d}" fill="none" stroke="${se.color}" stroke-width="2.6" ${se.dash?'stroke-dasharray="6 5"':''} stroke-linejoin="round"/>`;
-    if(n<=40)se.values.forEach((v,i)=>{if(v==null)return;s+=`<circle cx="${X(i)}" cy="${Y(v)}" r="3.6" fill="#fff" stroke="${se.color}" stroke-width="2"><title>${esc(o.labels[i])} · ${esc(se.name)}: ${esc((o.tip||o.axis||fNum.format)(v))}</title></circle>`;});
-    if(o.vals){const fvf=o.fmtVal||fCmp.format,gap=o.labelGap||Math.max(...se.values.filter(x=>x!=null).map(x=>fvf(x).length),4)*6.6+6,st=Math.max(1,Math.ceil(gap/(n>1?f.iw/(n-1):f.iw))),last=se.values.reduce((a,x,j)=>x==null?a:j,-1);
+    // linha reta ponto a ponto (a curva suavizada passava por baixo/por cima dos pontos reais)
+    const parc=o.partialLast&&si===0&&n>1&&se.values[n-1]!=null&&se.values[n-2]!=null;
+    const vals=parc?se.values.slice(0,n-1):se.values;
+    let d='',seg=[];const flush=()=>{if(seg.length>1){d+=`M${seg[0][0]},${seg[0][1]}`;for(let k=1;k<seg.length;k++)d+=`L${seg[k][0]},${seg[k][1]}`;}seg=[];};
+    vals.forEach((v,i)=>{if(v==null){flush();}else seg.push([X(i),Y(v)]);});flush();
+    if(o.area&&si===0&&!se.values.includes(null)&&n>1){const b=f.mt+f.ih;s+=`<path d="${d}L${X(vals.length-1)},${b}L${X(0)},${b}Z" fill="${se.color}" opacity=".06"/>`;}
+    s+=`<path d="${d}" fill="none" stroke="${se.color}" stroke-width="2.2" ${se.dash?'stroke-dasharray="6 5"':''} stroke-linejoin="round"/>`;
+    // mês em andamento: trecho tracejado e ponto vazado em cinza, pra não parecer uma queda
+    if(parc)s+=`<path d="M${X(n-2)},${Y(se.values[n-2])}L${X(n-1)},${Y(se.values[n-1])}" fill="none" stroke="#9aa0a6" stroke-width="2" stroke-dasharray="5 5"/>`;
+    if(n<=40)se.values.forEach((v,i)=>{if(v==null)return;const pc=parc&&i===n-1,cor=pc?'#9aa0a6':se.color;s+=`<circle cx="${X(i)}" cy="${Y(v)}" r="${o.keyVals?3:3.6}" fill="${o.keyVals&&!pc?cor:'#fff'}" stroke="${cor}" stroke-width="2"><title>${esc(o.labels[i])} · ${esc(se.name)}: ${esc((o.tip||o.axis||fNum.format)(v))}</title></circle>`;});
+    if(o.keyVals){
+      // rótulo só onde importa: maior, menor e último mês fechado (+ o mês em andamento, em cinza)
+      const fv=o.fmtVal||fCmp.format,base=parc?se.values.slice(0,n-1):se.values,idx=base.map((v,i)=>[v,i]).filter(([v])=>v!=null);
+      if(idx.length){const imax=idx.reduce((a,b)=>b[0]>a[0]?b:a)[1],imin=idx.reduce((a,b)=>b[0]<a[0]?b:a)[1],iult=idx[idx.length-1][1];
+        const marca=new Map();
+        if(o.allVals){
+          // valor em todos os meses: em cima do ponto, ou embaixo quando o ponto é um "vale" (menor que os vizinhos)
+          idx.forEach(([v,i])=>{const a=base[i-1],b=base[i+1];marca.set(i,a!=null&&b!=null&&v<a&&v<b?'abaixo':'acima');});
+        }else{marca.set(imax,'acima');if(!marca.has(imin))marca.set(imin,'abaixo');if(!marca.has(iult))marca.set(iult,'acima');}
+        marca.forEach((pos,i)=>{const v=se.values[i],anc=i===0?'start':i>=n-1?'end':'middle',dx=i===0?-4:0;
+          s+=`<text class="vl" x="${X(i)+dx}" y="${pos==='acima'?Y(v)-11:Y(v)+20}" text-anchor="${anc}" style="fill:${se.color}">${esc(fv(v))}</text>`;});
+        if(parc){const v=se.values[n-1];s+=`<text class="vl" x="${X(n-1)-10}" y="${Y(v)+4}" text-anchor="end" style="fill:#80868b;font-weight:600">${esc(fv(v))}*</text>`;}}
+    }
+    if(o.vals&&!o.keyVals){const fvf=o.fmtVal||fCmp.format,gap=o.labelGap||Math.max(...se.values.filter(x=>x!=null).map(x=>fvf(x).length),4)*6.6+6,st=Math.max(1,Math.ceil(gap/(n>1?f.iw/(n-1):f.iw))),last=se.values.reduce((a,x,j)=>x==null?a:j,-1);
       se.values.forEach((v,i)=>{if(v==null)return;
         if(i%st!==0&&i!==last)return; if(i!==last&&last-i<st*0.6)return;
         if(i!==last&&last-i===1){const mxv=Math.max(...se.values.filter(x=>x!=null));if(mxv&&Math.abs(v-se.values[last])/mxv<0.03)return;}
@@ -573,13 +740,13 @@ function chartBarsX(o){
   const fv=o.fmtVal||fNum.format;let b='';
   for(let i=0;i<n;i++){
     const gx=x0+pad+i*gw;
-    o.series.forEach((se,k)=>{const v=se.values[i];if(v==null)return;const x=gx+(gw-bw*ns)/2+k*bw,y=Y(v),h=Math.max(1,mt+ih-y),cx=x+(bw-1.5)/2,lb=[].concat(o.labels[i]).join(' · ');
+    o.series.forEach((se,k)=>{const v=se.values[i];if(v==null)return;const x=gx+(gw-bw*ns)/2+k*bw,y=Y(v),h=Math.max(1,mt+lp+ih-y),cx=x+(bw-1.5)/2,lb=[].concat(o.labels[i]).join(' · ');
       b+=`<rect x="${x}" y="${y}" width="${bw-1.5}" height="${h}" rx="3" fill="${se.color}"><title>${esc(lb)} · ${esc(se.name)}: ${esc((o.tip||fv)(v))}</title></rect>`;
       if(o.oneVal&&k!==ns-1)return;
       const vc='vl'+(big?' vlb':'');
       b+=rot?`<text class="${vc}" transform="translate(${cx+(big?5:4)},${y-6}) rotate(-90)" text-anchor="start">${esc(fv(v))}</text>`:`<text class="${vc}" x="${cx}" y="${y-5}" text-anchor="middle">${esc(fv(v))}</text>`;});
     if(o.deltas&&o.deltas[i])b+=`<text class="dlt ${o.deltas[i].c}" x="${gx+gw/2}" y="${big?24:18}" text-anchor="middle">${esc(o.deltas[i].t)}</text>`;
-    [].concat(o.labels[i]).forEach((l,q)=>{b+=`<text class="ax${q?' ax2':''}${big?' axb':''}" x="${gx+gw/2}" y="${mt+ih+(big?20:17)+q*(big?16:13)}" text-anchor="middle">${esc(l)}</text>`;});
+    [].concat(o.labels[i]).forEach((l,q)=>{b+=`<text class="ax${q?' ax2':''}${big?' axb':''}" x="${gx+gw/2}" y="${mt+lp+ih+(big?20:17)+q*(big?16:13)}" text-anchor="middle">${esc(l)}</text>`;});
   }
   const aria=esc(o.aria||'gráfico de barras');
   if(!scroll)return `<svg class="ch" viewBox="0 0 ${W} ${H}" role="img" aria-label="${aria}">${grid}${axT}${b}</svg>`;
@@ -632,6 +799,8 @@ $('#fAno').onchange=e=>{S.ano=e.target.value;go();};
 $('#fMes').onchange=e=>{S.mes=e.target.value;go();};
 $('#fIni').onchange=e=>{S.ini=e.target.value;go();};
 $('#fFim').onchange=e=>{S.fim=e.target.value;go();};
+// celular: os filtros ficam recolhidos atrás do botão "Filtros" (senão ocupam a tela inteira antes dos números)
+$('#fToggle').onclick=()=>{const f=$('#filters');f.classList.toggle('aberto');$('#fToggle').textContent=f.classList.contains('aberto')?'Fechar filtros ▴':'Filtros ▾';};
 $('#fClear').onclick=()=>{S.ano=S.mes=S.ini=S.fim='';S.u.clear();S.c.clear();S.m.clear();syncFilters();msU.refresh();msC.refresh();msM.refresh();go();};
 $$('[data-atalho]').forEach(b=>b.onclick=()=>{
   const a=b.dataset.atalho;
@@ -662,11 +831,30 @@ function previsaoFechamentoMes(dd){
   return {fracaoMedia:fracoes.reduce((a,b)=>a+b,0)/fracoes.length,anos:fracoes.length};
 }
 let S_metaMes='';
+// botão Imprimir / PDF: o navegador abre a janela de impressão, onde dá pra escolher "Salvar como PDF"
+const btnImprimir=()=>`<button class="btn btn-print" type="button" onclick="window.print()">🖨 Imprimir / PDF</button>`;
+// "?" de ajuda: explica o número só pra quem clicar (no lugar dos parágrafos que tiramos)
+const ajuda=txt=>`<button class="ajuda" type="button" aria-label="O que é isto?" data-ajuda="${esc(txt)}">?</button>`;
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('.ajuda');
+  $$('.ajuda-bal').forEach(x=>x.remove());
+  if(!b)return;
+  e.stopPropagation();
+  const bal=document.createElement('div');bal.className='ajuda-bal';bal.textContent=b.dataset.ajuda;
+  document.body.appendChild(bal);
+  const r=b.getBoundingClientRect(),w=Math.min(300,window.innerWidth-24);
+  bal.style.width=w+'px';
+  bal.style.left=Math.max(12,Math.min(window.innerWidth-w-12,r.left+window.scrollX-w/2+r.width/2))+'px';
+  bal.style.top=(r.bottom+window.scrollY+8)+'px';
+});
 function viewGeral(){
   const PER=periodo(),dm=PER.mask,dd=dims(),Q=D.qualidade;
   const ontemIso=isoAdd(ULT,-1);
   const hoje=agg(maskRange(ULT,ULT),dd,null).tot;
   const ontem=agg(maskRange(ontemIso,ontemIso),dd,null).tot;
+  // mesmo dia da semana passada (laboratório tem padrão por dia da semana: sexta x sexta compara melhor)
+  const semPasIso=isoAdd(ULT,-7),semPas=agg(maskRange(semPasIso,semPasIso),dd,null).tot;
+  const wdU=wdOf(ULT),diaSem=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][wdU]+(wdU===0||wdU===6?' passado':' passada');
   const mesIni=`${uy}-${pad(um)}-01`,mesAcum=agg(maskRange(mesIni,ULT),dd,null).tot;
   const uHoje=agg(maskRange(ULT,ULT),dd,i=>A.u[i]).g;
   const uRows=D.unidades.map((u,idx)=>({nome:u.nome,o:uHoje.get(idx)||{f:0,r:0,e:0}})).filter(r=>r.o.f>0||r.o.r>0).sort((a,b)=>b.o.f-a.o.f);
@@ -688,22 +876,22 @@ function viewGeral(){
   let h=perBar(PER);
   if(Q.pct_linhas_medico_sem_nome>0)h+=`<div class="notice warn"><b>Aviso de qualidade de dados:</b> ${fD1.format(Q.pct_linhas_medico_sem_nome)}% dos exames (${fD1.format(Q.pct_fat_medico_sem_nome)}% do faturamento) têm médico solicitante sem nome na lista de médicos; o filtro e o ranking por médico mostram o código nesses casos. <button class="lnk" data-go="qualidade">Ver detalhes</button></div>`;
   h+=`<div class="secao-topo">
-   <div class="secao-head"><h2 style="margin:0">Acompanhamento do dia</h2><span class="sub">${WDL[wdOf(ULT)]}, ${isoBR(ULT)}</span></div>
+   <div class="secao-head"><h2 style="margin:0">Acompanhamento do dia</h2><span class="sub">${WDL[wdOf(ULT)]}, ${isoBR(ULT)}</span>${btnImprimir()}</div>
    <div class="kpis-dia">
-    <div class="card kpi"><div class="l">Faturamento hoje</div><div class="v" style="color:var(--blue)">${fBRL0.format(hoje.f)}</div><div class="s">${delta(ontem.f,hoje.f)} vs. ontem</div></div>
-    <div class="card kpi"><div class="l">Atendimentos hoje</div><div class="v">${fNum.format(hoje.r)}</div><div class="s">${delta(ontem.r,hoje.r)} vs. ontem</div><div class="s" style="margin-top:5px;padding-top:5px;border-top:1px dashed var(--line)">Ticket médio: <b style="color:var(--amber)">${fBRL.format(tk(hoje))}</b></div></div>
-    <div class="card kpi"><div class="l">Exames hoje</div><div class="v">${fNum.format(hoje.e)}</div><div class="s">${delta(ontem.e,hoje.e)} vs. ontem</div></div>
-    <div class="card kpi kpi-proj"><div class="l">Projeção de fechamento</div><div class="proj-linha"><span class="proj-lb">Acumulado do mês</span><span class="proj-vv">${fBRL0.format(mesAcum.f)}</span></div><div class="proj-linha"><span class="proj-lb">Projeção do mês</span><span class="proj-vv" style="color:var(--green)">${fBRL0.format(projecao)}</span></div><div class="s">Ritmo ${fBRL0.format(ritmoDiario)}/dia · ${diasUteisRestam} dias úteis rest.</div></div>
+    <div class="card kpi t-fat"><div class="l">Faturamento hoje</div><div class="v">${fBRL0.format(hoje.f)}</div><div class="s">${delta(ontem.f,hoje.f)} vs. ontem</div><div class="s kpi-extra">${diaSem} <b>${fBRL0.format(semPas.f)}</b> ${delta(semPas.f,hoje.f)}</div></div>
+    <div class="card kpi t-atd"><div class="l">Atendimentos hoje</div><div class="v">${fNum.format(hoje.r)}</div><div class="s">${delta(ontem.r,hoje.r)} vs. ontem</div><div class="s kpi-extra">Ticket médio ${ajuda('Ticket médio = faturamento dividido pelo número de pacientes atendidos. Mostra quanto, em média, cada paciente deixou no laboratório.')} <b>${fBRL.format(tk(hoje))}</b></div></div>
+    <div class="card kpi t-exa"><div class="l">Exames hoje</div><div class="v">${fNum.format(hoje.e)}</div><div class="s">${delta(ontem.e,hoje.e)} vs. ontem</div><div class="s kpi-extra">Exames por atendimento <b>${fD1.format(hoje.r?hoje.e/hoje.r:0)}</b></div></div>
+    <div class="card kpi kpi-proj t-prj"><div class="l">Projeção de fechamento ${ajuda('Quanto o mês deve fechar se continuar no ritmo atual: média faturada por dia útil até hoje × dias úteis que ainda faltam, somado ao que já entrou.')}</div><div class="proj-linha"><span class="proj-lb">Acumulado do mês</span><span class="proj-vv">${fBRL0.format(mesAcum.f)}</span></div><div class="proj-linha"><span class="proj-lb">Projeção do mês</span><span class="proj-vv proj-dest">${fBRL0.format(projecao)}</span></div><div class="s">Ritmo ${fBRL0.format(ritmoDiario)}/dia · ${diasUteisRestam} dias úteis rest.</div></div>
    </div>
    <div class="grid-dia">
     <div class="card tw">
-     <h3 style="margin:0 0 10px;font-size:15px">Desempenho por unidade — hoje</h3>
+     <h3 class="card-tit">Unidades hoje</h3>
      <table><thead><tr><th>Unidade</th><th>Atend.</th><th>Exames</th><th>Faturamento</th><th>Ticket médio</th><th>Participação</th></tr></thead><tbody>
      ${uRows.length?uRows.map(r=>`<tr><td>${esc(r.nome)}</td><td>${fNum.format(r.o.r)}</td><td>${fNum.format(r.o.e)}</td><td>${fBRL0.format(r.o.f)}</td><td>${fBRL.format(tk(r.o))}</td><td><div class="pbar"><b style="width:${hoje.f?(r.o.f/hoje.f*100).toFixed(1):0}%"></b></div></td></tr>`).join(''):'<tr><td colspan="6" style="color:var(--muted)">Nenhum atendimento registrado hoje ainda.</td></tr>'}
      </tbody><tfoot><tr class="tot"><td>Total</td><td>${fNum.format(hoje.r)}</td><td>${fNum.format(hoje.e)}</td><td>${fBRL0.format(hoje.f)}</td><td>${fBRL.format(tk(hoje))}</td><td>100%</td></tr></tfoot></table>
     </div>
     <div class="card">
-     <h3 style="margin:0 0 10px;font-size:15px">Convênios — hoje</h3>
+     <h3 class="card-tit">Convênios hoje</h3>
      <div class="rank-conv-dia">
      ${cTop.length?cTop.map(r=>`<div class="rc-row"><div class="rc-nome">${esc(r.nome)}</div><div class="rc-bar"><b style="width:${(r.o.f/cMax*100).toFixed(1)}%"></b></div><div class="rc-val">${fBRL0.format(r.o.f)} <span class="rc-n">· ${fNum.format(r.o.r)} atend.</span></div></div>`).join(''):'<p class="sub">Sem faturamento hoje ainda.</p>'}
      ${cRest.length?`<div class="rc-row rc-outros"><div class="rc-nome">Outros (${cRest.length} convênios)</div><div class="rc-bar"><b style="width:${(cOutrosF/cMax*100).toFixed(1)}%"></b></div><div class="rc-val">${fBRL0.format(cOutrosF)} <span class="rc-n">· ${fNum.format(cOutrosR)} atend.</span></div></div>`:''}
@@ -712,7 +900,8 @@ function viewGeral(){
    </div>
   </div>
 `;
-  h+=`<h2>Faturamento líquido por mês<small>${PER.def?'últimos 12 meses':'período escolhido'}</small></h2><div class="card">${chartLine({labels:ym12.map(k=>ymLabel(k)+(PARCIAL&&k===ULTYM?'*':'')),series:[{name:'Faturamento líquido',color:'#2563eb',values:ym12.map(k=>mon12.get(k).f)}],area:true,vals:true,axis:v=>'R$ '+fCmp.format(v),tip:v=>fBRL.format(v),fmtVal:v=>fCmp.format(v),aria:'Faturamento líquido por mês'})}${PARCIAL&&ym12.includes(ULTYM)?`<p class="hint" style="margin:8px 0 0">O último mês está em andamento: tem dados só até ${isoBR(ULT).slice(0,5)}.</p>`:''}</div>`;
+  const estreito=($('#view').clientWidth||1100)<700;
+  h+=`<h2>Faturamento líquido por mês<small>${PER.def?'últimos 12 meses':'período escolhido'}</small></h2><div class="card">${chartLine({w:estreito?380:900,h:estreito?280:300,maxLabels:estreito?6:16,labels:ym12.map(k=>ymLabel(k)+(PARCIAL&&k===ULTYM?'*':'')),series:[{name:'Faturamento líquido',color:'#1f63c6',values:ym12.map(k=>mon12.get(k).f)}],area:true,keyVals:true,allVals:!estreito,partialLast:PARCIAL&&ym12[ym12.length-1]===ULTYM,axis:v=>'R$ '+fCmp.format(v),tip:v=>fBRL.format(v),fmtVal:v=>fCmp.format(v),aria:'Faturamento líquido por mês'})}${PARCIAL&&ym12.includes(ULTYM)?`<p class="hint" style="margin:8px 0 0">* mês em andamento, dados até ${isoBR(ULT).slice(0,5)}</p>`:''}</div>`;
   return h;
 }
 function bindGeral(){const g=$('#gMeta');if(g)g.onchange=()=>{S_metaMes=g.value;go();};}
@@ -729,7 +918,7 @@ function viewAnual(){
     for(let k=0;k<12;k++){const yb=ULTYM-11+k,ya=yb-12,mo=yb%12,part=PARCIAL&&yb===ULTYM;
       groups.push({label:MES[mo]+(part?'*':''),sub:String(Math.floor(ya/12))+' × '+String(Math.floor(yb/12)),full:`${MESL[mo]}${part?'*':''} (${Math.floor(ya/12)} × ${Math.floor(yb/12)})`,a:g.get(ya)||null,b:g.get(yb)||null});}
     cA.name=`${ymL(ULTYM-23)} a ${ymL(ULTYM-12)}`;cB.name=`${ymL(ULTYM-11)} a ${ymL(ULTYM)}`;
-    intro=`Os 12 meses mais recentes (<b>${cB.name}</b>) contra os 12 meses anteriores (<b>${cA.name}</b>), mês a mês. Atualiza sozinho com o dia mais recente dos dados.${pm?' Só dentro do período escolhido no filtro de Ano/Mês/Data.':''}`;
+    intro=`Últimos 12 meses (<b>${cB.name}</b>) comparados com os 12 meses anteriores (<b>${cA.name}</b>).${pm?' Só dentro do período escolhido no filtro.':''}`;
     if(PARCIAL)fnote=`* ${MESL[um-1]}: os dados vão até o dia ${ULTDOM}, então os dois anos são comparados só nos dias 1 a ${ULTDOM}, para a comparação ser justa.`;
   }else{
     const lim=PARCIAL&&(S.anoA===uy||S.anoB===uy);
@@ -745,16 +934,17 @@ function viewAnual(){
   }
   const ok=o=>o&&o.r>0,comuns=groups.filter(g=>ok(g.a)&&ok(g.b));
   const mets=[
-    {t:'Faturamento líquido',fmt:v=>fBRL.format(v),tf:v=>fBRL0.format(v),ax:v=>'R$ '+fCmp.format(v),lb:v=>fCmp.format(v),g:o=>o.f,cor:['#9db4e0','#2563eb']},
-    {t:'Pacientes atendidos',fmt:v=>fNum.format(v),ax:v=>fNum.format(v),lb:v=>fNum.format(v),g:o=>o.r,cor:['#8fcab0','#1f9d6b']},
-    {t:'Exames realizados',fmt:v=>fNum.format(v),ax:v=>fNum.format(v),lb:v=>fNum.format(v),g:o=>o.e,cor:['#e3bd8e','#c9791f']},
-    {t:'Ticket médio',fmt:v=>fBRL.format(v),ax:v=>'R$ '+fD1.format(v),lb:v=>fBRL0.format(v),g:o=>tk(o),cor:['#c6aee6','#7c3aed']}];
-  let h=`<div class="pick"><div class="card"><h3>Comparativo anual</h3><div class="row" style="margin:6px 0 8px"><div class="seg" role="group" aria-label="Modo"><button data-am="m24" aria-pressed="${m24}">Últimos 24 meses</button><button data-am="ano" aria-pressed="${!m24}">Comparar dois anos</button></div></div><p class="sub">${intro} Unidade, convênio e médico dos filtros acima continuam valendo. Se você escolher um Ano, Mês ou intervalo de datas no filtro do topo, ele soma com a comparação escolhida aqui em cima (só entram os dias dentro desse período).</p>${ctrl}</div></div>${aviso}`;
+    {t:'Faturamento líquido',fmt:v=>fBRL.format(v),tf:v=>fBRL0.format(v),ax:v=>'R$ '+fCmp.format(v),lb:v=>fCmp.format(v),g:o=>o.f,cor:['#a9c3ec','#1f63c6'],tc:'t-fat'},
+    {t:'Pacientes atendidos',fmt:v=>fNum.format(v),ax:v=>fNum.format(v),lb:v=>fNum.format(v),g:o=>o.r,cor:['#cdb6ee','#7a3fd1'],tc:'t-atd'},
+    {t:'Exames realizados',fmt:v=>fNum.format(v),ax:v=>fNum.format(v),lb:v=>fNum.format(v),g:o=>o.e,cor:['#9fd0db','#0e7490'],tc:'t-exa'},
+    {t:'Ticket médio',fmt:v=>fBRL.format(v),ax:v=>'R$ '+fD1.format(v),lb:v=>fBRL0.format(v),g:o=>tk(o),cor:['#f0c79a','#b45309'],tc:'t-prj'}];
+  let h=`<div class="pick"><div class="card"><h3>Comparativo anual</h3><div class="row" style="margin:6px 0 8px"><div class="seg" role="group" aria-label="Modo"><button data-am="m24" aria-pressed="${m24}">Últimos 24 meses</button><button data-am="ano" aria-pressed="${!m24}">Comparar dois anos</button></div></div><p class="sub">${intro}</p>${ctrl}</div></div>${aviso}`;
   if(!comuns.length&&!aviso)h+=`<div class="notice warn"><b>Não há meses em comum entre ${cA.name} e ${cB.name}.</b> A base vai de ${isoBR(PRI)} a ${isoBR(ULT)}. Escolha outros anos.</div>`;
   if(comuns.length){
     const sa=Z(),sb=Z();comuns.forEach(g=>['f','b','x','e','r'].forEach(k=>{sa[k]+=g.a[k];sb[k]+=g.b[k];}));
-    const kp=(t,fmt,x,y)=>`<div class="card"><div class="l" style="font-size:13px;color:var(--muted);font-weight:600">${t}</div><div class="v">${fmt(y)}</div><div class="p">${cA.name}: ${fmt(x)} · ${delta(x,y)}</div></div>`;
-    h+=`<div class="cmpk">${kp('Faturamento líquido · '+cB.name,fBRL0.format,sa.f,sb.f)}${kp('Pacientes atendidos',fNum.format,sa.r,sb.r)}${kp('Exames realizados',fNum.format,sa.e,sb.e)}${kp('Ticket médio',fBRL.format,tk(sa),tk(sb))}</div>`;
+    // mesmo formato de card das outras telas: número na cor do assunto, variação embaixo, período anterior separado
+    const kp=(t,fmt,x,y,tc)=>`<div class="card kpi ${tc}"><div class="l">${t}</div><div class="v">${fmt(y)}</div><div class="s">${delta(x,y)} vs. ${cA.name}</div><div class="s kpi-extra">${cA.name} <b>${fmt(x)}</b></div></div>`;
+    h+=`<div class="kpis-dia">${kp('Faturamento líquido',fBRL0.format,sa.f,sb.f,'t-fat')}${kp('Pacientes atendidos',fNum.format,sa.r,sb.r,'t-atd')}${kp('Exames realizados',fNum.format,sa.e,sb.e,'t-exa')}${kp('Ticket médio',fBRL.format,tk(sa),tk(sb),'t-prj')}</div>`;
   }
   const W=Math.max(300,($('#view').clientWidth||1100)-44);
   const dlt=(a,b)=>{const p=(b-a)/a*100,c=p>0.05?'up':p<-0.05?'dn':'eq';return {c,t:`${p>0.05?'▲':p<-0.05?'▼':'•'} ${fD1.format(Math.abs(p))}%`};};
@@ -762,13 +952,13 @@ function viewAnual(){
     const vA=groups.map(g=>ok(g.a)?m.g(g.a):null),vB=groups.map(g=>ok(g.b)?m.g(g.b):null);
     const dl=groups.map((g,i)=>vA[i]!=null&&vB[i]!=null&&vA[i]>0?dlt(vA[i],vB[i]):null);
     const cA2={name:cA.name,color:m.cor[0]},cB2={name:cB.name,color:m.cor[1]};
-    h+=`<div class="card" style="margin-top:14px"><h3>${m.t}</h3>${legend([cA2,cB2])}${chartBarsX({big:true,scroll:false,w:W,h:420,labels:groups.map(g=>g.sub?[g.label,g.sub]:g.label),series:[{...cA2,values:vA},{...cB2,values:vB}],axis:m.ax,tip:m.fmt,fmtVal:m.lb,deltas:dl,aria:m.t+', '+cA.name+' contra '+cB.name})}</div>`;});
-  h+=`<h2>Tabela mês a mês<small>${m24?'anteriores = '+cA.name+' · recentes = '+cB.name:''}</small></h2><div class="card tw tsm"><table><thead><tr><th rowspan="2">Mês</th>${mets.map(m=>`<th colspan="3" style="text-align:center">${m.t}</th>`).join('')}</tr><tr>${mets.map(()=>`<th>${m24?'Anteriores':cA.name}</th><th>${m24?'Recentes':cB.name}</th><th>Var.</th>`).join('')}</tr></thead><tbody>`;
+    h+=`<div class="card" style="margin-top:14px"><h3>${m.t}</h3>${legend([cA2,cB2])}${chartBarsX({big:true,scroll:W<700,rot:false,oneVal:true,w:W,h:400,end:true,labels:groups.map(g=>g.sub?[g.label,g.sub]:g.label),series:[{...cA2,values:vA},{...cB2,values:vB}],axis:m.ax,tip:m.fmt,fmtVal:m.lb,deltas:dl,aria:m.t+', '+cA.name+' contra '+cB.name})}</div>`;});
+  h+=`<details class="ap-atencao"><summary><h2 style="display:inline">Tabela mês a mês</h2> <span class="sub">os mesmos números dos gráficos, em tabela · clique para abrir</span></summary><div class="card tw tsm"><table><thead><tr><th rowspan="2">Mês</th>${mets.map(m=>`<th colspan="3" style="text-align:center">${m.t}</th>`).join('')}</tr><tr>${mets.map(()=>`<th>${m24?'Anteriores':cA.name}</th><th>${m24?'Recentes':cB.name}</th><th>Var.</th>`).join('')}</tr></thead><tbody>`;
   groups.forEach(g=>{h+=`<tr><td>${g.full}</td>`;mets.forEach(x=>{const a=ok(g.a)?x.g(g.a):null,b=ok(g.b)?x.g(g.b):null;
     const tf=x.tf||x.fmt;h+=`<td>${a==null?'—':tf(a)}</td><td>${b==null?'—':tf(b)}</td><td>${a!=null&&b!=null?delta(a,b):'—'}</td>`;});h+='</tr>';});
   if(comuns.length){const sa=Z(),sb=Z();comuns.forEach(g=>['f','b','x','e','r'].forEach(k=>{sa[k]+=g.a[k];sb[k]+=g.b[k];}));
     h+=`<tr class="tot"><td>Total dos meses comparados</td>${mets.map(x=>`<td>${(x.tf||x.fmt)(x.g(sa))}</td><td>${(x.tf||x.fmt)(x.g(sb))}</td><td>${delta(x.g(sa),x.g(sb))}</td>`).join('')}</tr>`;}
-  h+='</tbody></table></div>';
+  h+='</tbody></table></div></details>';
   if(fnote)h+=`<p class="sub" style="margin-top:10px">${fnote}</p>`;
   const dmFiltro=PER.def?maskRange(r12.ini,r12.fim):PER.mask,periodoLbl=PER.def?'últimos 12 meses':'período escolhido';
   const mon12=agg(dmFiltro,dd,i=>diaYM[A.d[i]]).g,ym12=[...mon12.keys()].sort((a,b)=>a-b);
@@ -791,7 +981,7 @@ function bindAnual(){$$('[data-am]').forEach(b=>b.onclick=()=>{S.anMode=b.datase
 function daysBetween(a,b){const f=s=>Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10));return Math.round((f(b)-f(a))/864e5);}
 function viewPeriodos(){
   const dd=dims(),P=[S.pa,S.pb],ok=P.every(p=>p.ini&&p.fim&&p.ini<=p.fim);
-  let h=`<div class="pick">${['A','B'].map((L,k)=>`<div class="card"><h3>Período ${L}${k?' (comparado com o A)':' (base)'}</h3><div class="rng"><label class="fld">De<input type="date" data-p="${k}" data-e="ini" value="${P[k].ini}" min="${PRI}" max="${ULT}"></label><label class="fld">Até<input type="date" data-p="${k}" data-e="fim" value="${P[k].fim}" min="${PRI}" max="${ULT}"></label></div>${P[k].ini&&P[k].fim&&P[k].ini<=P[k].fim?`<p class="wdl">${WDL[wdOf(P[k].ini)]}, ${isoBR(P[k].ini)} até ${WDL[wdOf(P[k].fim)]}, ${isoBR(P[k].fim)} · ${daysBetween(P[k].ini,P[k].fim)+1} dias</p>`:''}</div>`).join('')}</div><p style="margin:10px 0 0"><button class="btn" id="pReset">Voltar aos últimos 15 dias (padrão)</button></p>`;
+  let h=`<div class="pick">${['A','B'].map((L,k)=>`<div class="card"><h3>Período ${L}${k?' (o que você quer ver)':' (base de comparação)'}</h3><div class="rng"><label class="fld">De<input type="date" data-p="${k}" data-e="ini" value="${P[k].ini}" min="${PRI}" max="${ULT}"></label><label class="fld">Até<input type="date" data-p="${k}" data-e="fim" value="${P[k].fim}" min="${PRI}" max="${ULT}"></label></div>${P[k].ini&&P[k].fim&&P[k].ini<=P[k].fim?`<p class="wdl">${WDL[wdOf(P[k].ini)]}, ${isoBR(P[k].ini)} até ${WDL[wdOf(P[k].fim)]}, ${isoBR(P[k].fim)} · ${daysBetween(P[k].ini,P[k].fim)+1} dias</p>`:''}</div>`).join('')}</div><p style="margin:10px 0 0"><button class="btn" id="pReset">Voltar ao padrão: últimos 15 dias × os mesmos dias da semana 4 semanas antes</button></p>`;
   if(!ok)return h+`<div class="notice warn"><b>Datas inválidas:</b> preencha início e fim dos dois períodos, com o início antes do fim.</div>`;
   const R=P.map(p=>{
     const dm=maskRange(p.ini,p.fim),off=new Int16Array(NDIAS).fill(-1);
@@ -799,8 +989,9 @@ function viewPeriodos(){
     const a=agg(dm,dd,i=>off[A.d[i]]),cal=daysBetween(p.ini,p.fim)+1,n=daysBetween(p.ini,p.fim)+1;
     return {t:a.tot,g:a.g,cal,dias:a.g.size};});
   const [a,b]=R,fa=a.t,fb=b.t;
-  const cmp=(t,fmt,ga,gb)=>`<div class="card"><div class="l" style="font-size:12.5px;color:var(--muted);font-weight:600">${t}</div><div class="v">${fmt(gb)}</div><div class="p">Período A: ${fmt(ga)} · ${delta(ga,gb)}</div></div>`;
-  h+=`<div class="cmpk">${cmp('Faturamento líquido',fBRL0.format,fa.f,fb.f)}${cmp('Atendimentos (pacientes)',fNum.format,fa.r,fb.r)}${cmp('Exames realizados',fNum.format,fa.e,fb.e)}${cmp('Ticket médio',fBRL.format,tk(fa),tk(fb))}</div>`;
+  // número grande = período B; embaixo, a variação contra o A (base) e o valor do A
+  const cmp=(t,fmt,ga,gb,tc)=>`<div class="card kpi ${tc}"><div class="l">${t}</div><div class="v">${fmt(gb)}</div><div class="s">${delta(ga,gb)} vs. período A</div><div class="s kpi-extra">Período A <b>${fmt(ga)}</b></div></div>`;
+  h+=`<div class="kpis-dia">${cmp('Faturamento líquido',fBRL0.format,fa.f,fb.f,'t-fat')}${cmp('Atendimentos (pacientes)',fNum.format,fa.r,fb.r,'t-atd')}${cmp('Exames realizados',fNum.format,fa.e,fb.e,'t-exa')}${cmp('Ticket médio',fBRL.format,tk(fa),tk(fb),'t-prj')}</div>`;
   if(a.cal!==b.cal)h+=`<div class="notice"><b>Períodos de tamanhos diferentes:</b> A tem ${a.cal} dias e B tem ${b.cal}. Compare também as linhas “por dia” da tabela.</div>`;
   const row=(t,x,y,fmt)=>`<tr><td>${t}</td><td>${fmt(x)}</td><td>${fmt(y)}</td><td>${fmt(y-x)}</td><td>${delta(x,y)}</td></tr>`;
   h+=`<h2>Detalhamento</h2><div class="card tw"><table><thead><tr><th></th><th>Período A<br><span style="font-weight:400">${wdD(S.pa.ini)} a ${wdD(S.pa.fim)}</span></th><th>Período B<br><span style="font-weight:400">${wdD(S.pb.ini)} a ${wdD(S.pb.fim)}</span></th><th>Diferença</th><th>Variação</th></tr></thead><tbody>
@@ -817,16 +1008,16 @@ function viewPeriodos(){
   const daily=fn=>[{...cA,values:idx.map(i=>i<a.cal?fn(a.g.get(i)):null)},{...cB,values:idx.map(i=>i<b.cal?fn(b.g.get(i)):null)}];
   const cum=fn=>{let sa=0,sb=0;return [{...cA,values:idx.map(i=>i<a.cal?(sa+=fn(a.g.get(i))):null)},{...cB,values:idx.map(i=>i<b.cal?(sb+=fn(b.g.get(i))):null)}];};
   const val=k=>o=>o?o[k]:0,acc=S.cmpCum;
-  const mets=[{t:'Faturamento líquido',k:'f',ax:v=>'R$ '+fCmp.format(v),tip:v=>fBRL.format(v),fv:v=>fNum.format(Math.round(v)),fc:v=>fCmp.format(v)},
-    {t:'Atendimentos (pacientes)',k:'r',ax:v=>fNum.format(v),tip:v=>fNum.format(v),fv:v=>fNum.format(v),fc:v=>fNum.format(v)},
-    {t:'Exames realizados',k:'e',ax:v=>fNum.format(v),tip:v=>fNum.format(v),fv:v=>fNum.format(v),fc:v=>fNum.format(v)}];
+  const mets=[{t:'Faturamento líquido',k:'f',cor:['#a9c3ec','#1f63c6'],ax:v=>'R$ '+fCmp.format(v),tip:v=>fBRL.format(v),fv:v=>fNum.format(Math.round(v)),fc:v=>fCmp.format(v)},
+    {t:'Atendimentos (pacientes)',k:'r',cor:['#cdb6ee','#7a3fd1'],ax:v=>fNum.format(v),tip:v=>fNum.format(v),fv:v=>fNum.format(v),fc:v=>fNum.format(v)},
+    {t:'Exames realizados',k:'e',cor:['#9fd0db','#0e7490'],ax:v=>fNum.format(v),tip:v=>fNum.format(v),fv:v=>fNum.format(v),fc:v=>fNum.format(v)}];
   h+=`<h2>Dia a dia dentro de cada período<small>dia 1 = data inicial de cada período</small></h2>
-   <div class="row" style="margin-bottom:10px"><div class="seg" role="group" aria-label="Tipo de gráfico"><button data-c="0" aria-pressed="${!acc}">Por dia</button><button data-c="1" aria-pressed="${!!acc}">Acumulado</button></div><span class="hint" style="margin:0">${acc?'Soma dos dias até aquele ponto.':'Cada barra é um dia, com o valor escrito em cima.'}</span></div>`;
-  mets.forEach(m=>{const ss=acc?cum(val(m.k)):daily(val(m.k));
-    h+=`<div class="card" style="margin-bottom:14px"><h3>${m.t}${acc?' acumulado':' por dia'}</h3>${legend(ss)}${acc?chartLine({w:900,h:320,labels:idx.map(i=>String(i+1)),series:ss,axis:m.ax,tip:m.tip,vals:true,fmtVal:m.fc,labelGap:70,maxLabels:16,aria:m.t}):chartBarsX({scroll:!((Wv-80)/nmax>=64),slot:70,w:Wv,h:340,labels:labD,series:ss,axis:m.ax,tip:m.tip,fmtVal:m.fv,aria:m.t})}</div>`;});
+   <div class="row" style="margin-bottom:10px"><div class="seg" role="group" aria-label="Tipo de gráfico"><button data-c="0" aria-pressed="${!acc}">Por dia</button><button data-c="1" aria-pressed="${!!acc}">Acumulado</button></div><span class="hint" style="margin:0">${acc?'Soma dos dias até aquele ponto.':'Cada par de barras é um dia: clara = período A, escura = período B (com o valor).'}</span></div>`;
+  mets.forEach(m=>{const ss=(acc?cum(val(m.k)):daily(val(m.k))).map((s,i)=>({...s,color:m.cor[i]}));
+    h+=`<div class="card" style="margin-bottom:14px"><h3>${m.t}${acc?' acumulado':' por dia'}</h3>${legend(ss)}${acc?chartLine({w:900,h:320,labels:idx.map(i=>String(i+1)),series:ss,axis:m.ax,tip:m.tip,vals:true,fmtVal:m.fc,labelGap:70,maxLabels:16,aria:m.t}):chartBarsX({scroll:!((Wv-80)/nmax>=64),slot:70,rot:false,oneVal:true,w:Wv,h:340,labels:labD,series:ss,axis:m.ax,tip:m.tip,fmtVal:m.fv,aria:m.t})}</div>`;});
   return h;
 }
-function bindPeriodos(){const pr=$('#pReset');if(pr)pr.onclick=()=>{S.pa={ini:isoAdd(ULT,-14),fim:ULT};S.pb={ini:monthBack(isoAdd(ULT,-14)),fim:monthBack(ULT)};go();};$$('[data-c]').forEach(b=>b.onclick=()=>{S.cmpCum=+b.dataset.c;go();});$$('[data-p]').forEach(i=>i.onchange=e=>{
+function bindPeriodos(){const pr=$('#pReset');if(pr)pr.onclick=()=>{S.pa={ini:isoAdd(ULT,-42),fim:isoAdd(ULT,-28)};S.pb={ini:isoAdd(ULT,-14),fim:ULT};go();};$$('[data-c]').forEach(b=>b.onclick=()=>{S.cmpCum=+b.dataset.c;go();});$$('[data-p]').forEach(i=>i.onchange=e=>{
   const v=e.target.value;
   // enquanto o ano não tem 4 dígitos plausíveis, não faz nada - deixa o campo em paz,
   // sem redesenhar a tela (é isso que travava a digitação no meio do ano)
@@ -848,12 +1039,13 @@ function viewRank(){
   const nome=k=>dim[k].nome;
   let h=perBar(PER)+`<div class="row"><div class="seg" role="group" aria-label="Agrupar por">${[['convenios','Convênios'],['medicos','Médicos'],['unidades','Unidades']].map(([v,t])=>`<button data-r="${v}" aria-pressed="${kind===v}">${t}</button>`).join('')}</div><button class="btn" id="csv">Baixar CSV</button></div>`;
   if(kind==='medicos'&&D.qualidade.pct_fat_medico_sem_nome>0)h+=`<div class="notice warn" style="margin-top:0"><b>Atenção:</b> ${fD1.format(D.qualidade.pct_fat_medico_sem_nome)}% do faturamento está em códigos de médico sem nome na lista enviada. Eles aparecem como “Cód. N”.</div>`;
-  h+=`<div class="card tw" style="margin-top:12px"><table><thead><tr><th>#</th><th class="nm">${kind==='medicos'?'Médico':kind==='unidades'?'Unidade':'Convênio'}</th><th>Faturamento líquido</th><th>% do total</th><th>Exames</th><th>Pacientes</th><th>Ticket médio</th><th>Desconto</th></tr></thead><tbody>`;
-  rows.slice(0,lim).forEach(([k,o],i)=>{const q=kind==='medicos'?D.medicos[k].q:0;
-    h+=`<tr><td>${i+1}</td><td class="nm">${esc(nome(k))}${q===1?'<span class="tag">sem nome</span>':''}${q===2?'<span class="tag w">ambíguo</span>':''}</td><td class="bar" style="--w:${(o.f/mx*100).toFixed(1)}%">${fBRL.format(o.f)}</td><td>${fD1.format(tot.f?o.f/tot.f*100:0)}%</td><td>${fNum.format(o.e)}</td><td>${fNum.format(o.r)}</td><td>${fBRL.format(tk(o))}</td><td>${fD1.format(o.b?o.x/o.b*100:0)}%</td></tr>`;});
-  h+=`<tr class="tot"><td></td><td>Total (${fNum.format(rows.length)} ${{convenios:'convênios',medicos:'médicos',unidades:'unidades'}[kind]})</td><td>${fBRL.format(tot.f)}</td><td>100%</td><td>${fNum.format(tot.e)}</td><td>${fNum.format(tot.r)}</td><td>${fBRL.format(tk(tot))}</td><td>${fD1.format(tot.b?tot.x/tot.b*100:0)}%</td></tr></tbody></table></div>`;
+  // participação em barra (igual à tabela de setores), faturamento sem centavos pra ler mais rápido
+  h+=`<div class="card tw" style="margin-top:12px"><table class="tb-set"><thead><tr><th>#</th><th class="nm">${kind==='medicos'?'Médico':kind==='unidades'?'Unidade':'Convênio'}</th><th>Faturamento líquido</th><th class="part">Participação</th><th>Exames</th><th>Pacientes</th><th>Ticket médio</th><th>Desconto</th></tr></thead><tbody>`;
+  rows.slice(0,lim).forEach(([k,o],i)=>{const q=kind==='medicos'?D.medicos[k].q:0,pc=tot.f?o.f/tot.f*100:0;
+    h+=`<tr><td>${i+1}</td><td class="nm">${esc(nome(k))}${q===1?'<span class="tag">sem nome</span>':''}${q===2?'<span class="tag w">ambíguo</span>':''}</td><td><b>${fBRL0.format(o.f)}</b></td><td class="part"><div class="part-in"><div class="pbar"><b style="width:${(o.f/mx*100).toFixed(1)}%;background:var(--c-fat)"></b></div><span>${fD1.format(pc)}%</span></div></td><td>${fNum.format(o.e)}</td><td>${fNum.format(o.r)}</td><td>${fBRL.format(tk(o))}</td><td>${fD1.format(o.b?o.x/o.b*100:0)}%</td></tr>`;});
+  h+=`<tr class="tot"><td></td><td class="nm">Total (${fNum.format(rows.length)} ${{convenios:'convênios',medicos:'médicos',unidades:'unidades'}[kind]})</td><td>${fBRL0.format(tot.f)}</td><td class="part"></td><td>${fNum.format(tot.e)}</td><td>${fNum.format(tot.r)}</td><td>${fBRL.format(tk(tot))}</td><td>${fD1.format(tot.b?tot.x/tot.b*100:0)}%</td></tr></tbody></table></div>`;
   if(rows.length>25)h+=`<p style="margin-top:12px"><button class="btn" id="todos">${S.todos?'Mostrar só os 25 primeiros':'Mostrar todos ('+fNum.format(rows.length)+')'}</button></p>`;
-  h+=`<p class="sub" style="margin-top:10px">Pacientes por convênio/médico: cada atendimento é contado uma vez, no convênio e médico da primeira linha do cadastro (ver Qualidade dos Dados).</p>`;
+  h+=`<p class="hint" style="margin-top:10px">Cada paciente conta uma vez, no convênio e médico do cadastro.</p>`;
   window.__csv=()=>{const L=[['Posição','Nome','Faturamento líquido','Bruto','Descontos','Exames','Pacientes','Ticket médio']];
     rows.forEach(([k,o],i)=>L.push([i+1,nome(k),o.f.toFixed(2),o.b.toFixed(2),o.x.toFixed(2),o.e,o.r,tk(o).toFixed(2)]));
     return L.map(l=>l.map(c=>'"'+String(c).replace(/"/g,'""').replace(/\./g,(m,off,s)=>/^\d+\.\d+$/.test(s)?',':'.')+'"').join(';')).join('\n');};
@@ -880,17 +1072,21 @@ function viewExames(){
     let x=byEx.get(B.x[i]);if(!x){x={e:0,l:0};byEx.set(B.x[i],x);}x.e+=B.e[i];x.l+=B.l[i];
   }
   const sets=[...bySet.entries()].sort((a,b)=>b[1].l-a[1].l),mxs=sets.length?Math.max(...sets.map(s=>s[1].l)):1;
-  const ord=S.exOrd,exs=[...byEx.entries()].sort((a,b)=>b[1][ord]-a[1][ord]).slice(0,50);
-  let h=perBar(PER)+`<div class="notice"><b>Como esta aba filtra:</b> usa meses inteiros (${S.ini||S.fim?'datas parciais incluem o mês todo':'ano e mês valem'}), unidade e convênio. O filtro de médico não se aplica aqui.${S.m.size?' <b>Há médicos selecionados: eles estão sendo ignorados nesta aba.</b>':''}</div>`;
-  h+=`<h2>Faturamento por setor</h2><div class="card tw"><table><thead><tr><th>Setor</th><th>Faturamento líquido</th><th>% do total</th><th>Exames</th><th>% dos exames</th><th>Valor médio por exame</th></tr></thead><tbody>`;
-  sets.forEach(([k,o])=>{h+=`<tr><td>${esc(D.setores[k].nome)}</td><td class="bar" style="--w:${(o.l/mxs*100).toFixed(1)}%">${fBRL.format(o.l)}</td><td>${fD1.format(tot.l?o.l/tot.l*100:0)}%</td><td>${fNum.format(o.e)}</td><td>${fD1.format(tot.e?o.e/tot.e*100:0)}%</td><td>${fBRL.format(o.e?o.l/o.e:0)}</td></tr>`;});
-  h+=`<tr class="tot"><td>Total</td><td>${fBRL.format(tot.l)}</td><td>100%</td><td>${fNum.format(tot.e)}</td><td>100%</td><td>${fBRL.format(tot.e?tot.l/tot.e:0)}</td></tr></tbody></table></div>`;
-  h+=`<div class="row"><h2 style="margin:0">Top 50 exames</h2><div class="seg" role="group" aria-label="Ordenar"><button data-o="l" aria-pressed="${ord==='l'}">Por faturamento</button><button data-o="e" aria-pressed="${ord==='e'}">Por volume</button></div></div>
+  // mostra os 20 primeiros; o botão embaixo abre até 50 (lista longa cansa quem só quer bater o olho)
+  const ord=S.exOrd,exsAll=[...byEx.entries()].sort((a,b)=>b[1][ord]-a[1][ord]).slice(0,50),exs=S.exTodos?exsAll:exsAll.slice(0,20);
+  let h=perBar(PER)+`<p class="hint" style="margin:6px 0 0">Esta aba usa meses inteiros; o filtro de médico não vale aqui.${S.m.size?' <b>Os médicos selecionados estão sendo ignorados.</b>':''}</p>`;
+  // participação como barra (mais fácil de ler que só o %); a cor é a do faturamento
+  h+=`<h2>Faturamento por setor</h2><div class="card tw"><table class="tb-set"><thead><tr><th>Setor</th><th>Faturamento líquido</th><th class="part">Participação no faturamento</th><th>Exames</th><th>Valor médio por exame</th></tr></thead><tbody>`;
+  sets.forEach(([k,o])=>{const pc=tot.l?o.l/tot.l*100:0;h+=`<tr><td>${esc(D.setores[k].nome)}</td><td><b>${fBRL0.format(o.l)}</b></td><td class="part"><div class="part-in"><div class="pbar"><b style="width:${(o.l/mxs*100).toFixed(1)}%;background:var(--c-fat)"></b></div><span>${fD1.format(pc)}%</span></div></td><td>${fNum.format(o.e)}</td><td>${fBRL.format(o.e?o.l/o.e:0)}</td></tr>`;});
+  h+=`<tr class="tot"><td>Total</td><td>${fBRL0.format(tot.l)}</td><td class="part"></td><td>${fNum.format(tot.e)}</td><td>${fBRL.format(tot.e?tot.l/tot.e:0)}</td></tr></tbody></table></div>`;
+  h+=`<div class="row"><h2 style="margin:0">Exames que mais ${ord==='l'?'faturaram':'foram feitos'}<small>${S.exTodos?'top 50':'top 20'}</small></h2><div class="seg" role="group" aria-label="Ordenar"><button data-o="l" aria-pressed="${ord==='l'}">Por faturamento</button><button data-o="e" aria-pressed="${ord==='e'}">Por volume</button></div></div>
    <div class="card tw"><table><thead><tr><th>#</th><th>Código</th><th class="nm">Exame</th><th>Setor</th><th>Exames</th><th>Faturamento líquido</th><th>% do total</th><th>Valor médio</th></tr></thead><tbody>`;
   exs.forEach(([k,o],n)=>{const ex=D.exames[k];h+=`<tr><td>${n+1}</td><td>${esc(ex.cod)}</td><td class="nm">${esc(ex.nome)}</td><td>${esc(D.setores[ex.s].nome)}</td><td>${fNum.format(o.e)}</td><td>${fBRL.format(o.l)}</td><td>${fD1.format(tot.l?o.l/tot.l*100:0)}%</td><td>${fBRL.format(o.e?o.l/o.e:0)}</td></tr>`;});
-  return h+'</tbody></table></div>';
+  h+='</tbody></table></div>';
+  if(exsAll.length>20)h+=`<p style="margin:10px 0 0;text-align:center"><button class="btn" id="exTodos">${S.exTodos?'Mostrar só os 20 primeiros':'Mostrar os 50 primeiros'}</button></p>`;
+  return h;
 }
-function bindExames(){$$('[data-o]').forEach(b=>b.onclick=()=>{S.exOrd=b.dataset.o;go();});}
+function bindExames(){$$('[data-o]').forEach(b=>b.onclick=()=>{S.exOrd=b.dataset.o;go();});const bt=$('#exTodos');if(bt)bt.onclick=()=>{S.exTodos=!S.exTodos;go();};}
 
 /* ---------- saúde do negócio ---------- */
 function ytdMask(y){return dayMask(i=>diaAno[i]===y&&(diaMes[i]<um||(diaMes[i]===um&&diaDom[i]<=ULTDOM)));}
@@ -937,6 +1133,16 @@ function saudeTabela(titulo,linhas,cor){
   if(!linhas.length)return `<div class="card"><h3 style="margin-top:0">${titulo}</h3><div class="empty">Nada para comparar.</div></div>`;
   return `<div class="card tw"><h3 style="margin:0 0 10px;color:${cor}">${titulo}</h3><table><thead>${saudeCabecalho()}</thead><tbody>${linhas.map(saudeLinha).join('')}</tbody></table></div>`;
 }
+function saudeTop(ic,titulo,cls,linhas){
+  if(!linhas.length)return `<div class="card"><h3 class="card-tit">${titulo}</h3><div class="empty">Nada para comparar.</div></div>`;
+  // resumo rápido (a pesquisa detalhada vai ficar em outra tela): valor atual em cima,
+  // "era X" + variação embaixo; dinheiro em "mil" pra ficar fácil de ler
+  // cada célula empilhada: valor de agora, "era X" (ano passado) e a variação embaixo; dinheiro em "mil"
+  const cel=(a,b,fmt)=>`<td><span class="st-v">${fmt(a)}</span><span class="st-era">era ${fmt(b)}</span><span class="st-var">${delta(b,a)}</span></td>`;
+  const tr=r=>`<tr><td class="nm">${esc(r.nome)}${r.q===1?'<span class="tag">sem nome</span>':''}${r.q===2?'<span class="tag w">ambíguo</span>':''}</td>
+   ${cel(r.atual.f,r.ant.f,v=>'R$ '+(Math.abs(v)>=1e6?fD2.format(v/1e6)+' mi':fCmp.format(v)))}${cel(r.atual.r,r.ant.r,fNum.format)}${cel(r.atual.e,r.ant.e,fNum.format)}</tr>`;
+  return `<div class="card saude-top"><h3 class="card-tit"><span class="dl ${cls}">${ic}</span> ${titulo}</h3><table><thead><tr><th class="nm">Nome</th><th style="color:var(--c-fat)">Faturamento líquido</th><th style="color:var(--c-atd)">Atendimentos</th><th style="color:var(--c-exa)">Exames</th></tr></thead><tbody>${linhas.map(tr).join('')}</tbody></table></div>`;
+}
 function saudePar(tituloGrupo,v){
   return `<h3 style="margin:16px 0 8px">${tituloGrupo}<small style="font-weight:400;color:var(--muted);margin-left:8px">considerando os ${v.pool} maiores em faturamento ou em exames no ano anterior</small></h3>
    <div class="saude-grid">${saudeTabelaCompacta('Top 5 em alta',v.linhas.slice(0,5),'#0f6b44')}${saudeTabelaCompacta('Top 5 em queda',v.linhas.slice(-5).reverse(),'#b3261e')}</div>`;
@@ -966,20 +1172,20 @@ function viewSaude(){
   const per3=(y)=>agg(ytdMask(y),{},null).tot;
   const t0=per3(uy),t1=per3(uy-1);
   const rotuloPeriodo=`01/01 até ${ddmm(ULT)}`;
-  let h=`<div class="card"><h3 style="margin-top:0">Saúde do negócio · Ano atual × Ano anterior</h3>
-   <p class="sub">Compara o acumulado de <b>${rotuloPeriodo} de ${uy}</b> com o mesmo período de <b>${uy-1}</b> - sempre até o mesmo dia, para não comparar um ano inteiro com um ano ainda em andamento.</p>
-   <div class="kpis">
-    <div class="card kpi"><div class="l">Faturamento líquido · ${rotuloPeriodo}</div><div class="v" style="color:var(--blue);${fitTxt(fBRL0.format(t0.f))}">${fBRL0.format(t0.f)}</div><div class="s">${uy-1}: ${fBRL0.format(t1.f)} · ${delta(t1.f,t0.f)}</div></div>
-    <div class="card kpi"><div class="l">Atendimentos</div><div class="v" style="color:var(--green)">${fNum.format(t0.r)}</div><div class="s">${uy-1}: ${fNum.format(t1.r)} · ${delta(t1.r,t0.r)}</div></div>
-    <div class="card kpi"><div class="l">Ticket médio</div><div class="v" style="color:var(--amber)">${fBRL.format(tk(t0))}</div><div class="s">${uy-1}: ${fBRL.format(tk(t1))} · ${delta(tk(t1),tk(t0))}</div></div>
-    <div class="card kpi"><div class="l">Exames</div><div class="v" style="color:var(--ink)">${fNum.format(t0.e)}</div><div class="s">${uy-1}: ${fNum.format(t1.e)} · ${delta(t1.e,t0.e)}</div></div>
+  // mesmo formato dos cards da Visão Diária: número na cor do texto, variação colorida, valor do ano passado embaixo
+  const kc=(l,v,va,vb,fmt,tc)=>`<div class="card kpi ${tc||''}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${delta(vb,va)} vs. ${uy-1}</div><div class="s kpi-extra">${uy-1} no mesmo período <b>${fmt(vb)}</b></div></div>`;
+  let h=`<div class="secao-topo" style="margin-top:24px"><div class="secao-head"><h2 style="margin:0">Ano atual × ano anterior</h2><span class="sub">${rotuloPeriodo} de ${uy}, comparado com o mesmo período de ${uy-1}</span>${btnImprimir()}</div>
+   <div class="kpis-dia">
+    ${kc('Faturamento líquido',fBRL0.format(t0.f),t0.f,t1.f,fBRL0.format,'t-fat')}
+    ${kc('Atendimentos',fNum.format(t0.r),t0.r,t1.r,fNum.format,'t-atd')}
+    ${kc('Ticket médio '+ajuda('Faturamento dividido pelo número de pacientes atendidos. Subir o ticket com menos pacientes significa que cada paciente está fazendo mais exames (ou exames mais caros).'),fBRL.format(tk(t0)),tk(t0),tk(t1),fBRL.format,'t-prj')}
+    ${kc('Exames',fNum.format(t0.e),t0.e,t1.e,fNum.format,'t-exa')}
    </div></div>`;
-  h+=`<h2>Diagnóstico por grupo<small>top 5 de maior alta e maior queda, entre os principais convênios e médicos</small></h2>`;
-  h+=saudePar('Convênios',vConv);
-  h+=saudePar('Médicos',vMed);
-  h+=`<h2>Detalhamento<small>top 10 de convênios e médicos, alta e queda</small></h2>`;
-  h+=`<h3 style="margin:16px 0 8px">Convênios</h3><div class="saude-grid">${saudeTabela('Top 10 em alta',vConv.linhas.slice(0,10),'#0f6b44')}${saudeTabela('Top 10 em queda',vConv.linhas.slice(-10).reverse(),'#b3261e')}</div>`;
-  h+=`<h3 style="margin:16px 0 8px">Médicos</h3><div class="saude-grid">${saudeTabela('Top 10 em alta',vMed.linhas.slice(0,10),'#0f6b44')}${saudeTabela('Top 10 em queda',vMed.linhas.slice(-10).reverse(),'#b3261e')}</div>`;
+  // um bloco por grupo (antes era top 5 + top 10 repetindo os mesmos nomes)
+  const bloco=(tit,v,quem)=>`<div class="secao-head" style="margin-top:28px"><h2 style="margin:0">${tit}</h2><span class="sub">entre os ${v.pool} maiores ${quem} de ${uy-1}</span></div>
+   <div class="saude-grid" style="margin-top:12px">${saudeTop('▲','Mais cresceram','up',v.linhas.slice(0,10))}${saudeTop('▼','Mais caíram','dn',v.linhas.slice(-10).reverse())}</div>`;
+  h+=bloco('Convênios',vConv,'convênios');
+  h+=bloco('Médicos',vMed,'médicos');
   return h;
 }
 
@@ -1000,16 +1206,16 @@ function viewFinanceiro(){
   const F=D.financeiro;
   if(!F)return `<div class="notice warn"><b>Ainda não há dados financeiros.</b> Envie os arquivos de contas a pagar (aberto.csv e categoria.csv) para a pasta <code>data/financeiro</code> do repositório.</div>`;
   const R=F.resumo;
-  const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
+  const k=(l,v,s,cor)=>`<div class="card kpi" style="border-top:4px solid ${cor||'#94a3b8'}"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
   let h=`<div class="secao-topo fin-tab">
-   <div class="secao-head"><h2 style="margin:0">Contas a pagar — visão geral</h2><span class="sub">${WDL[wdOf(F.hoje)]}, ${isoBR(F.hoje)}</span></div>
+   <div class="secao-head"><h2 style="margin:0">Contas a pagar · visão geral</h2><span class="sub">${WDL[wdOf(F.hoje)]}, ${isoBR(F.hoje)}</span></div>
    <div class="kpis-dia" style="grid-template-columns:repeat(3,1fr)">
     ${k('Vencidas',fBRL0.format(R.vencidas.v),`${fNum.format(R.vencidas.n)} conta(s) em atraso`,'var(--red)')}
     ${k('Vencendo hoje',fBRL0.format(R.hoje.v),`${fNum.format(R.hoje.n)} conta(s)`,'var(--amber)')}
     ${k('Próximos pagamentos',fBRL0.format(R.restoMes.v),`${fNum.format(R.restoMes.n)} conta(s) · resto de ${mesLabelDe(F.hoje)}`)}
    </div>
   </div>`;
-  h+=`<h2 style="margin-top:24px">Vencidas e vencendo hoje<small>vencendo hoje primeiro, depois as mais atrasadas · clique num título da tabela pra ordenar por ele</small></h2>`;
+  h+=`<h2 style="margin-top:24px">Vencidas e vencendo hoje<small>as que vencem hoje aparecem primeiro · clique no título da coluna para ordenar</small></h2>`;
   if(!F.tabela.length){
     h+='<div class="empty">Nenhuma conta vencida ou vencendo hoje.</div>';
   }else{
@@ -1017,7 +1223,7 @@ function viewFinanceiro(){
   }
   h+=`<h2 style="margin-top:28px">Fechamento de ${mesLabelDe(F.hoje)}</h2>
    <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
-    ${k('A pagar até fim do mês',fBRL0.format(R.aPagarMes.v),`${fNum.format(R.aPagarMes.n)} conta(s) · inclui as já vencidas`,'var(--blue)')}
+    ${k('A pagar até fim do mês',fBRL0.format(R.aPagarMes.v),`${fNum.format(R.aPagarMes.n)} conta(s) · inclui as já vencidas`,'var(--c-pag)')}
     ${R.recebimentosMes==null?`<div class="card kpi"><div class="l">Recebimentos até fim do mês</div><div class="v" style="color:var(--muted);font-size:17px">Sem dados ainda</div><div class="s">aguardando extração de contas a receber</div></div>`:k('Recebimentos até fim do mês',fBRL0.format(R.recebimentosMes.v),`${fNum.format(R.recebimentosMes.n)} recebimento(s)`,'var(--green)')}
     ${k('Recorrentes sem lançamento',fNum.format(F.recorrencia.n),'fornecedor/categoria que sempre aparece e ainda não tem lançamento neste mês','var(--amber)')}
    </div>`;
@@ -1138,13 +1344,13 @@ function viewFinPagar(){
   const F=D.financeiro;
   if(!F)return `<div class="notice warn"><b>Ainda não há dados financeiros.</b> Envie os arquivos de contas a pagar para a pasta <code>data/financeiro</code> do repositório.</div>`;
   const R=F.resumo;
-  const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
+  const k=(l,v,s,cor)=>`<div class="card kpi" style="border-top:4px solid ${cor||'#94a3b8'}"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
   const semDados=(l,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:var(--muted);font-size:17px">Sem dados ainda</div><div class="s">${s}</div></div>`;
   let h=`<div class="kpis kpis-5">
-   ${k('Em aberto até fim do mês',fBRL0.format(R.aPagarMes.v),`${fNum.format(R.aPagarMes.n)} conta(s) · inclui as já vencidas`,'var(--blue)')}
+   ${k('Em aberto até fim do mês',fBRL0.format(R.aPagarMes.v),`${fNum.format(R.aPagarMes.n)} conta(s) · inclui as já vencidas`,'var(--c-pag)')}
    ${R.pagoMes==null?semDados('Pago até hoje','aguardando extração de baixas (MOVTITULO)'):k('Pago até hoje',fBRL0.format(R.pagoMes),`em ${mesLabelDe(F.hoje)}`,'var(--green)')}
    ${k('A pagar em 7 dias',fBRL0.format(R.aPagar7d.v),`${fNum.format(R.aPagar7d.n)} conta(s) · inclui as já vencidas`,'var(--amber)')}
-   ${k('A pagar em 15 dias',fBRL0.format(R.aPagar15d.v),`${fNum.format(R.aPagar15d.n)} conta(s) · inclui as já vencidas`,'var(--amber)')}
+   ${k('A pagar em 15 dias',fBRL0.format(R.aPagar15d.v),`${fNum.format(R.aPagar15d.n)} conta(s) · inclui as já vencidas`)}
    ${R.projecaoMes==null?semDados('Projeção do mês','média dos últimos 2 anos · aguardando extração de baixas'):k('Projeção do mês',fBRL0.format(R.projecaoMes),'média dos últimos 2 anos (mesmo mês)','var(--ink)')}
   </div>`;
   h+=`<h2 style="margin-top:28px">Consultar títulos</h2>
@@ -1346,14 +1552,14 @@ function viewFinReceber(){
   const F=D.financeiro;
   if(!F||!F.receber)return `<div class="notice warn"><b>Ainda não há dados de contas a receber.</b> Envie os arquivos <code>contas_receber_aberto</code> e <code>contas_receber_baixas</code> para a pasta <code>data/financeiro</code> do repositório.</div>`;
   const R=F.receber.resumo,NI=F.naoIntegrados;
-  const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
+  const k=(l,v,s,cor)=>`<div class="card kpi" style="border-top:4px solid ${cor||'#94a3b8'}"><div class="l">${l}</div><div class="v" style="color:${cor||'var(--ink)'};${fitTxt(v)}">${v}</div><div class="s">${s||''}</div></div>`;
   const semDados=(l,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:var(--muted);font-size:17px">Sem dados ainda</div><div class="s">${s}</div></div>`;
   let h='';
   h+=`<div class="kpis kpis-5">
-   ${k('Em aberto até fim do mês',fBRL0.format(R.aReceberMes.v),`${fNum.format(R.aReceberMes.n)} título(s) · inclui vencidos há até 15 dias`,'var(--blue)')}
+   ${k('Em aberto até fim do mês',fBRL0.format(R.aReceberMes.v),`${fNum.format(R.aReceberMes.n)} título(s) · inclui vencidos há até 15 dias`,'var(--green)')}
    ${R.recebidoMes==null?semDados('Recebido até hoje','aguardando extração de baixas (MOVTITULO)'):k('Recebido até hoje',fBRL0.format(R.recebidoMes),`em ${mesLabelDe(F.hoje)}`,'var(--green)')}
    ${k('A receber em 7 dias',fBRL0.format(R.aReceber7d.v),`${fNum.format(R.aReceber7d.n)} título(s) · inclui vencidos há até 15 dias`,'var(--amber)')}
-   ${k('A receber em 15 dias',fBRL0.format(R.aReceber15d.v),`${fNum.format(R.aReceber15d.n)} título(s) · inclui vencidos há até 15 dias`,'var(--amber)')}
+   ${k('A receber em 15 dias',fBRL0.format(R.aReceber15d.v),`${fNum.format(R.aReceber15d.n)} título(s) · inclui vencidos há até 15 dias`)}
    ${R.projecaoMes==null?semDados('Projeção do mês','média dos últimos 2 anos · aguardando extração de baixas'):k('Projeção do mês',fBRL0.format(R.projecaoMes),'média dos últimos 2 anos (mesmo mês)','var(--ink)')}
   </div>`;
   h+=`<h2 style="margin-top:28px">Consultar títulos</h2>
@@ -1530,7 +1736,7 @@ function renderDreTab(){
   const totalReceita=receitaBruta?receitaBruta.valor:0;
   const resultado=ultimaFormula?ultimaFormula.valor:0;
   const totalDespesa=totalReceita-resultado;
-  const k=(l,v,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="color:${cor};${fitTxt(fBRL0.format(v))}">${fBRL0.format(v)}</div></div>`;
+  const k=(l,v,cor)=>`<div class="card kpi" style="border-top:4px solid ${cor}"><div class="l">${l}</div><div class="v" style="color:${cor};${fitTxt(fBRL0.format(v))}">${fBRL0.format(v)}</div></div>`;
   let h=`<div class="kpis" style="grid-template-columns:repeat(3,1fr)">
    ${k('Receitas',totalReceita,'var(--green)')}
    ${k('Despesas',totalDespesa,'var(--red)')}
@@ -1560,7 +1766,7 @@ function viewFinDRE(){
    <label class="fld" style="margin-left:auto">Mês<select id="dreMes">${DRE.meses.slice().reverse().map(m=>`<option value="${m}">${esc(mesLabelDe(m))}</option>`).join('')}</select></label>
    <button class="btn" id="dreCsv" type="button">Exportar CSV</button>
   </div>
-  <p class="sub">Regime de caixa: cada baixa (pagamento/recebimento) entra no mês em que foi paga, rateada proporcionalmente quando o título foi pago em mais de uma parcela. Clique numa conta pra ver os lançamentos que a compõem.</p>
+  <p class="hint">Cada pagamento ou recebimento entra no mês em que foi pago (regime de caixa). Clique numa conta para ver os lançamentos.</p>
   <div id="dreTabWrap"></div>`;
   return h;
 }
@@ -1588,10 +1794,11 @@ function bindFinDRE(){
 
 function viewQualidade(){
   const Q=D.qualidade;
-  const k=(l,v,s)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:26px;color:var(--ink)">${v}</div><div class="s">${s||''}</div></div>`;
-  let h=`<div class="kpis">${k('Linhas de exame lidas',fNum.format(Q.linhas),'cada linha = 1 exame')}${k('Atendimentos (requisições)',fNum.format(Q.requisicoes),'códigos de requisição únicos')}
-   ${k('Exames com médico sem nome',fD1.format(Q.pct_linhas_medico_sem_nome)+'%',fD1.format(Q.pct_fat_medico_sem_nome)+'% do faturamento · '+fNum.format(Q.medicos_sem_nome)+' de '+fNum.format(Q.medicos_usados)+' códigos')}
-   ${k('Exames com médico ambíguo',fD1.format(Q.pct_linhas_medico_ambiguo)+'%','o mesmo código aparece com mais de um nome na lista')}</div>
+  // cinza = informativo; laranja = tem algo a corrigir
+  const k=(l,v,s,tc)=>`<div class="card kpi ${tc||'t-neu'}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s||''}</div></div>`;
+  let h=`<div class="secao-head" style="margin-top:22px"><h2 style="margin:0">⚙ Configurações · qualidade dos dados</h2><button class="lnk" data-go="geral">← voltar ao painel</button></div><div class="kpis-dia" style="margin-top:14px">${k('Linhas de exame lidas',fNum.format(Q.linhas),'cada linha = 1 exame','t-exa')}${k('Atendimentos (requisições)',fNum.format(Q.requisicoes),'códigos de requisição únicos','t-atd')}
+   ${k('Exames com médico sem nome',fD1.format(Q.pct_linhas_medico_sem_nome)+'%',fD1.format(Q.pct_fat_medico_sem_nome)+'% do faturamento · '+fNum.format(Q.medicos_sem_nome)+' de '+fNum.format(Q.medicos_usados)+' códigos',Q.pct_linhas_medico_sem_nome>=0.05?'t-prj':'t-neu')}
+   ${k('Exames com médico ambíguo',fD1.format(Q.pct_linhas_medico_ambiguo)+'%','o mesmo código aparece com mais de um nome na lista',Q.pct_linhas_medico_ambiguo>=0.05?'t-prj':'t-neu')}</div>
    <h2>O que precisa de atenção</h2><div class="card"><ul class="notes">`;
   if(Q.pct_linhas_medico_sem_nome>0)h+=`<li><b>Lista de médicos incompleta.</b> ${fNum.format(Q.medicos_sem_nome)} dos ${fNum.format(Q.medicos_usados)} códigos de médico usados na planilha não existem na lista enviada. Reexporte a lista completa do sistema (coluna A = código, B = nome) e substitua <code>data/lista_medico.xlsx</code>: o painel passa a mostrar os nomes no próximo ciclo.</li>`;
   if(Q.pct_linhas_medico_ambiguo>0)h+=`<li><b>Códigos de médico repetidos com nomes diferentes.</b> Nesses casos o painel mostra os nomes juntos (marcados “ambíguo”). Vale conferir com o cadastro do sistema.</li>`;
@@ -1599,8 +1806,8 @@ function viewQualidade(){
   if(X&&X.linhas)h+=`<li><b>Linhas desconsideradas de propósito (${fNum.format(X.linhas)} linhas, ${fBRL.format(X.valor)}):</b> não entram em nenhum número do painel. ${X.unidades.length?`Unidades que não existem mais: ${X.unidades.map(u=>`código ${esc(u.cod)} (${fNum.format(u.linhas)} exames, ${fBRL.format(u.valor)})`).join('; ')}. `:''}${X.setores.length?`Setores fora da lista, que são taxas de coleta domiciliar e não exames: ${X.setores.map(u=>`setor ${u.id} “${esc(u.nome)}” (${fNum.format(u.linhas)} linhas, ${fBRL.format(u.valor)})`).join('; ')}. `:''}Se aparecer aqui algo que é exame de verdade, inclua o setor ou a unidade nos dicionários do <code>gerar_dashboard.py</code>.</li>`;
   if(Q.convenios_nome_repetido.length)h+=`<li><b>Convênios com o mesmo nome e códigos diferentes:</b> ${Q.convenios_nome_repetido.map(esc).join(', ')}. É o esperado: o painel mostra o código entre parênteses para você distinguir.</li>`;
   h+=`<li><b>Linhas com valor zero:</b> ${fNum.format(Q.linhas_valor_zero)}${Q.zero_por_convenio.length?' ('+Q.zero_por_convenio.map(z=>esc(z.nome)+': '+fNum.format(z.linhas)).join(', ')+')':''}. Cortesia não gera valor, então fica em R$ 0; CORTESIA é tratada como um convênio comum, e essas linhas contam como exame e atendimento.</li></ul></div>
-   <h2>Arquivos lidos</h2><div class="card tw"><table><thead><tr><th class="nm">Arquivo</th><th>Tipo</th><th>Linhas</th><th>Primeiro dia</th><th>Último dia</th></tr></thead><tbody>${Q.arquivos.map(a=>`<tr><td class="nm">${esc(a.nome)}</td><td>${a.tipo==='dia'?'dia':'ano'}</td><td>${fNum.format(a.linhas)}</td><td>${isoBR(a.de)}</td><td>${isoBR(a.ate)}</td></tr>`).join('')}</tbody></table></div>${Q.linhas_substituidas?`<p class="sub" style="margin-top:10px">${fNum.format(Q.linhas_substituidas)} linhas de arquivos mais antigos foram trocadas pela versão mais nova do mesmo atendimento e dia (por exemplo, um dia reenviado).</p>`:''}
-   <h2>Como os números são calculados</h2><div class="card"><ul class="notes">
+   <details class="ap-atencao"><summary><h2 style="display:inline">Arquivos lidos</h2> <span class="sub">clique para abrir</span></summary><div class="card tw"><table><thead><tr><th class="nm">Arquivo</th><th>Tipo</th><th>Linhas</th><th>Primeiro dia</th><th>Último dia</th></tr></thead><tbody>${Q.arquivos.map(a=>`<tr><td class="nm">${esc(a.nome)}</td><td>${a.tipo==='dia'?'dia':'ano'}</td><td>${fNum.format(a.linhas)}</td><td>${isoBR(a.de)}</td><td>${isoBR(a.ate)}</td></tr>`).join('')}</tbody></table></div>${Q.linhas_substituidas?`<p class="sub" style="margin-top:10px">${fNum.format(Q.linhas_substituidas)} linhas de arquivos mais antigos foram trocadas pela versão mais nova do mesmo atendimento e dia (por exemplo, um dia reenviado).</p>`:''}</details>
+   <details class="ap-atencao"><summary><h2 style="display:inline">Como os números são calculados</h2> <span class="sub">clique para abrir</span></summary><div class="card"><ul class="notes">
    <li><b>Faturamento</b> = coluna Líquido (Total Bruto − Descontos). O bruto e os descontos aparecem à parte.</li>
    <li><b>Exames</b> = número de linhas da planilha (Qtde é sempre 1).</li>
    <li><b>Pacientes atendidos / atendimentos</b> = códigos de requisição únicos. Cada cadastro no sistema conta uma vez, mesmo com muitos exames. Não é um CPF único: a mesma pessoa que volta em outro dia conta de novo.</li>
@@ -1609,7 +1816,7 @@ function viewQualidade(){
    <li><b>Data</b> = coluna Entrada (dia do cadastro do exame).</li>
    <li>Alguns cadastros têm linhas com convênio, médico ou dia diferentes (${fNum.format(Q.req_multi_convenio)} com mais de um convênio, ${fNum.format(Q.req_multi_medico)} com mais de um médico, ${fNum.format(Q.req_multi_dia)} com mais de um dia). Faturamento e exames seguem cada linha; o atendimento é contado uma vez, na primeira linha do cadastro. Por isso, ao filtrar por convênio ou médico, a contagem de pacientes pode diferir em poucos casos.</li>
    <li>Ficam de fora: unidades que não existem mais, setores fora da lista (taxas de coleta domiciliar) e linhas sem código de exame. O total aparece na lista “O que precisa de atenção”, acima.</li>
-   <li>Dados pessoais de pacientes (nome) não entram neste painel.</li></ul></div>`;
+   <li>Dados pessoais de pacientes (nome) não entram neste painel.</li></ul></div></details>`;
   return h;
 }
 
@@ -1619,7 +1826,7 @@ S.ap={q:'',f:'todos',ord:null,dir:1,pg:0,ex:false};
 const AP_PAGE=50;
 S.pc={q:'',conv:'1',ativos:true,ord:null,dir:1,pg:0};  /* conv 1 = Particular */
 const PC_PAGE=50;
-const AP_F=[['todos','Todos os exames'],['ambos','Com os dois preços'],['d','DB mais em conta'],['h','HP mais em conta'],['=','Preços iguais'],['?','Conferir (mais de um preço)'],['sd','Só o DB tem preço'],['sh','Só o HP tem preço'],['sp','Mapeado, sem preço na tabela'],['nm','Sem mapeamento']];
+const AP_F=[['todos','Todos os exames'],['ambos','Com os dois preços'],['d','DB mais barato'],['h','HP mais barato'],['=','Preços iguais'],['?','Conferir (mais de um preço)'],['sd','Só o DB tem preço'],['sh','Só o HP tem preço'],['sp','Mapeado, sem preço na tabela'],['nm','Sem mapeamento']];
 const apHay=r=>r._h||(r._h=normTxt([r.c,r.n,r.m,r.d&&r.d.c,r.d&&r.d.n,r.h&&r.h.c,r.h&&r.h.n].join(' ')));
 const apPreco=o=>o&&o.p?o.p[0]:null;
 function apRows(){
@@ -1664,11 +1871,11 @@ function apCel(o,melhor,lado){
   const [a,b]=o.p,rng=a!==b;
   const rdb=lado==='d'?reajusteMap()[o.c]:null;
   const rdbLine=rdb?`<span class="rdbline" style="color:${rdb.d>0?'var(--red)':rdb.d<0?'var(--green)':'var(--muted)'}">antes ${fBRL.format(rdb.pa)} · ${rdb.d>0?'▲':rdb.d<0?'▼':''}${rdb.p==null?'—':(rdb.p>0?'+':'')+fD1.format(rdb.p)+'%'}</span>`:'';
-  return `<span class="pv">${melhor?'<span class="ck">✔</span> ':''}${rng?fBRL.format(a)+' a '+fBRL.format(b)+' <span title="A tabela tem mais de um preço para este código" style="cursor:help">⚠</span>':fBRL.format(a)}</span>${rdbLine}${cd}${pz}`;
+  return `<span class="pv">${melhor?'<span class="ck">✔</span> ':''}${rng?fBRL.format(a)+' a '+fBRL.format(b)+' <span title="A tabela tem mais de um preço para este código" style="cursor:help">⚠</span>':fBRL.format(a)}</span>${rdbLine}<span class="ap-meta">${cd}${pz?' · '+pz:''}</span>`;
 }
 function apStatus(r){
   const eco=r.x!=null&&r.x>0?`<small>economia de ${fBRL.format(r.x)} (${fD1.format(r.y)}%)</small>${r.y>=50?'<small class="aviso">diferença grande: confira se é o mesmo exame</small>':''}`:'';
-  return {d:`<span class="pill ok">DB mais em conta</span>${eco}`,h:`<span class="pill ok">HP mais em conta</span>${eco}`,
+  return {d:`<span class="pill ap-db">DB mais barato</span>${eco}`,h:`<span class="pill ap-hp">HP mais barato</span>${eco}`,
     '=':'<span class="pill">Preços iguais</span>','?':'<span class="pill warn">Conferir</span><small>a tabela tem mais de um preço para o mesmo código</small>',
     sd:'<span class="pill mut">Só o DB tem preço</span>',sh:'<span class="pill mut">Só o HP tem preço</span>',
     sp:'<span class="pill mut">Sem preço na tabela</span>',nm:'<span class="pill mut">Sem mapeamento</span>'}[r.w];
@@ -1679,9 +1886,9 @@ function renderApoio(){
   const ord=S.ap.ord||(normTxt(S.ap.q).trim()?'rel':'vol'),seta=k=>ord===k?(S.ap.dir>0?' ▲':' ▼'):'';
   const th=(k,t,cls='')=>`<th class="${cls}" data-ap-ord="${k}" style="cursor:pointer" aria-sort="${ord===k?(S.ap.dir>0?'ascending':'descending'):'none'}">${t}${seta(k)}</th>`;
   const ini=S.ap.pg*AP_PAGE,vis=rows.slice(ini,ini+AP_PAGE);
-  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.ap.q.trim()?` para “${esc(S.ap.q.trim())}”`:''}${!S.ap.q.trim()&&!S.ap.ord?' · ordenado pelos exames mais feitos no ano':''} · fundo verde e ✔ = preço mais em conta · clique no título de uma coluna para ordenar</p>`;
+  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.ap.q.trim()?` para “${esc(S.ap.q.trim())}”`:''}${!S.ap.q.trim()&&!S.ap.ord?' · ordenado pelos exames mais feitos no ano':''} · ✔ verde = mais barato · clique no título da coluna para ordenar</p>`;
   if(!n){$('#apRes').innerHTML=h+'<div class="empty">Nenhum exame encontrado. Tente outra parte do nome ou o código.</div>';return;}
-  h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('c','Cód.','cd')}${th('n','Exame','nm')}${th('pd','Preço DB','pc')}${th('ph','Preço HP','pc')}${th('x','Mais em conta','pc st')}</tr></thead><tbody>`;
+  h+=`<div class="card tw"><table class="aptb ap-tab"><thead><tr>${th('c','Cód.','cd')}${th('n','Exame','nm')}${th('pd','<span style="color:var(--c-db)">Preço DB</span>','pc')}${th('ph','<span style="color:var(--c-hp)">Preço HP</span>','pc')}${th('x','Mais barato','pc st')}</tr></thead><tbody>`;
   vis.forEach(r=>{
     const mt=(r.m?'Material: '+esc(r.m):'')+(r.l?'':(r.m?' · ':'')+'<span class="tag w" style="margin-left:0" title="Este exame não está na lista de apoio do CONCENT">fora da lista de apoio</span>');
     h+=`<tr><td class="cd" data-l="Cód.">${esc(r.c)}</td><td class="nm">${esc(r.n)}${mt?`<span class="mt">${mt}</span>`:''}</td>
@@ -1697,17 +1904,19 @@ function viewApoio(){
   const AP=D.apoio;
   if(!AP)return `<div class="notice warn"><b>Ainda não há dados do laboratório de apoio.</b> Envie os 5 arquivos (lista de exames do CONCENT, de-para DB, de-para HP, tabela DB e tabela Pardini) para a pasta <code>data/apoio</code> do repositório. O passo a passo explica como.</div>`;
   const R=AP.resumo,c=R.cont,A=AP.atencao,pct=(v,t)=>t?fD1.format(v/t*100)+'% da lista':'';
-  const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:28px;color:${cor||'var(--ink)'}">${v}</div><div class="s">${s||''}</div></div>`;
-  let h=`<div class="kpis">${k('Exames na lista de apoio',fNum.format(R.exames),'lista do CONCENT')}${k('Com preço no DB',fNum.format(R.com_db),pct(R.com_db,R.exames),'var(--blue)')}
-    ${k('Com preço no HP',fNum.format(R.com_hp),pct(R.com_hp,R.exames),'var(--green)')}${k('Com os dois preços',fNum.format(R.ambos),'podem ser comparados',)}
-    ${k('Mais em conta',`<span style="font-size:21px">DB ${fNum.format(c.d)} · HP ${fNum.format(c.h)}</span>`,`nas comparações (iguais: ${fNum.format(c['='])} · a conferir: ${fNum.format(c['?'])})`,'var(--amber)')}</div>`;
+  // cada laboratório tem a sua cor em toda a aba: DB = anil, HP = laranja
+  const k=(l,v,s,tc)=>`<div class="card kpi ${tc}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s||''}</div></div>`;
+  let h=`<div class="kpis-dia" style="margin-top:22px">${k('Exames na lista de apoio',fNum.format(R.exames),'lista do CONCENT','t-exa')}${k('Com preço no DB',fNum.format(R.com_db),pct(R.com_db,R.exames),'t-db')}
+    ${k('Com preço no HP',fNum.format(R.com_hp),pct(R.com_hp,R.exames),'t-hp')}
+    <div class="card kpi kpi-proj t-neu"><div class="l">Quem é mais barato</div><div class="proj-linha"><span class="proj-lb">DB mais barato</span><span class="proj-vv" style="color:var(--c-db)">${fNum.format(c.d)} exames</span></div><div class="proj-linha"><span class="proj-lb">HP mais barato</span><span class="proj-vv" style="color:var(--c-hp)">${fNum.format(c.h)} exames</span></div><div class="s">de ${fNum.format(R.ambos)} com os dois preços${c['=']?` · ${fNum.format(c['='])} iguais`:''}</div></div></div>`;
   h+=`<div class="apbar" id="apBar"><label class="fld" style="flex:1 1 320px">Buscar exame<input type="search" id="apQ" placeholder="Nome ou código: CA 125, tsh, vitamina d..." autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
     <label class="fld">Mostrar<select id="apF">${AP_F.map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></label>
     <label class="apck"><input type="checkbox" id="apEx"> Incluir os ${fNum.format(R.extras)} exames fora da lista de apoio</label>
     <button class="btn" id="apCsv" type="button">Baixar CSV</button></div>
-    <p class="sub">A busca acha pelo nome ou código no CONCENT e também pelo nome ou código usado no DB e no HP. Exames com mais de um material aparecem em mais de uma linha. O preço do DB já é o mais recente; quando o exame mudou de preço no último reajuste, aparece embaixo o preço antigo e a variação.</p><div id="apRes"></div>`;
+<div id="apRes"></div>`;
   const ul=(arr,f,max=12)=>`<details style="margin-top:4px"><summary style="cursor:pointer;color:var(--blue)">ver a lista</summary><div style="margin-top:4px;line-height:1.5">${arr.slice(0,max).map(f).join('<br>')}${arr.length>max?`<br>… e mais ${fNum.format(arr.length-max)}`:''}</div></details>`;
-  h+=`<h2>Pontos de atenção nos cadastros</h2><div class="card"><ul class="notes">
+  // parte técnica (de-para, tabelas): fica fechada por padrão, quem cuida dos cadastros abre
+  h+=`<details class="ap-atencao"><summary><h2 style="display:inline">Pontos de atenção nos cadastros</h2> <span class="sub">clique para abrir</span></summary><div class="card"><ul class="notes">
    <li><b>${fNum.format(A.sem_mapa.length)} exames da lista não têm de-para</b> com o DB nem com o HP; por isso não têm preço aqui.${ul(A.sem_mapa,x=>`<code>${esc(x.c)}</code> ${esc(x.n)}`)}</li>
    ${A.dup_hp.length?`<li><b>${fNum.format(A.dup_hp.length)} códigos da tabela do HP aparecem mais de uma vez com preços diferentes.</b> O painel mostra a faixa de preço (com ⚠) e só marca o mais em conta quando não há dúvida.${ul(A.dup_hp,x=>`<code>${esc(x.c)}</code> ${esc(x.n)}: ${x.p.map(v=>fBRL.format(v)).join(' e ')}`)}</li>`:''}
    ${A.mesmo_mat.length?`<li><b>Exames ligados a mais de um código do apoio com o mesmo material</b> (confira se o de-para está certo).${ul(A.mesmo_mat,x=>`<code>${esc(x.c)}</code> ${esc(x.n)} → ${esc(x.l)}: ${x.a.map(esc).join(' e ')}`)}</li>`:''}
@@ -1715,7 +1924,7 @@ function viewApoio(){
    ${A.zero_map.length?`<li><b>Códigos com preço R$ 0,00 na tabela:</b> ${A.zero_map.map(esc).join(', ')}. Não entram na comparação.</li>`:''}
    ${(A.mat_sem_nome&&A.mat_sem_nome.length)?`<li><b>Códigos de material sem nome na lista de materiais:</b> ${A.mat_sem_nome.map(esc).join(', ')}. Aparecem como “Material N”.</li>`:''}
    ${A.extras.length?`<li><b>${fNum.format(A.extras.length)} exames têm de-para, mas não estão na lista de apoio do CONCENT</b> (em geral são exames feitos internamente). Ficam ocultos, a não ser que você marque “Incluir…”.</li>`:''}
-   <li>Arquivos usados: ${AP.arquivos.map(a=>`${esc(a.papel)} (<code>${esc(a.nome)}</code>)`).join('; ')}.</li></ul></div>`;
+   <li>Arquivos usados: ${AP.arquivos.map(a=>`${esc(a.papel)} (<code>${esc(a.nome)}</code>)`).join('; ')}.</li></ul></div></details>`;
   return h;
 }
 function bindApoio(){
@@ -1765,19 +1974,43 @@ function pcRows(){
   out.sort((a,b)=>normTxt(a.nome)<normTxt(b.nome)?-1:normTxt(a.nome)>normTxt(b.nome)?1:(a.marg==null?1:0)-(b.marg==null?1:0));
   return out;
 }
+function prejuizoApoio12m(PC){
+  const B=D.B,ymFim=mesYM[mesYM.length-1],qtd=new Map(),idConv=D.convenios.map(c=>c.id);
+  for(let i=0;i<B.mo.length;i++){
+    if(mesYM[B.mo[i]]<=ymFim-12)continue;
+    const ex=D.exames[B.x[i]],st=D.setores[ex.s];
+    if(!st||!normTxt(st.nome).includes('laboratorio apoio'))continue;
+    const kq=ex.cod+'|'+idConv[B.c[i]];qtd.set(kq,(qtd.get(kq)||0)+B.e[i]);
+  }
+  let perda=0,exames=0;const porConv=new Map();
+  for(const [ei,ci,ativo,valor] of PC.linhas){
+    if(!ativo||!(valor>0))continue;
+    const cs=[PC.custoDB[ei],PC.custoHP[ei]].filter(v=>v!=null);if(!cs.length)continue;
+    const custo=Math.min(...cs);if(valor>=custo)continue;
+    const cv=PC.convenios[ci],q=qtd.get(PC.exameCod[ei]+'|'+cv.c)||0;if(!q)continue;
+    const p=q*(custo-valor);perda+=p;exames+=q;porConv.set(cv.n,(porConv.get(cv.n)||0)+p);
+  }
+  const top=[...porConv.entries()].sort((a,b)=>b[1]-a[1])[0];
+  return {perda,exames,top:top&&perda?{nome:top[0],pct:top[1]/perda*100}:null};
+}
 function viewPrecosConv(){
   const PC=D.precosConv;
   if(!PC)return `<div class="notice warn"><b>Ainda não há a lista de preços por convênio.</b> Exporte o <code>precos_convenio.csv</code> direto do banco (rode o <code>extrair_precos_convenio.bat</code>), criptografe e envie para a pasta <code>data/apoio</code> do repositório.</div>`;
   const comCusto=PC.exames.filter((_,i)=>PC.custoDB[i]!=null||PC.custoHP[i]!=null).length;
   const convs=[...PC.convenios].sort((a,b)=>normTxt(a.n)<normTxt(b.n)?-1:1);
   const particular=PC.convenios.find(c=>normTxt(c.n)==='particular');
-  const k=(l,v,s2,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:28px;color:${cor||'var(--ink)'}">${v}</div><div class="s">${s2||''}</div></div>`;
-  let h=`<div class="kpis">${k('Exames no relatório',fNum.format(PC.exames.length),'do CONCENT')}${k('Com custo de apoio para comparar',fNum.format(comCusto),'DB ou HP cadastrado','var(--blue)')}${k('Convênios',fNum.format(PC.convenios.length),'na tabela de preços')}${k('Preços no total',fNum.format(PC.linhas.length),'exame × convênio, melhor plano')}</div>`;
+  // prejuízo de verdade nos últimos 12 meses: só exames do setor Laboratório Apoio (os feitos aqui dentro
+  // não pagam o apoio), convênio ativo, preço pago < custo do apoio, multiplicado pela quantidade que
+  // realmente foi feita naquele convênio. Antes contava toda combinação possível da tabela (5.867),
+  // a maioria nunca feita.
+  const prej=prejuizoApoio12m(PC);
+  const k=(l,v,s2,tc)=>`<div class="card kpi ${tc}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s2||''}</div></div>`;
+  let h=`<div class="kpis-dia" style="margin-top:22px">${k('Exames no relatório',fNum.format(PC.exames.length),'do CONCENT','t-exa')}${k('Com custo de apoio',fNum.format(comCusto),'têm preço no DB ou no HP','t-db')}${k('Convênios',fNum.format(PC.convenios.length),'na tabela de preços','t-neu')}${k('Prejuízo nos últimos 12 meses '+ajuda('Soma, nos últimos 12 meses, dos exames enviados ao laboratório de apoio em que o convênio pagou menos do que o apoio cobrou (pelo mais barato entre DB e HP). Só conta exames que foram feitos de verdade.'),fBRL0.format(prej.perda),`${fNum.format(prej.exames)} exames de apoio pagos abaixo do custo${prej.top?` · ${fD1.format(prej.top.pct)}% na ${esc(prej.top.nome)}`:''}`,'t-bad')}</div>`;
   h+=`<div class="apbar" id="pcBar"><label class="fld" style="flex:1 1 320px">Buscar exame<input type="search" id="pcQ" placeholder="Nome do exame..." autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
     <label class="fld">Convênio<select id="pcConv" style="max-width:260px">${convs.map(c=>`<option value="${esc(c.c)}">${esc(c.n)}</option>`).join('')}<option value="">Todos os convênios</option></select></label>
     <label class="apck"><input type="checkbox" id="pcAtivos"> Somente convênios ativos</label>
     <button class="btn" id="pcCsv" type="button">Baixar CSV</button></div>
-    <p class="sub">Um convênio pode ter mais de um plano cadastrado para o mesmo exame; aqui sempre aparece o de maior valor. Custo de apoio = menor preço entre DB e HP (aba Laboratório de Apoio). Margem = quanto sobra do valor pago pelo convênio depois de descontar esse custo. Sem busca, a ordem padrão é pelos exames mais feitos no ano; use as páginas abaixo da tabela para ver o restante, ou clique em "Exame" para ir em ordem alfabética.</p><div id="pcRes"></div>`;
+    <p class="hint">Margem = quanto sobra do preço pago depois do custo do apoio (o mais barato entre DB e HP).</p><div id="pcRes"></div>`;
   return h;
 }
 function pcCel(v){return v==null?`<span class="mut">—</span>`:fBRL.format(v);}
@@ -1788,13 +2021,13 @@ function renderPrecosConv(){
   const th=(k,t,cls='')=>`<th class="${cls}" data-pc-ord="${k}" style="cursor:pointer" aria-sort="${ord===k?(S.pc.dir>0?'ascending':'descending'):'none'}">${t}${seta(k)}</th>`;
   const ini=S.pc.pg*PC_PAGE,vis=rows.slice(ini,ini+PC_PAGE);
   const padraoTop50=!S.pc.ord&&!S.pc.q.trim();
-  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.pc.q.trim()?` para “${esc(S.pc.q.trim())}”`:''}${padraoTop50?' · ordenado pelos exames mais feitos no ano':''} · clique no título de uma coluna para ordenar · verde = sobra dinheiro sobre o custo de apoio, vermelho = fica no prejuízo</p>`;
+  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.pc.q.trim()?` para “${esc(S.pc.q.trim())}”`:''}${padraoTop50?' · ordenado pelos exames mais feitos no ano':''} · verde = sobra dinheiro, vermelho = prejuízo · clique no título da coluna para ordenar</p>`;
   if(!n){$('#pcRes').innerHTML=h+'<div class="empty">Nenhum preço encontrado. Tente outro nome, ou troque o convênio.</div>';return;}
-  h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('cod','Cód.','cd')}${th('exame','Exame','nm')}${th('conv','Convênio','nm')}${th('valor','Preço pago','pc')}${th('db','Preço DB','pc')}${th('hp','Preço HP','pc')}${th('marg','Margem','pc st')}</tr></thead><tbody>`;
+  h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('cod','Cód.','cd')}${th('exame','Exame','nm')}${th('conv','Convênio','nm')}${th('valor','Preço pago','pc')}${th('db','<span style="color:var(--c-db)">Preço DB</span>','pc')}${th('hp','<span style="color:var(--c-hp)">Preço HP</span>','pc')}${th('marg','Margem','pc st')}</tr></thead><tbody>`;
   vis.forEach(r=>{
     const boa=r.marg!=null&&r.marg>=0, ruim=r.marg!=null&&r.marg<0;
     h+=`<tr><td class="cd" data-l="Cód.">${esc(r.cod)}</td><td class="nm" data-l="Exame">${esc(r.nome)}${r.ativo?'':' <span class="tag w" title="Convênio marcado como inativo no CONCENT para este exame">inativo</span>'}</td>
-     <td class="nm" data-l="Convênio">${esc(r.cv.n)}</td>
+     <td class="nm cv" data-l="Convênio">${esc(r.cv.n)}</td>
      <td data-l="Preço pago" class="pc"><span class="pv">${pcCel(r.valor)}</span></td>
      <td data-l="Preço DB" class="pc">${pcCel(r.cDB)}</td>
      <td data-l="Preço HP" class="pc">${pcCel(r.cHP)}</td>
@@ -1955,9 +2188,9 @@ function renderAreaTecnica(){
   const nomesTodos=atSetoresTodos();
   const extras=nomesTodos.filter(n=>!agrupados.some(s=>s.setor===n)).map(n=>({setor:n,reqs:[],total:0,atrasados:0}));
   const setores=[...agrupados,...extras].sort((a,b)=>b.atrasados-a.atrasados||b.total-a.total||(normTxt(a.setor)<normTxt(b.setor)?-1:1));
-  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(setores.reduce((n,s)=>n+s.total,0))} exames em ${fNum.format(setores.length)} setores · clique num setor para ver as requisições</p>`;
+  let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(setores.reduce((n,s)=>n+s.total,0))} exames em ${fNum.format(setores.length)} setores · clique num setor para ver as requisições e os pacientes</p>`;
   if(!setores.length){$('#atRes').innerHTML=h+'<div class="empty">Nada por aqui com estes filtros.</div>';return;}
-  h+=`<div class="card tw"><table class="aptb"><thead><tr><th class="nm">Setor</th><th class="pc">Exames</th><th class="pc st">Atrasados</th></tr></thead><tbody>`;
+  h+=`<div class="card tw"><table class="aptb keep"><thead><tr><th class="nm">Setor</th><th class="pc">Exames</th><th class="pc st">Atrasados</th></tr></thead><tbody>`;
   setores.forEach(s=>{
     const aberto=S.at.aberto===s.setor;
     h+=`<tr class="atSetorRow" data-at-abrir="${esc(s.setor)}" style="cursor:pointer${aberto?';background:#eef4ff':''}"><td class="nm">${aberto?'▾':'▸'} ${esc(s.setor)}</td><td class="pc">${fNum.format(s.total)}</td><td class="pc st">${s.atrasados?`<span class="pv" style="color:#b3261e">${fNum.format(s.atrasados)}</span>`:'<span class="mut">0</span>'}</td></tr>`;
@@ -1981,25 +2214,26 @@ function viewAreaTecnica(){
   if(!AT)return `<div class="notice warn"><b>Ainda não há dados da área técnica.</b> Rode o <code>coletar_area_tecnica.py</code> na VM e envie os 3 CSVs para a pasta <code>data/area_tecnica</code> do repositório.</div>`;
   if(!S.at.de){const h=new Date(),d=new Date(h);d.setDate(d.getDate()-75);S.at.de=atISO(d);S.at.ate=atISO(h);}
   const R=AT.resumo,c=R.porStatus;
-  const k=(l,v,s,cor)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="font-size:58px;color:${cor||'var(--ink)'}">${v}</div><div class="s">${s||''}</div></div>`;
+  // faixa colorida no topo de cada card, na mesma cor do número (mesmo padrão das outras telas)
+  const k=(l,v,s,cor,faixa)=>`<div class="card kpi" style="border-top:4px solid ${faixa||cor||'var(--ink)'}"><div class="l">${l}</div><div class="v" style="font-size:58px;color:${cor||'var(--ink)'}">${v}</div><div class="s">${s||''}</div></div>`;
   const dentroPrazo=R.emAndamento-R.atrasados;
-  const porStatusCard=`<div class="card kpi"><div class="l">Por status</div><div class="at-status-grid">
+  const porStatusCard=`<div class="card kpi" style="border-top:4px solid var(--blue)"><div class="l">Por status</div><div class="at-status-grid">
     <div><div class="n">${fNum.format(c.col)}</div><div class="t">Exames em Coletado</div></div>
     <div><div class="n">${fNum.format(c.t)}</div><div class="t">Exames em Triado</div></div>
     <div><div class="n">${fNum.format(c.dp)}</div><div class="t">Exames Dig. Parc.</div></div>
     <div><div class="n">${fNum.format(c.d)}</div><div class="t">Exames Digitado</div></div>
   </div></div>`;
-  let h=`<div class="kpis at-kpis">${k('Exames em andamento',fNum.format(dentroPrazo),'Exames dentro do prazo e em análise pelo setor técnico')}${k('Exames em atraso',fNum.format(R.atrasadosSemColetado),'Exames com prazo vencido com amostra no setor técnico','#b3261e')}
+  let h=`<div class="kpis at-kpis">${k('Exames em andamento',fNum.format(dentroPrazo),'Exames dentro do prazo e em análise pelo setor técnico','var(--ink)','#475569')}${k('Exames em atraso '+ajuda('Exames com prazo de entrega vencido que já estão no setor técnico (triados, digitados ou digitados em parte). Os só coletados não entram aqui.'),fNum.format(R.atrasadosSemColetado),'Exames com prazo vencido com amostra no setor técnico','#b3261e')}
     ${k('Cadastrados e não coletados',fNum.format(R.aguardandoColeta),'Cadastros sem coleta do material e entrada no setor técnico','var(--amber)')}
     ${porStatusCard}</div>`;
   h+=`<div class="apbar" id="atBar" style="justify-content:center">
-    <label class="fld" style="flex:0 0 auto"><select id="atVista"><option value="and">Em andamento (${fNum.format(R.emAndamento)})</option><option value="agu">Aguardando coleta (${fNum.format(R.aguardandoColeta)})</option></select></label>
+    <label class="fld" style="flex:0 0 auto">Mostrar<select id="atVista"><option value="and">Em andamento (${fNum.format(R.emAndamento)})</option><option value="agu">Aguardando coleta (${fNum.format(R.aguardandoColeta)})</option></select></label>
     <label class="fld" style="flex:1 1 240px">Buscar paciente, exame ou requisição<input type="search" id="atQ" placeholder="Nome do paciente, exame, requisição..." autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
     <label class="fld">De<input type="date" id="atDe" style="font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 10px;height:40px;background:#fff"></label>
     <label class="fld">Até<input type="date" id="atAte" style="font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 10px;height:40px;background:#fff"></label>
     <div class="fld" style="flex:1 1 220px">Exame<div id="atExameSel"></div></div></div>
     <div class="apbar" id="atStatusFld" style="margin-top:8px;justify-content:center">${Object.entries(AT_STATUS).filter(([k])=>k!=='c').map(([k,t])=>`<label style="display:inline-flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:var(--ink)"><input type="checkbox" class="atSts" data-k="${k}" ${S.at.sts[k]?'checked':''} style="width:17px;height:17px"> ${t}</label>`).join('')}</div>
-    <p class="sub">Único lugar do painel que mostra nome de paciente — serve pra achar a amostra na bancada. Organizado como o relatório do CONCENT: setor → requisição → exames daquele setor. Por padrão mostra o prazo de hoje até 75 dias atrás, e esconde os já Conferidos (que estão prestes a liberar). “Aguardando coleta” ainda não tem prazo (a amostra não chegou no laboratório).</p><div id="atRes"></div>`;
+<div id="atRes"></div>`;
   return h;
 }
 function bindAreaTecnica(){
@@ -2023,7 +2257,9 @@ const GROUPS={geral:{tabs:['geral'],lbl:{geral:'Visão Diária'}},
   apoio:{tabs:['apoio'],lbl:{apoio:'Laboratório de Apoio'}},
   areaTecnica:{tabs:['areaTecnica'],lbl:{areaTecnica:'Área Técnica'}},
   fat:{tabs:['anual','periodos','exames','rank'],lbl:{anual:'Comparativo Anual',periodos:'Comparar Períodos',exames:'Setores',rank:'Convênios e Médicos'}},
-  custos:{tabs:['precosconv','qualidade'],lbl:{precosconv:'Preços por Convênio',qualidade:'Qualidade dos Dados'}},
+  custos:{tabs:['precosconv'],lbl:{precosconv:'Preços por Convênio'}},
+  // tela técnica (conferência dos arquivos): fora do menu, abre pelo link "Configurações" no topo
+  config:{tabs:['qualidade'],lbl:{qualidade:'Qualidade dos Dados'}},
   financeiro:{tabs:['finGeral','finPagar','finReceber','finDRE'],lbl:{finGeral:'Visão Geral',finPagar:'Contas a Pagar',finReceber:'Contas a Receber',finDRE:'Demonstrativos de Resultado'}}};
 const tabToGroup=Object.fromEntries(Object.entries(GROUPS).flatMap(([g,o])=>o.tabs.map(t=>[t,g])));
 function go(){
