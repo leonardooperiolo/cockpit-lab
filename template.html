@@ -8,27 +8,22 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#f3f7fe; --card:#ffffff; --ink:#0f1f3d; --text:#1e293b; --muted:#64748b; --line:#e3eaf5;
-  --blue:#2563eb; --blue-soft:#9db4e0; --green:#1f9d6b; --red:#d64545; --amber:#c9791f;
-  --info-bg:#dfe9fb; --info-line:#c3d3f2;
-}
+:root{--blue-soft:#9db4e0}
 *{box-sizing:border-box}
 html{scroll-padding-top:150px}
-body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+body{margin:0;font:15px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
 .wrap{max-width:1240px;margin:0 auto;padding:22px 24px 60px}
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap}
-.eyebrow{font-size:13px;font-weight:600;color:var(--blue);letter-spacing:.02em}
-h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(28px,4vw,42px);line-height:1.12;margin:6px 0 0;color:var(--ink)}
-.stamp{font-size:12.5px;color:var(--muted);text-align:right}
-.stamp b{display:block;font-size:14px;color:var(--ink)}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:26px 0 0}
-.tabs button{background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:10px 16px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}
-.tabs button:hover{color:var(--ink)}
-.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--blue)}
+
+h1{line-height:1.12;margin:6px 0 0;color:var(--ink)}
+.stamp{color:var(--muted);text-align:right}
+.stamp b{color:var(--ink)}
+.tabs{display:flex;margin:26px 0 0}
+.tabs button{background:none;border-bottom:2px solid transparent;font:inherit;font-weight:600;cursor:pointer}
+
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-.filters{position:sticky;top:0;z-index:20;background:rgba(243,247,254,.94);backdrop-filter:blur(6px);padding:14px 0 12px;display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end}
+.filters{position:sticky;top:0;z-index:20;backdrop-filter:blur(6px);display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end}
 .fgroup{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
 .fld{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);font-weight:600}
 .fld select,.fld input[type=date],.ms-b{font:inherit;font-size:14px;color:var(--text);background:#fff;border:1px solid #cfdaee;border-radius:9px;padding:7px 10px;min-width:104px;height:36px}
@@ -46,14 +41,14 @@ h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(2
 .ms-i input{margin-top:3px}
 .ms-more{padding:8px 4px;font-size:12.5px;color:var(--muted)}
 .btn{font:inherit;font-size:13.5px;font-weight:600;color:var(--blue);background:#fff;border:1px solid #cfdaee;border-radius:9px;padding:0 14px;height:36px;cursor:pointer}
-.btn:hover{background:#eef3fd}
+
 .fhint{flex-basis:100%;font-size:12.5px;color:var(--muted)}
 
 .notice{background:var(--info-bg);border:1px solid var(--info-line);border-radius:12px;padding:12px 16px;margin:14px 0 0;font-size:14px}
 .notice b{color:var(--blue)}
-.notice.warn{background:#fff3e2;border-color:#f0d5a8}
+.notice.warn{border-color:#f0d5a8}
 .notice.warn b{color:var(--amber)}
-.notice.danger{background:#fdecec;border-color:#f2b8b8}
+.notice.danger{border-color:#f2b8b8}
 .notice.danger b{color:var(--red)}
 .ni-heat{border-collapse:separate;border-spacing:0;font-size:13px;width:auto}
 .ni-heat th,.ni-heat td{padding:7px 12px;text-align:center;white-space:nowrap}
@@ -74,9 +69,9 @@ h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(2
 .saude-grid th,.saude-grid td{padding:7px 4px}
 @media (max-width:820px){.saude-grid{grid-template-columns:1fr}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
-.kpi .l{font-size:12.5px;color:var(--muted);font-weight:600}
-.kpi .v{font-size:clamp(22px,2.3vw,30px);font-weight:800;line-height:1.15;margin:6px 0 4px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.kpi .s{font-size:12.5px;color:var(--muted)}
+
+.kpi .v{line-height:1.15;margin:6px 0 4px;font-variant-numeric:tabular-nums;white-space:nowrap}
+
 .at-kpis{align-items:stretch}
 .at-kpis .card.kpi{text-align:center;display:flex;flex-direction:column}
 .at-kpis .kpi .l{font-size:17px}
@@ -87,24 +82,24 @@ h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:clamp(2
 .at-status-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin:10px 0 2px}
 .at-status-grid .n{font-size:30px;font-weight:800;color:var(--blue);line-height:1.15;font-variant-numeric:tabular-nums}
 .at-status-grid .t{font-size:12.5px;color:#334155;margin-top:2px}
-h2{font-size:19px;color:var(--ink);margin:30px 0 4px}
+h2{color:var(--ink);margin:30px 0 4px}
 h2 small{font-size:13px;font-weight:400;color:var(--muted);margin-left:8px}
 h3{font-size:15px;color:var(--ink);margin:0 0 2px}
 .sub{font-size:13px;color:var(--muted);margin:0 0 10px}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px;margin-top:12px}
 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin-top:12px}
 .ch{width:100%;height:auto;display:block}
-.gr{stroke:#e8eef8;stroke-width:1}
-.ax{fill:#64748b;font-size:12px}
-.vl{fill:#0f1f3d;font-size:11px;font-weight:700}
+.gr{stroke-width:1}
+.ax{font-size:12px}
+.vl{fill:#0f1f3d}
 .ax2{font-size:10.5px;opacity:.8}
 .vlb{font-size:12.5px}
 .axb{font-size:13px;font-weight:600;fill:#334155}
 .ax2.axb{font-size:9.5px;font-weight:500;fill:#64748b}
 .dlt{font-size:13px;font-weight:800}
 .dlt.up{fill:#1f9d6b}.dlt.dn{fill:#d64545}.dlt.eq{fill:#64748b}
-.perbar{margin:16px 0 0;padding:10px 14px;background:var(--info-bg);border:1px solid var(--info-line);border-radius:10px;font-size:14px;color:var(--ink)}
-.perbar span{color:#475569}
+.perbar{margin:16px 0 0;border:1px solid var(--info-line)}
+
 body.locked>*:not(.gate){display:none}
 .gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:999;padding:20px}
 .gate-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px 26px;max-width:360px;width:100%;box-shadow:0 8px 30px rgba(15,31,61,.08);display:flex;flex-direction:column;gap:12px}
@@ -119,20 +114,20 @@ body.locked>*:not(.gate){display:none}
 .apck{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--text);height:40px}
 .aptb{border-collapse:separate;border-spacing:0}
 .aptb th{padding:12px 14px;background:#f6f9ff;text-align:left;font-size:12.5px;color:#475569;border-bottom:1px solid #dfe8f6}
-.aptb td{padding:13px 14px;border-bottom:1px solid #edf2f9;vertical-align:middle;white-space:normal;text-align:left}
+.aptb td{border-bottom:1px solid #edf2f9;vertical-align:middle;white-space:normal;text-align:left}
 .aptb tbody tr:last-child td{border-bottom:0}
 .aptb td.cd,.aptb th.cd{width:64px;color:#64748b;font-size:13px}
 .aptb td.nm{min-width:230px;font-weight:600;color:var(--ink);font-size:14.5px}
 .aptb td.nm .mt{display:block;margin-top:3px;font-weight:400;font-size:12px;color:var(--muted)}
 .aptb td.pc,.aptb th.pc{min-width:140px;width:150px}
 .aptb td.st,.aptb th.st{min-width:190px}
-.aptb .pv{display:block;font-size:16px;font-weight:700;color:var(--ink);white-space:nowrap}
+.aptb .pv{display:block;font-weight:700;color:var(--ink);white-space:nowrap}
 .aptb .cdg{display:block;margin-top:1px;font-size:11.5px;color:#94a3b8;text-decoration:none}
 .aptb .pz{display:block;margin-top:1px;font-size:11px;color:#94a3b8}
 a.cdg:hover{text-decoration:underline;color:#2563eb}
 .aptb td small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:3px;font-weight:400}
 .aptb td small.aviso{color:#8a5a00}
-.aptb td.best{background:#eaf7f0}
+
 .aptb td.best .pv{color:#0f6b44}
 .aptb .ck{color:#1f9d6b}
 .aptb .mut{color:#94a3b8;font-size:13px}
@@ -160,11 +155,11 @@ a.cdg:hover{text-decoration:underline;color:#2563eb}
 .empty{padding:34px 10px;text-align:center;color:var(--muted);font-size:14px}
 
 .tw{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:13.5px}
+table{border-collapse:collapse;width:100%}
 th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 th:first-child,td:first-child{text-align:left}
 th{font-size:12px;color:var(--muted);font-weight:600;background:#fafcff;position:sticky;top:0}
-tr.tot td{font-weight:700;border-top:2px solid var(--line);background:#fafcff}
+tr.tot td{font-weight:700;border-top:2px solid var(--line)}
 td.nm,th.nm{white-space:normal;min-width:220px;text-align:left}
 .bar{background:linear-gradient(#a9c3ec,#a9c3ec) left bottom/var(--w) 4px no-repeat}
 .dl{font-weight:700;font-size:12.5px}
@@ -173,7 +168,7 @@ td.nm,th.nm{white-space:normal;min-width:220px;text-align:left}
 .tag.w{background:#fff3e2;color:var(--amber)}
 .seg{display:inline-flex;border:1px solid #cfdaee;border-radius:10px;overflow:hidden;background:#fff}
 .seg button{font:inherit;font-size:13.5px;font-weight:600;border:0;background:none;padding:7px 16px;cursor:pointer;color:var(--muted)}
-.seg button[aria-pressed=true]{background:var(--blue);color:#fff}
+.seg button[aria-pressed=true]{color:#fff}
 .row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin:26px 0 8px}
 .pick{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
 .pick .card{flex:1 1 320px}
@@ -184,13 +179,12 @@ td.nm,th.nm{white-space:normal;min-width:220px;text-align:left}
 .notes li{margin:6px 0}
 .notes{font-size:14px;max-width:88ch}
 @media(max-width:900px){.filters{position:static}}
-@media(max-width:700px){.wrap{padding:16px 14px 50px}.grid2{grid-template-columns:1fr}.ms-b{width:100%}.fld{flex:1 1 140px}.stamp{text-align:left}}
+@media(max-width:700px){.wrap{padding:16px 14px 50px}.grid2{grid-template-columns:1fr}.ms-b{width:100%}.stamp{text-align:left}}
 
-/* ===== modo simples (teste - sugestoes do Gemini) ===== */
-body{font-family:'Inter',system-ui,-apple-system,Arial,sans-serif;color:#0b1220}
-.kpi .l{font-size:15px;font-weight:700;color:#334155}
+
+
 .kpi .v{font-size:clamp(30px,3.4vw,42px)}
-.kpi .s{font-size:14px;color:#334155}
+
 .kpis-5{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
 .kpis-5 .v{font-size:clamp(17px,1.7vw,24px);white-space:nowrap}
 /* tabela de "Consultar títulos": largura fixa por coluna (via colgroup no HTML) em vez de
@@ -202,18 +196,18 @@ body{font-family:'Inter',system-ui,-apple-system,Arial,sans-serif;color:#0b1220}
 /* todas as colunas centralizadas, incluindo Valor */
 .cp-tab table td,.cp-tab table th{text-align:center}
 .cp-tab table tfoot td{border-top:2px solid var(--line);font-weight:700;background:#fafcff}
-.tabs button{font-size:16px;padding:14px 20px}
-.tabs button[aria-selected=true]{color:#fff;background:var(--blue);border-radius:10px 10px 0 0;border-bottom-color:var(--blue)}
-.subtabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
-.subtabs button{font:inherit;font-size:14px;font-weight:600;color:var(--muted);background:#eef3fd;border:1px solid #cfdaee;border-radius:20px;padding:7px 16px;cursor:pointer}
-.subtabs button[aria-selected=true]{color:#fff;background:var(--blue);border-color:var(--blue)}
+
+.tabs button[aria-selected=true]{border-bottom-color:var(--blue)}
+.subtabs{display:flex;flex-wrap:wrap;margin:10px 0 0}
+.subtabs button{font:inherit;font-weight:600;cursor:pointer}
+
 .fgroup#fgAtalhos{gap:10px}
 .btn.atalho{font-size:15px;font-weight:700;height:48px;padding:0 20px;border-radius:12px;border-width:2px}
 select.simple-sel{font-size:16px;height:48px;min-width:220px;border-radius:12px;border:2px solid #cfdaee;padding:8px 12px}
 .kpis-simples{grid-template-columns:repeat(3,1fr)}
 @media(max-width:820px){.kpis-simples{grid-template-columns:1fr}}
 
-/* ===== rodada 2: Visao Geral (hoje/mes/projecao) + Saude do Negocio (insight) ===== */
+
 .cards-hoje{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0 0}
 @media(max-width:820px){.cards-hoje{grid-template-columns:1fr}}
 .card-hoje{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
@@ -236,28 +230,23 @@ select.simple-sel{font-size:16px;height:48px;min-width:220px;border-radius:12px;
 .efeito.pos .v{color:#0f6b44}
 .efeito.neg .v{color:#b3261e}
 
-/* ===== rodada 3 (teste - design system sugerido pelo Gemini) ===== */
-:root{
-  --r3-bg:#F8FAFC; --r3-surface:#FFFFFF; --r3-border:#E2E8F0; --r3-ink:#0F172A; --r3-muted:#64748B;
-  --r3-brand:#0284C7; --r3-ok-bg:#DCFCE7; --r3-ok-tx:#16A34A; --r3-warn-bg:#FEF3C7; --r3-warn-tx:#D97706;
-  --r3-err-bg:#FEE2E2; --r3-err-tx:#DC2626; --r3-info-bg:#DBEAFE; --r3-info-tx:#2563EB;
-}
-body{font-family:'Inter',system-ui,-apple-system,Arial,sans-serif}
+
+:root{--r3-bg:#F8FAFC;--r3-surface:#FFFFFF;--r3-ok-bg:#DCFCE7;--r3-ok-tx:#16A34A;--r3-warn-bg:#FEF3C7;--r3-warn-tx:#D97706;--r3-err-bg:#FEE2E2;--r3-err-tx:#DC2626;--r3-info-bg:#DBEAFE;--r3-info-tx:#2563EB}
+
 .card,.card-hoje,.kpi{font-variant-numeric:tabular-nums}
-.card,.card-hoje{border-radius:12px;border:1px solid var(--r3-border);transition:box-shadow .2s ease-in-out,border-color .2s ease-in-out}
-.card:hover,.card-hoje:hover{box-shadow:0 4px 12px rgba(0,0,0,.06);border-color:#CBD5E1}
-table tr:hover td{background:#F8FAFC}
+.card,.card-hoje{border:1px solid var(--r3-border)}
+
 .btn:focus-visible,select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--r3-brand);outline-offset:2px}
 .badge{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:6px}
 .badge.ok{background:var(--r3-ok-bg);color:var(--r3-ok-tx)}
 .badge.off{background:#f1f5f9;color:var(--r3-muted)}
 .live-dot{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--r3-ok-tx);background:var(--r3-ok-bg);padding:3px 10px;border-radius:99px;margin-left:10px;vertical-align:middle}
-.live-dot::before{content:'';width:7px;height:7px;border-radius:99px;background:var(--r3-ok-tx);animation:r3pulse 1.4s infinite}
+.live-dot::before{content:'';width:7px;height:7px;border-radius:99px;background:var(--r3-ok-tx)}
 @keyframes r3pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .secao-topo{margin-top:6px}
 .secao-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .secao-head .sub{color:var(--r3-muted);font-size:13px}
-.kpis-dia{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:14px 0 18px}
+.kpis-dia{display:grid;gap:14px;margin:14px 0 18px}
 @media(max-width:820px){.kpis-dia{grid-template-columns:1fr}}
 .grid-dia{display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start}
 @media(max-width:900px){.grid-dia{grid-template-columns:1fr}}
@@ -265,30 +254,30 @@ table tr:hover td{background:#F8FAFC}
 .pbar b{display:block;height:100%;background:var(--r3-brand);border-radius:99px}
 .rank-conv-dia{display:flex;flex-direction:column;gap:10px}
 .rc-row{display:grid;grid-template-columns:1fr;gap:3px}
-.rc-nome{font-size:13px;font-weight:600;color:var(--r3-ink)}
+
 .rc-bar{background:#eef2f7;border-radius:99px;height:7px;overflow:hidden}
 .rc-bar b{display:block;height:100%;background:var(--r3-brand);border-radius:99px}
-.rc-val{font-size:12px;color:var(--r3-muted)}
+.rc-val{font-size:12px}
 .rc-n{color:#94a3b8}
 .rc-outros .rc-nome,.rc-outros .rc-val{color:var(--r3-muted);font-style:italic}
 .shortcut-card p.sub{margin:2px 0 12px;font-size:13px;color:var(--r3-muted)}
 .shortcut-card .btn{width:100%;justify-content:center}
 
-/* ===== rodada 4 (teste - 4 kpis no topo, sem a secao Saude do Negocio na Visao Geral) ===== */
+
 .kpis-dia{grid-template-columns:repeat(4,1fr)}
 @media(max-width:1100px){.kpis-dia{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.kpis-dia{grid-template-columns:1fr}}
 .kpi-proj{padding-bottom:12px}
-.kpi-proj .proj-linha{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:5px;padding-top:5px;border-top:1px dashed var(--line)}
+.kpi-proj .proj-linha{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .kpi-proj .proj-linha:first-of-type{border-top:0;margin-top:2px;padding-top:0}
-.kpi-proj .proj-lb{font-size:11.5px;color:var(--muted);white-space:nowrap}
-.kpi-proj .proj-vv{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
-.kpi-proj .s{margin-top:6px}
+.kpi-proj .proj-lb{white-space:nowrap}
+.kpi-proj .proj-vv{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+
 .kpi-proj .meta-input-sm{width:100%;font:inherit;font-size:12.5px;border:1px solid #cfdaee;border-radius:8px;padding:5px 8px;margin-top:8px}
 .kpi-proj .meta-bar-sm{height:7px;border-radius:5px;background:#e3eaf5;margin-top:7px;overflow:hidden}
 .kpi-proj .meta-bar-sm b{display:block;height:100%;background:var(--green);border-radius:5px}
 
-.aptb .rdbline{display:block;margin-top:2px;font-size:11px;font-weight:600}
+.aptb .rdbline{display:block;margin-top:2px;font-weight:600}
 
 .pill.venc{background:#fee2e2;color:#b91c1c}
 .fin-tab table td.num,.fin-tab table th.num{text-align:center}
@@ -312,40 +301,32 @@ table tr:hover td{background:#F8FAFC}
 
 /* ===== sistema visual v2: uma paleta, uma fonte, cor só quando significa algo =====
    (vem por último de propósito: substitui as cores/fontes das "rodadas" de cima) */
-:root{
-  --bg:#f5f5f2; --card:#ffffff; --ink:#1b2430; --text:#2b3440; --muted:#6b7280; --line:#e4e4de;
-  --accent:#0f5f73; --accent-soft:#e6eff1;
-  --good:#2f7d4f; --bad:#b42318; --warn:#b45309;
-  --blue:var(--accent); --green:var(--good); --red:var(--bad); --amber:var(--warn);
-  --r3-brand:var(--accent); --r3-border:var(--line); --r3-ink:var(--ink); --r3-muted:var(--muted);
-  --info-bg:transparent; --info-line:var(--line);
-}
-body{background:var(--bg);color:var(--text);font-family:'Source Sans 3','Noto Sans CJK JP',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px}
+:root{--card:#ffffff;--ink:#1b2430;--text:#2b3440;--good:#2f7d4f;--bad:#b42318;--warn:#b45309;--blue:var(--accent);--green:var(--good);--red:var(--bad);--amber:var(--warn);--r3-brand:var(--accent);--r3-border:var(--line);--r3-ink:var(--ink);--r3-muted:var(--muted);--info-bg:transparent;--info-line:var(--line)}
+body{background:var(--bg);color:var(--text);font-family:'Source Sans 3','Noto Sans CJK JP',system-ui,-apple-system,'Segoe UI',sans-serif}
 .fin-tab table td:nth-child(2),.fin-fil{font-family:inherit}
 /* cabeçalho */
-.eyebrow{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.07em}
-h1{font-family:inherit;font-weight:700;font-size:24px;margin-top:2px}
+
+h1{font-family:inherit;font-weight:700;margin-top:2px}
 .stamp{font-size:12.5px;line-height:1.7}.stamp b{display:inline;font-size:12.5px;font-weight:600}
 /* abas: uma linha só, sublinhado na ativa */
-.tabs{flex-wrap:nowrap;overflow-x:auto;gap:2px;margin-top:18px;scrollbar-width:none}
-.tabs button{font-size:15px;padding:10px 14px;color:var(--muted);white-space:nowrap}
-.tabs button[aria-selected=true]{color:var(--ink);background:none;border-radius:0;border-bottom:2px solid var(--accent)}
+.tabs{flex-wrap:nowrap;overflow-x:auto;margin-top:18px;scrollbar-width:none}
+.tabs button{white-space:nowrap}
+.tabs button[aria-selected=true]{border-bottom:2px solid var(--accent)}
 .subtabs{gap:4px;margin-top:12px}
-.subtabs button{background:none;border:0;border-radius:6px;font-size:14px;padding:6px 12px}
-.subtabs button[aria-selected=true]{background:var(--accent-soft);color:var(--accent)}
+
 .seg{border-color:#d6d6cf}.seg button[aria-pressed=true]{background:var(--accent)}
 /* filtros: mesma altura e mesmo peso em tudo */
 .btn,.btn.atalho{height:36px;font-size:14px;font-weight:600;border-width:1px;border-radius:8px;padding:0 14px;color:var(--ink);border-color:#d6d6cf}
 .btn:hover{background:#efefea}
 .fld select,.fld input[type=date],.ms-b,select.simple-sel{height:36px;font-size:14px;font-weight:400;border:1px solid #d6d6cf;border-radius:8px}
-.filters{background:rgba(245,245,242,.95);padding:12px 0}
+.filters{padding:12px 0}
 /* cartões retos, sem sombra de "hover" em coisa que não é clicável */
-.card,.card-hoje{border-radius:8px;border-color:var(--line);transition:none}
-.card:hover,.card-hoje:hover{box-shadow:none;border-color:var(--line)}
+.card,.card-hoje{transition:none}
+.card:hover,.card-hoje:hover{border-color:var(--line)}
 .card-tit{margin:0 0 10px;font-size:15px;font-weight:700;color:var(--ink)}
-.kpi .l{font-size:14px;font-weight:600;color:var(--muted)}
+.kpi .l{font-weight:600}
 .kpi .v{font-weight:700;color:var(--ink)}
-.kpi .s{color:var(--muted);font-size:13.5px}
+.kpi .s{color:var(--muted)}
 .kpi .s b{color:var(--ink);font-weight:600}
 .kpi-extra{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
 /* aviso de período: uma linha discreta em vez de caixa azul */
@@ -355,32 +336,29 @@ h1{font-family:inherit;font-weight:700;font-size:24px;margin-top:2px}
 .notice.warn{background:none;border-left-color:var(--warn)}.notice.danger{background:none;border-left-color:var(--bad)}
 h2{font-size:18px;font-weight:700}
 /* tabelas */
-th,.aptb th{background:none;color:var(--muted);font-weight:600;border-bottom:1px solid #cfcfc7}
+th,.aptb th{background:none;font-weight:600;border-bottom:1px solid #cfcfc7}
 table tr:hover td{background:#fafaf7}
 tr.tot td{background:none}
-.pbar,.rc-bar{background:#ecece6}
+
 .pbar b,.rc-bar b{background:var(--accent)}
-.rc-nome{font-weight:500;font-size:13.5px;color:var(--ink)}
+.rc-nome{font-weight:500;color:var(--ink)}
 .rc-val{color:var(--muted)}
 .pill,.badge,.tag{border-radius:4px}
 .live-dot::before{animation:none}
-.saude-top table{font-size:13.5px}.saude-top th,.saude-top td{padding:7px 6px}.saude-top td.nm{min-width:0;font-size:13px}
+.saude-top table{font-size:13.5px}.saude-top th,.saude-top td{padding:7px 6px}.saude-top td.nm{min-width:0}
 .saude-top table{table-layout:fixed}.saude-top th.nm{width:34%}.saude-top td.nm{font-size:13.5px}
 .saude-top .st-var{display:block;margin-top:1px}.saude-top .st-var .dl{font-size:13px}
 .saude-top td{white-space:normal;vertical-align:middle}
 .saude-top .st-v{display:block;color:var(--ink);font-weight:700;font-size:15px}
 .saude-top .st-era{display:block;font-size:12.5px;color:var(--muted);margin-top:1px}.saude-top .st-era .dl{font-size:12.5px;white-space:nowrap}
 /* gráficos */
-.gr{stroke:#ebebe5}.ax{fill:#80868b}.vl{font-size:12px;font-weight:700}
+.ax{fill:#80868b}.vl{font-weight:700}
 
 /* ===== v3 "acolhedor": pensado pro dono de laboratório pequeno/médio (mais velho, técnico,
    pouca intimidade com número e tela). Clareza pelo desenho, não por texto explicativo:
    cada assunto tem a SUA cor (faturamento sempre azul, atendimentos sempre roxo...),
    verde/vermelho só nas setas de melhora/piora, letra maior, aba ativa bem marcada. */
-:root{
-  --bg:#f1f5fb; --line:#e0e7f1; --accent:#1f63c6; --accent-soft:#e3edfb; --muted:#5f6b7a;
-  --c-fat:#1f63c6; --c-atd:#7a3fd1; --c-exa:#0e7490; --c-prj:#b45309;
-}
+:root{--bg:#f1f5fb;--line:#e0e7f1;--accent:#1f63c6;--accent-soft:#e3edfb;--muted:#5f6b7a;--c-fat:#1f63c6;--c-atd:#7a3fd1;--c-exa:#0e7490;--c-prj:#b45309}
 body{font-size:16px}
 .filters{background:rgba(241,245,251,.95)}
 .eyebrow{color:var(--accent);text-transform:none;letter-spacing:.01em;font-size:13px;font-weight:700}
@@ -411,6 +389,50 @@ h1{font-size:26px}
 .kpi-proj .s{margin-top:10px}
 .pbar,.rc-bar{background:#e8eef7}
 .rc-nome{font-size:14px}
+/* botão de ajuda "?" e balão */
+.ajuda{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid #b8c6dc;background:#fff;color:#4b5b73;font:700 11.5px/1 inherit;cursor:pointer;padding:0;margin-left:4px;vertical-align:2px}
+.ajuda:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.ajuda-bal{position:absolute;z-index:999;background:#1b2430;color:#fff;font-size:13.5px;line-height:1.45;padding:10px 12px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);text-align:left;font-weight:400}
+.cfg-lnk{margin-top:4px;font-size:12.5px}
+.btn-print{margin-left:auto}
+/* impressão: só o conteúdo, sem abas, filtros e botões */
+@media print{
+  body{background:#fff!important;font-size:12px}
+  .tabs,.subtabs,.filters,.btn,.ajuda,.ajuda-bal,.cfg-lnk,.perbar{display:none!important}
+  .wrap{max-width:none;padding:0;zoom:.6}
+  h2{break-after:avoid}
+  svg.ch{max-height:300px;width:auto;max-width:100%;display:block;margin:0 auto}
+  .card,.card-hoje{box-shadow:none!important;break-inside:avoid}
+  .card.saude-top,.card.tw{break-inside:auto}tr{break-inside:avoid}
+  .kpis-dia{grid-template-columns:repeat(4,1fr)!important}
+  .grid-dia{grid-template-columns:2fr 1fr!important}
+  .saude-grid{grid-template-columns:1fr 1fr!important}
+  @page{size:A4 landscape;margin:10mm}
+}
+#fToggle{display:none}
+/* celular: nada pode passar da largura da tela (senão o navegador "afasta" a página toda e fica tudo miúdo) */
+@media(max-width:700px){
+  .fld select,.fld input,select.simple-sel,.ms-b,.apbar input[type=search]{width:100%!important;max-width:100%;min-width:0!important}
+  .fld{flex:1 1 100%!important;min-width:0}
+  .kpis,.kpis-dia,.cmpk,.at-kpis{grid-template-columns:1fr!important}
+  .apbar,.row{flex-wrap:wrap}
+  .apbar>*,.row>*{min-width:0;max-width:100%}
+  .subtabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .subtabs button{white-space:nowrap}
+  h1{font-size:22px}
+  .card{padding:14px 14px}
+  .tw{max-width:100%}
+  #fToggle{display:inline-flex;align-items:center}
+  /* tabela de setores da Área Técnica continua tabela no celular (são só 3 colunas) */
+  .aptb.keep{display:table}.aptb.keep thead{display:table-header-group}.aptb.keep tbody{display:table-row-group}
+  .aptb.keep tr{display:table-row;padding:0}.aptb.keep>tbody>tr>td,.aptb.keep>thead>tr>th{display:table-cell;width:auto!important;padding:10px 8px!important}
+  .aptb.keep>tbody>tr>td{border-bottom:1px solid #edf2f9!important}.aptb.keep td::before{display:none}
+  .aptb.keep td,.aptb.keep th{min-width:0!important}
+  /* Saúde do Negócio: a tabela rola de lado em vez de espremer as colunas */
+  .saude-top{overflow-x:auto}.saude-top table{table-layout:auto;min-width:470px}.saude-top th{white-space:nowrap}
+  .saude-top th.nm{width:auto}.saude-top td.nm{max-width:120px;font-size:12.5px}
+  .filters:not(.aberto) #fgPeriodo,.filters:not(.aberto) .fg-dims{display:none!important}
+}
 /* Laboratório de Apoio: DB anil, HP laranja */
 :root{--c-db:#4338ca;--c-hp:#c2410c}
 .kpi.t-db,.kpi.t-hp{border-top-width:4px}
@@ -443,7 +465,7 @@ table{font-size:14.5px}
       <div class="eyebrow">Laboratório · Cockpit executivo</div>
       <h1>Painel de Faturamento &amp; Atendimentos</h1>
     </div>
-    <div class="stamp">Dados até <b id="stDados"></b><br>Atualizado em <b id="stGerado"></b></div>
+    <div class="stamp">Dados até <b id="stDados"></b><br>Atualizado em <b id="stGerado"></b><br><button class="lnk cfg-lnk" type="button" data-go="qualidade">⚙ Configurações e qualidade dos dados</button></div>
   </header>
 
   <nav class="tabs" id="tabs" role="tablist">
@@ -452,12 +474,13 @@ table{font-size:14.5px}
     <button role="tab" data-group="apoio">Laboratório de Apoio</button>
     <button role="tab" data-group="areaTecnica">Área Técnica</button>
     <button role="tab" data-group="fat">Faturamento e Exames</button>
-    <button role="tab" data-group="custos">Tabelas por Exame</button>
+    <button role="tab" data-group="custos">Preços por Convênio</button>
     <button role="tab" data-group="financeiro">Financeiro</button>
   </nav>
   <nav class="subtabs" id="subtabs" role="tablist"></nav>
 
   <section class="filters" id="filters">
+    <button class="btn" id="fToggle" type="button">Filtros ▾</button>
     <div class="fgroup" id="fgAtalhos">
       <button class="btn atalho" type="button" data-atalho="mes">Este Mês</button>
       <button class="btn atalho" type="button" data-atalho="mesAnterior">Mês Passado</button>
@@ -469,7 +492,7 @@ table{font-size:14.5px}
       <label class="fld">Data inicial<input type="date" id="fIni"></label>
       <label class="fld">Data final<input type="date" id="fFim"></label>
     </div>
-    <div class="fgroup">
+    <div class="fgroup fg-dims">
       <div class="fld">Unidade<div id="msU"></div></div>
       <div class="fld">Convênio<div id="msC"></div></div>
       <div class="fld" id="fgMedico">Médico solicitante<div id="msM"></div></div>
@@ -585,7 +608,7 @@ function monthBack(iso){
 const uy=+ULT.slice(0,4), um=+ULT.slice(5,7), [py,pm]=addMonths(uy,um,-1);
 const S={tab:'geral',ano:'',mes:'',ini:'',fim:'',u:new Set(),c:new Set(),m:new Set(),
   anoB:ANOS[ANOS.length-1], anoA:ANOS.length>1?ANOS[ANOS.length-2]:ANOS[0],
-  pa:{ini:monthBack(isoAdd(ULT,-14)),fim:monthBack(ULT)}, pb:{ini:isoAdd(ULT,-14),fim:ULT}, anMode:'m24',
+  pa:{ini:isoAdd(ULT,-42),fim:isoAdd(ULT,-28)}, pb:{ini:isoAdd(ULT,-14),fim:ULT}, anMode:'m24',
   rank:'convenios', todos:false, exOrd:'l', cmpCum:0};
 
 const maskOf=(set,len)=>{if(!set.size)return null;const a=new Uint8Array(len);set.forEach(i=>a[i]=1);return a;};
@@ -776,6 +799,8 @@ $('#fAno').onchange=e=>{S.ano=e.target.value;go();};
 $('#fMes').onchange=e=>{S.mes=e.target.value;go();};
 $('#fIni').onchange=e=>{S.ini=e.target.value;go();};
 $('#fFim').onchange=e=>{S.fim=e.target.value;go();};
+// celular: os filtros ficam recolhidos atrás do botão "Filtros" (senão ocupam a tela inteira antes dos números)
+$('#fToggle').onclick=()=>{const f=$('#filters');f.classList.toggle('aberto');$('#fToggle').textContent=f.classList.contains('aberto')?'Fechar filtros ▴':'Filtros ▾';};
 $('#fClear').onclick=()=>{S.ano=S.mes=S.ini=S.fim='';S.u.clear();S.c.clear();S.m.clear();syncFilters();msU.refresh();msC.refresh();msM.refresh();go();};
 $$('[data-atalho]').forEach(b=>b.onclick=()=>{
   const a=b.dataset.atalho;
@@ -806,6 +831,22 @@ function previsaoFechamentoMes(dd){
   return {fracaoMedia:fracoes.reduce((a,b)=>a+b,0)/fracoes.length,anos:fracoes.length};
 }
 let S_metaMes='';
+// botão Imprimir / PDF: o navegador abre a janela de impressão, onde dá pra escolher "Salvar como PDF"
+const btnImprimir=()=>`<button class="btn btn-print" type="button" onclick="window.print()">🖨 Imprimir / PDF</button>`;
+// "?" de ajuda: explica o número só pra quem clicar (no lugar dos parágrafos que tiramos)
+const ajuda=txt=>`<button class="ajuda" type="button" aria-label="O que é isto?" data-ajuda="${esc(txt)}">?</button>`;
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('.ajuda');
+  $$('.ajuda-bal').forEach(x=>x.remove());
+  if(!b)return;
+  e.stopPropagation();
+  const bal=document.createElement('div');bal.className='ajuda-bal';bal.textContent=b.dataset.ajuda;
+  document.body.appendChild(bal);
+  const r=b.getBoundingClientRect(),w=Math.min(300,window.innerWidth-24);
+  bal.style.width=w+'px';
+  bal.style.left=Math.max(12,Math.min(window.innerWidth-w-12,r.left+window.scrollX-w/2+r.width/2))+'px';
+  bal.style.top=(r.bottom+window.scrollY+8)+'px';
+});
 function viewGeral(){
   const PER=periodo(),dm=PER.mask,dd=dims(),Q=D.qualidade;
   const ontemIso=isoAdd(ULT,-1);
@@ -835,12 +876,12 @@ function viewGeral(){
   let h=perBar(PER);
   if(Q.pct_linhas_medico_sem_nome>0)h+=`<div class="notice warn"><b>Aviso de qualidade de dados:</b> ${fD1.format(Q.pct_linhas_medico_sem_nome)}% dos exames (${fD1.format(Q.pct_fat_medico_sem_nome)}% do faturamento) têm médico solicitante sem nome na lista de médicos; o filtro e o ranking por médico mostram o código nesses casos. <button class="lnk" data-go="qualidade">Ver detalhes</button></div>`;
   h+=`<div class="secao-topo">
-   <div class="secao-head"><h2 style="margin:0">Acompanhamento do dia</h2><span class="sub">${WDL[wdOf(ULT)]}, ${isoBR(ULT)}</span></div>
+   <div class="secao-head"><h2 style="margin:0">Acompanhamento do dia</h2><span class="sub">${WDL[wdOf(ULT)]}, ${isoBR(ULT)}</span>${btnImprimir()}</div>
    <div class="kpis-dia">
     <div class="card kpi t-fat"><div class="l">Faturamento hoje</div><div class="v">${fBRL0.format(hoje.f)}</div><div class="s">${delta(ontem.f,hoje.f)} vs. ontem</div><div class="s kpi-extra">${diaSem} <b>${fBRL0.format(semPas.f)}</b> ${delta(semPas.f,hoje.f)}</div></div>
-    <div class="card kpi t-atd"><div class="l">Atendimentos hoje</div><div class="v">${fNum.format(hoje.r)}</div><div class="s">${delta(ontem.r,hoje.r)} vs. ontem</div><div class="s kpi-extra">Ticket médio <b>${fBRL.format(tk(hoje))}</b></div></div>
+    <div class="card kpi t-atd"><div class="l">Atendimentos hoje</div><div class="v">${fNum.format(hoje.r)}</div><div class="s">${delta(ontem.r,hoje.r)} vs. ontem</div><div class="s kpi-extra">Ticket médio ${ajuda('Ticket médio = faturamento dividido pelo número de pacientes atendidos. Mostra quanto, em média, cada paciente deixou no laboratório.')} <b>${fBRL.format(tk(hoje))}</b></div></div>
     <div class="card kpi t-exa"><div class="l">Exames hoje</div><div class="v">${fNum.format(hoje.e)}</div><div class="s">${delta(ontem.e,hoje.e)} vs. ontem</div><div class="s kpi-extra">Exames por atendimento <b>${fD1.format(hoje.r?hoje.e/hoje.r:0)}</b></div></div>
-    <div class="card kpi kpi-proj t-prj"><div class="l">Projeção de fechamento</div><div class="proj-linha"><span class="proj-lb">Acumulado do mês</span><span class="proj-vv">${fBRL0.format(mesAcum.f)}</span></div><div class="proj-linha"><span class="proj-lb">Projeção do mês</span><span class="proj-vv proj-dest">${fBRL0.format(projecao)}</span></div><div class="s">Ritmo ${fBRL0.format(ritmoDiario)}/dia · ${diasUteisRestam} dias úteis rest.</div></div>
+    <div class="card kpi kpi-proj t-prj"><div class="l">Projeção de fechamento ${ajuda('Quanto o mês deve fechar se continuar no ritmo atual: média faturada por dia útil até hoje × dias úteis que ainda faltam, somado ao que já entrou.')}</div><div class="proj-linha"><span class="proj-lb">Acumulado do mês</span><span class="proj-vv">${fBRL0.format(mesAcum.f)}</span></div><div class="proj-linha"><span class="proj-lb">Projeção do mês</span><span class="proj-vv proj-dest">${fBRL0.format(projecao)}</span></div><div class="s">Ritmo ${fBRL0.format(ritmoDiario)}/dia · ${diasUteisRestam} dias úteis rest.</div></div>
    </div>
    <div class="grid-dia">
     <div class="card tw">
@@ -859,7 +900,8 @@ function viewGeral(){
    </div>
   </div>
 `;
-  h+=`<h2>Faturamento líquido por mês<small>${PER.def?'últimos 12 meses':'período escolhido'}</small></h2><div class="card">${chartLine({labels:ym12.map(k=>ymLabel(k)+(PARCIAL&&k===ULTYM?'*':'')),series:[{name:'Faturamento líquido',color:'#1f63c6',values:ym12.map(k=>mon12.get(k).f)}],area:true,keyVals:true,allVals:true,partialLast:PARCIAL&&ym12[ym12.length-1]===ULTYM,axis:v=>'R$ '+fCmp.format(v),tip:v=>fBRL.format(v),fmtVal:v=>fCmp.format(v),aria:'Faturamento líquido por mês'})}${PARCIAL&&ym12.includes(ULTYM)?`<p class="hint" style="margin:8px 0 0">* mês em andamento, dados até ${isoBR(ULT).slice(0,5)}</p>`:''}</div>`;
+  const estreito=($('#view').clientWidth||1100)<700;
+  h+=`<h2>Faturamento líquido por mês<small>${PER.def?'últimos 12 meses':'período escolhido'}</small></h2><div class="card">${chartLine({w:estreito?380:900,h:estreito?280:300,maxLabels:estreito?6:16,labels:ym12.map(k=>ymLabel(k)+(PARCIAL&&k===ULTYM?'*':'')),series:[{name:'Faturamento líquido',color:'#1f63c6',values:ym12.map(k=>mon12.get(k).f)}],area:true,keyVals:true,allVals:!estreito,partialLast:PARCIAL&&ym12[ym12.length-1]===ULTYM,axis:v=>'R$ '+fCmp.format(v),tip:v=>fBRL.format(v),fmtVal:v=>fCmp.format(v),aria:'Faturamento líquido por mês'})}${PARCIAL&&ym12.includes(ULTYM)?`<p class="hint" style="margin:8px 0 0">* mês em andamento, dados até ${isoBR(ULT).slice(0,5)}</p>`:''}</div>`;
   return h;
 }
 function bindGeral(){const g=$('#gMeta');if(g)g.onchange=()=>{S_metaMes=g.value;go();};}
@@ -910,7 +952,7 @@ function viewAnual(){
     const vA=groups.map(g=>ok(g.a)?m.g(g.a):null),vB=groups.map(g=>ok(g.b)?m.g(g.b):null);
     const dl=groups.map((g,i)=>vA[i]!=null&&vB[i]!=null&&vA[i]>0?dlt(vA[i],vB[i]):null);
     const cA2={name:cA.name,color:m.cor[0]},cB2={name:cB.name,color:m.cor[1]};
-    h+=`<div class="card" style="margin-top:14px"><h3>${m.t}</h3>${legend([cA2,cB2])}${chartBarsX({big:true,scroll:false,rot:false,oneVal:true,w:W,h:400,labels:groups.map(g=>g.sub?[g.label,g.sub]:g.label),series:[{...cA2,values:vA},{...cB2,values:vB}],axis:m.ax,tip:m.fmt,fmtVal:m.lb,deltas:dl,aria:m.t+', '+cA.name+' contra '+cB.name})}</div>`;});
+    h+=`<div class="card" style="margin-top:14px"><h3>${m.t}</h3>${legend([cA2,cB2])}${chartBarsX({big:true,scroll:W<700,rot:false,oneVal:true,w:W,h:400,end:true,labels:groups.map(g=>g.sub?[g.label,g.sub]:g.label),series:[{...cA2,values:vA},{...cB2,values:vB}],axis:m.ax,tip:m.fmt,fmtVal:m.lb,deltas:dl,aria:m.t+', '+cA.name+' contra '+cB.name})}</div>`;});
   h+=`<details class="ap-atencao"><summary><h2 style="display:inline">Tabela mês a mês</h2> <span class="sub">os mesmos números dos gráficos, em tabela · clique para abrir</span></summary><div class="card tw tsm"><table><thead><tr><th rowspan="2">Mês</th>${mets.map(m=>`<th colspan="3" style="text-align:center">${m.t}</th>`).join('')}</tr><tr>${mets.map(()=>`<th>${m24?'Anteriores':cA.name}</th><th>${m24?'Recentes':cB.name}</th><th>Var.</th>`).join('')}</tr></thead><tbody>`;
   groups.forEach(g=>{h+=`<tr><td>${g.full}</td>`;mets.forEach(x=>{const a=ok(g.a)?x.g(g.a):null,b=ok(g.b)?x.g(g.b):null;
     const tf=x.tf||x.fmt;h+=`<td>${a==null?'—':tf(a)}</td><td>${b==null?'—':tf(b)}</td><td>${a!=null&&b!=null?delta(a,b):'—'}</td>`;});h+='</tr>';});
@@ -939,7 +981,7 @@ function bindAnual(){$$('[data-am]').forEach(b=>b.onclick=()=>{S.anMode=b.datase
 function daysBetween(a,b){const f=s=>Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10));return Math.round((f(b)-f(a))/864e5);}
 function viewPeriodos(){
   const dd=dims(),P=[S.pa,S.pb],ok=P.every(p=>p.ini&&p.fim&&p.ini<=p.fim);
-  let h=`<div class="pick">${['A','B'].map((L,k)=>`<div class="card"><h3>Período ${L}${k?' (o que você quer ver)':' (base de comparação)'}</h3><div class="rng"><label class="fld">De<input type="date" data-p="${k}" data-e="ini" value="${P[k].ini}" min="${PRI}" max="${ULT}"></label><label class="fld">Até<input type="date" data-p="${k}" data-e="fim" value="${P[k].fim}" min="${PRI}" max="${ULT}"></label></div>${P[k].ini&&P[k].fim&&P[k].ini<=P[k].fim?`<p class="wdl">${WDL[wdOf(P[k].ini)]}, ${isoBR(P[k].ini)} até ${WDL[wdOf(P[k].fim)]}, ${isoBR(P[k].fim)} · ${daysBetween(P[k].ini,P[k].fim)+1} dias</p>`:''}</div>`).join('')}</div><p style="margin:10px 0 0"><button class="btn" id="pReset">Voltar aos últimos 15 dias (padrão)</button></p>`;
+  let h=`<div class="pick">${['A','B'].map((L,k)=>`<div class="card"><h3>Período ${L}${k?' (o que você quer ver)':' (base de comparação)'}</h3><div class="rng"><label class="fld">De<input type="date" data-p="${k}" data-e="ini" value="${P[k].ini}" min="${PRI}" max="${ULT}"></label><label class="fld">Até<input type="date" data-p="${k}" data-e="fim" value="${P[k].fim}" min="${PRI}" max="${ULT}"></label></div>${P[k].ini&&P[k].fim&&P[k].ini<=P[k].fim?`<p class="wdl">${WDL[wdOf(P[k].ini)]}, ${isoBR(P[k].ini)} até ${WDL[wdOf(P[k].fim)]}, ${isoBR(P[k].fim)} · ${daysBetween(P[k].ini,P[k].fim)+1} dias</p>`:''}</div>`).join('')}</div><p style="margin:10px 0 0"><button class="btn" id="pReset">Voltar ao padrão: últimos 15 dias × os mesmos dias da semana 4 semanas antes</button></p>`;
   if(!ok)return h+`<div class="notice warn"><b>Datas inválidas:</b> preencha início e fim dos dois períodos, com o início antes do fim.</div>`;
   const R=P.map(p=>{
     const dm=maskRange(p.ini,p.fim),off=new Int16Array(NDIAS).fill(-1);
@@ -975,7 +1017,7 @@ function viewPeriodos(){
     h+=`<div class="card" style="margin-bottom:14px"><h3>${m.t}${acc?' acumulado':' por dia'}</h3>${legend(ss)}${acc?chartLine({w:900,h:320,labels:idx.map(i=>String(i+1)),series:ss,axis:m.ax,tip:m.tip,vals:true,fmtVal:m.fc,labelGap:70,maxLabels:16,aria:m.t}):chartBarsX({scroll:!((Wv-80)/nmax>=64),slot:70,rot:false,oneVal:true,w:Wv,h:340,labels:labD,series:ss,axis:m.ax,tip:m.tip,fmtVal:m.fv,aria:m.t})}</div>`;});
   return h;
 }
-function bindPeriodos(){const pr=$('#pReset');if(pr)pr.onclick=()=>{S.pa={ini:monthBack(isoAdd(ULT,-14)),fim:monthBack(ULT)};S.pb={ini:isoAdd(ULT,-14),fim:ULT};go();};$$('[data-c]').forEach(b=>b.onclick=()=>{S.cmpCum=+b.dataset.c;go();});$$('[data-p]').forEach(i=>i.onchange=e=>{
+function bindPeriodos(){const pr=$('#pReset');if(pr)pr.onclick=()=>{S.pa={ini:isoAdd(ULT,-42),fim:isoAdd(ULT,-28)};S.pb={ini:isoAdd(ULT,-14),fim:ULT};go();};$$('[data-c]').forEach(b=>b.onclick=()=>{S.cmpCum=+b.dataset.c;go();});$$('[data-p]').forEach(i=>i.onchange=e=>{
   const v=e.target.value;
   // enquanto o ano não tem 4 dígitos plausíveis, não faz nada - deixa o campo em paz,
   // sem redesenhar a tela (é isso que travava a digitação no meio do ano)
@@ -1132,11 +1174,11 @@ function viewSaude(){
   const rotuloPeriodo=`01/01 até ${ddmm(ULT)}`;
   // mesmo formato dos cards da Visão Diária: número na cor do texto, variação colorida, valor do ano passado embaixo
   const kc=(l,v,va,vb,fmt,tc)=>`<div class="card kpi ${tc||''}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${delta(vb,va)} vs. ${uy-1}</div><div class="s kpi-extra">${uy-1} no mesmo período <b>${fmt(vb)}</b></div></div>`;
-  let h=`<div class="secao-topo" style="margin-top:24px"><div class="secao-head"><h2 style="margin:0">Ano atual × ano anterior</h2><span class="sub">${rotuloPeriodo} de ${uy}, comparado com o mesmo período de ${uy-1}</span></div>
+  let h=`<div class="secao-topo" style="margin-top:24px"><div class="secao-head"><h2 style="margin:0">Ano atual × ano anterior</h2><span class="sub">${rotuloPeriodo} de ${uy}, comparado com o mesmo período de ${uy-1}</span>${btnImprimir()}</div>
    <div class="kpis-dia">
     ${kc('Faturamento líquido',fBRL0.format(t0.f),t0.f,t1.f,fBRL0.format,'t-fat')}
     ${kc('Atendimentos',fNum.format(t0.r),t0.r,t1.r,fNum.format,'t-atd')}
-    ${kc('Ticket médio',fBRL.format(tk(t0)),tk(t0),tk(t1),fBRL.format,'t-prj')}
+    ${kc('Ticket médio '+ajuda('Faturamento dividido pelo número de pacientes atendidos. Subir o ticket com menos pacientes significa que cada paciente está fazendo mais exames (ou exames mais caros).'),fBRL.format(tk(t0)),tk(t0),tk(t1),fBRL.format,'t-prj')}
     ${kc('Exames',fNum.format(t0.e),t0.e,t1.e,fNum.format,'t-exa')}
    </div></div>`;
   // um bloco por grupo (antes era top 5 + top 10 repetindo os mesmos nomes)
@@ -1754,7 +1796,7 @@ function viewQualidade(){
   const Q=D.qualidade;
   // cinza = informativo; laranja = tem algo a corrigir
   const k=(l,v,s,tc)=>`<div class="card kpi ${tc||'t-neu'}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s||''}</div></div>`;
-  let h=`<div class="kpis-dia" style="margin-top:22px">${k('Linhas de exame lidas',fNum.format(Q.linhas),'cada linha = 1 exame','t-exa')}${k('Atendimentos (requisições)',fNum.format(Q.requisicoes),'códigos de requisição únicos','t-atd')}
+  let h=`<div class="secao-head" style="margin-top:22px"><h2 style="margin:0">⚙ Configurações · qualidade dos dados</h2><button class="lnk" data-go="geral">← voltar ao painel</button></div><div class="kpis-dia" style="margin-top:14px">${k('Linhas de exame lidas',fNum.format(Q.linhas),'cada linha = 1 exame','t-exa')}${k('Atendimentos (requisições)',fNum.format(Q.requisicoes),'códigos de requisição únicos','t-atd')}
    ${k('Exames com médico sem nome',fD1.format(Q.pct_linhas_medico_sem_nome)+'%',fD1.format(Q.pct_fat_medico_sem_nome)+'% do faturamento · '+fNum.format(Q.medicos_sem_nome)+' de '+fNum.format(Q.medicos_usados)+' códigos',Q.pct_linhas_medico_sem_nome>=0.05?'t-prj':'t-neu')}
    ${k('Exames com médico ambíguo',fD1.format(Q.pct_linhas_medico_ambiguo)+'%','o mesmo código aparece com mais de um nome na lista',Q.pct_linhas_medico_ambiguo>=0.05?'t-prj':'t-neu')}</div>
    <h2>O que precisa de atenção</h2><div class="card"><ul class="notes">`;
@@ -1932,16 +1974,38 @@ function pcRows(){
   out.sort((a,b)=>normTxt(a.nome)<normTxt(b.nome)?-1:normTxt(a.nome)>normTxt(b.nome)?1:(a.marg==null?1:0)-(b.marg==null?1:0));
   return out;
 }
+function prejuizoApoio12m(PC){
+  const B=D.B,ymFim=mesYM[mesYM.length-1],qtd=new Map(),idConv=D.convenios.map(c=>c.id);
+  for(let i=0;i<B.mo.length;i++){
+    if(mesYM[B.mo[i]]<=ymFim-12)continue;
+    const ex=D.exames[B.x[i]],st=D.setores[ex.s];
+    if(!st||!normTxt(st.nome).includes('laboratorio apoio'))continue;
+    const kq=ex.cod+'|'+idConv[B.c[i]];qtd.set(kq,(qtd.get(kq)||0)+B.e[i]);
+  }
+  let perda=0,exames=0;const porConv=new Map();
+  for(const [ei,ci,ativo,valor] of PC.linhas){
+    if(!ativo||!(valor>0))continue;
+    const cs=[PC.custoDB[ei],PC.custoHP[ei]].filter(v=>v!=null);if(!cs.length)continue;
+    const custo=Math.min(...cs);if(valor>=custo)continue;
+    const cv=PC.convenios[ci],q=qtd.get(PC.exameCod[ei]+'|'+cv.c)||0;if(!q)continue;
+    const p=q*(custo-valor);perda+=p;exames+=q;porConv.set(cv.n,(porConv.get(cv.n)||0)+p);
+  }
+  const top=[...porConv.entries()].sort((a,b)=>b[1]-a[1])[0];
+  return {perda,exames,top:top&&perda?{nome:top[0],pct:top[1]/perda*100}:null};
+}
 function viewPrecosConv(){
   const PC=D.precosConv;
   if(!PC)return `<div class="notice warn"><b>Ainda não há a lista de preços por convênio.</b> Exporte o <code>precos_convenio.csv</code> direto do banco (rode o <code>extrair_precos_convenio.bat</code>), criptografe e envie para a pasta <code>data/apoio</code> do repositório.</div>`;
   const comCusto=PC.exames.filter((_,i)=>PC.custoDB[i]!=null||PC.custoHP[i]!=null).length;
   const convs=[...PC.convenios].sort((a,b)=>normTxt(a.n)<normTxt(b.n)?-1:1);
   const particular=PC.convenios.find(c=>normTxt(c.n)==='particular');
-  // "abaixo do custo": combinações exame × convênio (convênio ativo) em que o preço pago não cobre o custo do apoio
-  let abaixo=0;for(const [ei,ci,ativo,valor] of PC.linhas){if(!ativo||!(valor>0))continue;const cs=[PC.custoDB[ei],PC.custoHP[ei]].filter(v=>v!=null);if(cs.length&&valor<Math.min(...cs))abaixo++;}
+  // prejuízo de verdade nos últimos 12 meses: só exames do setor Laboratório Apoio (os feitos aqui dentro
+  // não pagam o apoio), convênio ativo, preço pago < custo do apoio, multiplicado pela quantidade que
+  // realmente foi feita naquele convênio. Antes contava toda combinação possível da tabela (5.867),
+  // a maioria nunca feita.
+  const prej=prejuizoApoio12m(PC);
   const k=(l,v,s2,tc)=>`<div class="card kpi ${tc}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s2||''}</div></div>`;
-  let h=`<div class="kpis-dia" style="margin-top:22px">${k('Exames no relatório',fNum.format(PC.exames.length),'do CONCENT','t-exa')}${k('Com custo de apoio',fNum.format(comCusto),'têm preço no DB ou no HP','t-db')}${k('Convênios',fNum.format(PC.convenios.length),'na tabela de preços','t-neu')}${k('Preço abaixo do custo',fNum.format(abaixo),'exame × convênio ativo que dá prejuízo','t-bad')}</div>`;
+  let h=`<div class="kpis-dia" style="margin-top:22px">${k('Exames no relatório',fNum.format(PC.exames.length),'do CONCENT','t-exa')}${k('Com custo de apoio',fNum.format(comCusto),'têm preço no DB ou no HP','t-db')}${k('Convênios',fNum.format(PC.convenios.length),'na tabela de preços','t-neu')}${k('Prejuízo nos últimos 12 meses '+ajuda('Soma, nos últimos 12 meses, dos exames enviados ao laboratório de apoio em que o convênio pagou menos do que o apoio cobrou (pelo mais barato entre DB e HP). Só conta exames que foram feitos de verdade.'),fBRL0.format(prej.perda),`${fNum.format(prej.exames)} exames de apoio pagos abaixo do custo${prej.top?` · ${fD1.format(prej.top.pct)}% na ${esc(prej.top.nome)}`:''}`,'t-bad')}</div>`;
   h+=`<div class="apbar" id="pcBar"><label class="fld" style="flex:1 1 320px">Buscar exame<input type="search" id="pcQ" placeholder="Nome do exame..." autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
     <label class="fld">Convênio<select id="pcConv" style="max-width:260px">${convs.map(c=>`<option value="${esc(c.c)}">${esc(c.n)}</option>`).join('')}<option value="">Todos os convênios</option></select></label>
     <label class="apck"><input type="checkbox" id="pcAtivos"> Somente convênios ativos</label>
@@ -2126,7 +2190,7 @@ function renderAreaTecnica(){
   const setores=[...agrupados,...extras].sort((a,b)=>b.atrasados-a.atrasados||b.total-a.total||(normTxt(a.setor)<normTxt(b.setor)?-1:1));
   let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(setores.reduce((n,s)=>n+s.total,0))} exames em ${fNum.format(setores.length)} setores · clique num setor para ver as requisições e os pacientes</p>`;
   if(!setores.length){$('#atRes').innerHTML=h+'<div class="empty">Nada por aqui com estes filtros.</div>';return;}
-  h+=`<div class="card tw"><table class="aptb"><thead><tr><th class="nm">Setor</th><th class="pc">Exames</th><th class="pc st">Atrasados</th></tr></thead><tbody>`;
+  h+=`<div class="card tw"><table class="aptb keep"><thead><tr><th class="nm">Setor</th><th class="pc">Exames</th><th class="pc st">Atrasados</th></tr></thead><tbody>`;
   setores.forEach(s=>{
     const aberto=S.at.aberto===s.setor;
     h+=`<tr class="atSetorRow" data-at-abrir="${esc(s.setor)}" style="cursor:pointer${aberto?';background:#eef4ff':''}"><td class="nm">${aberto?'▾':'▸'} ${esc(s.setor)}</td><td class="pc">${fNum.format(s.total)}</td><td class="pc st">${s.atrasados?`<span class="pv" style="color:#b3261e">${fNum.format(s.atrasados)}</span>`:'<span class="mut">0</span>'}</td></tr>`;
@@ -2159,7 +2223,7 @@ function viewAreaTecnica(){
     <div><div class="n">${fNum.format(c.dp)}</div><div class="t">Exames Dig. Parc.</div></div>
     <div><div class="n">${fNum.format(c.d)}</div><div class="t">Exames Digitado</div></div>
   </div></div>`;
-  let h=`<div class="kpis at-kpis">${k('Exames em andamento',fNum.format(dentroPrazo),'Exames dentro do prazo e em análise pelo setor técnico','var(--ink)','#475569')}${k('Exames em atraso',fNum.format(R.atrasadosSemColetado),'Exames com prazo vencido com amostra no setor técnico','#b3261e')}
+  let h=`<div class="kpis at-kpis">${k('Exames em andamento',fNum.format(dentroPrazo),'Exames dentro do prazo e em análise pelo setor técnico','var(--ink)','#475569')}${k('Exames em atraso '+ajuda('Exames com prazo de entrega vencido que já estão no setor técnico (triados, digitados ou digitados em parte). Os só coletados não entram aqui.'),fNum.format(R.atrasadosSemColetado),'Exames com prazo vencido com amostra no setor técnico','#b3261e')}
     ${k('Cadastrados e não coletados',fNum.format(R.aguardandoColeta),'Cadastros sem coleta do material e entrada no setor técnico','var(--amber)')}
     ${porStatusCard}</div>`;
   h+=`<div class="apbar" id="atBar" style="justify-content:center">
@@ -2193,7 +2257,9 @@ const GROUPS={geral:{tabs:['geral'],lbl:{geral:'Visão Diária'}},
   apoio:{tabs:['apoio'],lbl:{apoio:'Laboratório de Apoio'}},
   areaTecnica:{tabs:['areaTecnica'],lbl:{areaTecnica:'Área Técnica'}},
   fat:{tabs:['anual','periodos','exames','rank'],lbl:{anual:'Comparativo Anual',periodos:'Comparar Períodos',exames:'Setores',rank:'Convênios e Médicos'}},
-  custos:{tabs:['precosconv','qualidade'],lbl:{precosconv:'Preços por Convênio',qualidade:'Qualidade dos Dados'}},
+  custos:{tabs:['precosconv'],lbl:{precosconv:'Preços por Convênio'}},
+  // tela técnica (conferência dos arquivos): fora do menu, abre pelo link "Configurações" no topo
+  config:{tabs:['qualidade'],lbl:{qualidade:'Qualidade dos Dados'}},
   financeiro:{tabs:['finGeral','finPagar','finReceber','finDRE'],lbl:{finGeral:'Visão Geral',finPagar:'Contas a Pagar',finReceber:'Contas a Receber',finDRE:'Demonstrativos de Resultado'}}};
 const tabToGroup=Object.fromEntries(Object.entries(GROUPS).flatMap(([g,o])=>o.tabs.map(t=>[t,g])));
 function go(){
