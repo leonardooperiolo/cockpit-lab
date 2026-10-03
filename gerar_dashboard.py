@@ -1012,6 +1012,49 @@ def _data_hora_db2(s):
     return f"{m.group(1)}T{m.group(2)}:{m.group(3)}:{m.group(4)}" if m else None
 
 
+def carregar_tempo_entrega():
+    """Tempo de entrega (TAT): data/area_tecnica/area_tecnica_tat.csv.gz.enc, gerado 1x por dia
+    pelo coletar_area_tecnica.py. Linhas já agregadas no DB2 por mês de entrada x setor x
+    exame: qtd, quantos no prazo, soma (em segundos) de liberação - prazo e de prazo - entrada.
+    Vai pro painel como [ym, setor, código, qtd, no_prazo, horas_dif, horas_prometidas]."""
+    if not PASTA_AREA_TEC.is_dir():
+        return None
+    arq = next((p for p in sorted(PASTA_AREA_TEC.iterdir()) if p.name.lower().startswith("area_tecnica_tat")), None)
+    if not arq:
+        return None
+    linhas = []
+    for r in _linhas_db2(_abrir_enc(arq)):
+        if len(r) < 7:
+            continue
+        mes, strc, cod, qtd, prazo, dif, prom = (_dbnum(r[0]), _dbnum(r[1]), r[2].strip(), _dbnum(r[3]),
+                                                _dbnum(r[4]), _dbnum(r[5]), _dbnum(r[6]))
+        if not mes or not qtd:
+            continue
+        ym = f"{mes // 100:04d}-{mes % 100:02d}"
+        linhas.append([ym, strc or 0, cod, qtd, prazo or 0, round((dif or 0) / 3600, 1), round((prom or 0) / 3600, 1)])
+    return {"linhas": linhas, "arquivo": arq.name} if linhas else None
+
+
+def carregar_pacientes():
+    """Pacientes novos x que voltam: data/pacientes/pacientes_mes.csv.gz.enc, gerado pelo
+    coletar_pacientes.py na VM. Já vem SÓ com totais por mês x unidade (unidade 0 = laboratório
+    inteiro); nenhum código de paciente sai da VM."""
+    pasta = PASTA_DADOS / "pacientes"
+    arq = next((p for p in sorted(pasta.iterdir()) if p.name.lower().startswith("pacientes_mes")), None) if pasta.is_dir() else None
+    if not arq:
+        return None
+    p = _abrir_enc(arq)
+    texto = gzip.open(p, "rt", encoding="utf-8").read() if p.name.lower().endswith(".gz") else p.read_text(encoding="utf-8")
+    linhas = []
+    for r in csv.DictReader(texto.splitlines()):
+        try:
+            linhas.append([r["mes"], int(r["unidade"]), int(r["pacientes"]), int(r["novos"]),
+                           int(r["novos_6m_base"]), int(r["novos_voltaram_6m"])])
+        except (KeyError, ValueError):
+            continue
+    return {"linhas": linhas} if linhas else None
+
+
 def carregar_area_tecnica():
     arqs = achar_arquivos_area_tecnica()
     faltam = [NOME_PAPEL_AT[k] for k in ARQ_AREA_TEC if k not in arqs]
@@ -2204,6 +2247,12 @@ def main():
         r = dados["areaTecnica"]["resumo"]
         print(f"Área técnica: {r['emAndamento']} exames em andamento ({r['atrasados']} atrasados), "
               f"{r['aguardandoColeta']} aguardando coleta.")
+    dados["tempoEntrega"] = carregar_tempo_entrega()
+    if dados["tempoEntrega"]:
+        print(f"Tempo de entrega: {len(dados['tempoEntrega']['linhas'])} linhas (mês x setor x exame).")
+    dados["pacientes"] = carregar_pacientes()
+    if dados["pacientes"]:
+        print(f"Pacientes novos x que voltam: {len(dados['pacientes']['linhas'])} linhas (mês x unidade).")
     dados["reajustesDB"] = carregar_reajustes_db()
     if dados["reajustesDB"]:
         ult = dados["reajustesDB"][-1]

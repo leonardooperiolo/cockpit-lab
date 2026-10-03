@@ -410,6 +410,7 @@ h1{font-size:26px}
   @page{size:A4 landscape;margin:10mm}
 }
 #fToggle{display:none}
+.semaf{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:0}
 /* celular: nada pode passar da largura da tela (senão o navegador "afasta" a página toda e fica tudo miúdo) */
 @media(max-width:700px){
   .fld select,.fld input,select.simple-sel,.ms-b,.apbar input[type=search]{width:100%!important;max-width:100%;min-width:0!important}
@@ -1057,6 +1058,152 @@ function bindRank(){
   $('#csv').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+window.__csv()],{type:'text/csv;charset=utf-8'}));a.download='ranking_'+S.rank+'.csv';a.click();};
 }
 
+
+/* ---------- médicos (alertas): quem parou ou caiu de pedir exames ---------- */
+function medAlertasCalc(){
+  const dd=dims(),{mu,mc}=dd,age=new Int32Array(NDIAS);
+  for(let i=0;i<NDIAS;i++)age[i]=daysBetween(D.dias[i],ULT);
+  const nM=D.medicos.length,rec=new Float64Array(nM),ant=new Float64Array(nM),p90=new Float64Array(nM),f90=new Float64Array(nM),ult=new Int32Array(nM).fill(1e9);
+  const sem=new Map(); // médico -> Set de semanas com paciente (13 semanas antes dos últimos 30 dias)
+  const Ad=A.d,Am=A.m,Ar=A.r,Al=A.l,Au=A.u,Ac=A.c;
+  for(let i=0;i<N;i++){
+    if(mu&&!mu[Au[i]])continue; if(mc&&!mc[Ac[i]])continue;
+    const m=Am[i],a=age[Ad[i]],r=Ar[i];
+    if(r>0){if(a<ult[m])ult[m]=a;}
+    if(a<30)rec[m]+=r;
+    else if(a<60)ant[m]+=r;
+    if(a>=30&&a<121){p90[m]+=r;f90[m]+=Al[i];if(r>0){let s=sem.get(m);if(!s){s=new Set();sem.set(m,s);}s.add(Math.floor((a-30)/7));}}
+  }
+  // primeira vez que o médico aparece em toda a história (idade máxima)
+  const maisAntigo=new Int32Array(nM).fill(-1);
+  for(let i=0;i<N;i++){if(mu&&!mu[Au[i]])continue;if(mc&&!mc[Ac[i]])continue;if(Ar[i]>0){const a=age[Ad[i]];if(a>maisAntigo[Am[i]])maisAntigo[Am[i]]=a;}}
+  const valido=m=>{const md=D.medicos[m];if(!md)return false;const n=normTxt(md.nome);return !/solicitac|propri|sem medico|^cod\./.test(n);};
+  const sumidos=[],caindo=[];
+  sem.forEach((s,m)=>{if(!valido(m)||s.size<8)return;
+    if(rec[m]===0)sumidos.push({m,sem:s.size,fat:f90[m],dias:ult[m]});
+    else{const media=p90[m]/3;if(media>=8&&rec[m]<=media*0.5)caindo.push({m,media,agora:rec[m]});}});
+  sumidos.sort((a,b)=>b.fat-a.fat);caindo.sort((a,b)=>(b.media-b.agora)-(a.media-a.agora));
+  let ativos=0,ativosAnt=0,novos=0,novosAnt=0;
+  for(let m=0;m<nM;m++){if(!valido(m))continue;if(rec[m]>0)ativos++;if(ant[m]>0)ativosAnt++;if(maisAntigo[m]>=0&&maisAntigo[m]<30)novos++;else if(maisAntigo[m]>=30&&maisAntigo[m]<60)novosAnt++;}
+  const rank=[];for(let m=0;m<nM;m++)if(valido(m)&&rec[m]>0)rank.push({m,agora:rec[m],antes:ant[m]});
+  rank.sort((a,b)=>b.agora-a.agora);
+  return {sumidos,caindo,ativos,ativosAnt,novos,novosAnt,rank:rank.slice(0,15)};
+}
+function viewMedAlertas(){
+  const R=medAlertasCalc(),nome=m=>esc(D.medicos[m].nome),fatS=R.sumidos.reduce((s,x)=>s+x.fat,0);
+  const k=(l,v,s,tc,ex)=>`<div class="card kpi ${tc}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div>${ex?`<div class="s kpi-extra">${ex}</div>`:''}</div>`;
+  let h=`<div class="secao-topo" style="margin-top:22px"><div class="secao-head"><h2 style="margin:0">Médicos que pedem exames</h2><span class="sub">últimos 30 dias (até ${isoBR(ULT)}), comparado com os 30 dias anteriores</span></div>
+   <div class="kpis-dia">
+    ${k('Pararam de mandar '+ajuda('Médicos que mandaram pacientes em pelo menos 8 das 13 semanas antes e não mandaram nenhum nos últimos 30 dias.'),fNum.format(R.sumidos.length)+(R.sumidos.length===1?' médico':' médicos'),'mandavam quase toda semana e não mandam há mais de 30 dias','t-bad',R.sumidos.length?`Valiam <b>${fBRL0.format(fatS)}</b> nos 3 meses antes`:'')}
+    ${k('Mandando bem menos '+ajuda('Médicos frequentes (8+ pacientes por mês) que, nos últimos 30 dias, mandaram metade ou menos do que a média dos 3 meses anteriores.'),fNum.format(R.caindo.length)+(R.caindo.length===1?' médico':' médicos'),'caíram pela metade ou mais','t-prj','Vale uma visita do comercial')}
+    ${k('Médicos ativos',fNum.format(R.ativos),'pediram ao menos 1 exame nos últimos 30 dias','t-atd',`30 dias antes <b>${fNum.format(R.ativosAnt)}</b> ${delta(R.ativosAnt,R.ativos)}`)}
+    ${k('Médicos novos',fNum.format(R.novos),'primeira vez que pedem exame aqui','t-exa',`30 dias antes <b>${fNum.format(R.novosAnt)}</b>`)}
+   </div></div>
+   <div class="saude-grid" style="margin-top:18px">
+   <div class="card tw"><h3 class="card-tit"><span class="dl dn">●</span> Pararam de mandar pacientes</h3>${R.sumidos.length?`<table><thead><tr><th class="nm">Médico</th><th>Mandava</th><th>Último paciente</th><th>Valia em 3 meses</th></tr></thead><tbody>${R.sumidos.map(x=>`<tr><td class="nm"><b>${nome(x.m)}</b></td><td>${x.sem} de 13 semanas</td><td><span class="pill venc">há ${x.dias} dias</span></td><td>${fBRL0.format(x.fat)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Nenhum médico frequente parou de mandar pacientes. 👍</div>'}</div>
+   <div class="card tw"><h3 class="card-tit"><span class="dl" style="color:var(--warn)">●</span> Mandando bem menos</h3>${R.caindo.length?`<table><thead><tr><th class="nm">Médico</th><th>Pacientes/mês antes</th><th>Últimos 30 dias</th><th>Queda</th></tr></thead><tbody>${R.caindo.slice(0,12).map(x=>`<tr><td class="nm"><b>${nome(x.m)}</b></td><td>${fNum.format(Math.round(x.media))}</td><td>${fNum.format(x.agora)}</td><td>${delta(x.media,x.agora)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Nenhum médico frequente caiu pela metade.</div>'}</div>
+   </div>
+   <h2>Quem mais mandou pacientes<small>últimos 30 dias</small></h2><div class="card tw"><table><thead><tr><th>#</th><th class="nm">Médico</th><th>Pacientes</th><th>30 dias antes</th><th>Variação</th></tr></thead><tbody>
+   ${R.rank.map((x,i)=>`<tr><td>${i+1}</td><td class="nm">${nome(x.m)}</td><td><b>${fNum.format(x.agora)}</b></td><td>${fNum.format(x.antes)}</td><td>${delta(x.antes,x.agora)}</td></tr>`).join('')}</tbody></table></div>`;
+  return h;
+}
+
+/* ---------- tempo de entrega (Área Técnica) ---------- */
+S.tat={mes:''};
+function tatMesesFechados(){
+  const ms=[...new Set(D.tempoEntrega.linhas.map(l=>l[0]))].sort(),atual=ULT.slice(0,7);
+  return ms.filter(m=>m<atual); // mês corrente ainda tem exames sem liberar: fica de fora
+}
+function tatAgg(meses,key){
+  const set=new Set(meses),g=new Map();
+  for(const [ym,st,cod,q,np,hd,hp] of D.tempoEntrega.linhas){
+    if(!set.has(ym))continue;const k=key([ym,st,cod]);let o=g.get(k);if(!o){o={q:0,np:0,hd:0,hp:0};g.set(k,o);}
+    o.q+=q;o.np+=np;o.hd+=hd;o.hp+=hp;}
+  return g;
+}
+function tatDias(h){ // média em horas -> texto: "0,8 dia antes", "2,3 dias depois", "no dia"
+  const d=Math.abs(h)/24;if(d<0.25)return 'no prazo certinho';
+  const t=fD1.format(d)+(d>=1.95?' dias':' dia');return h<0?t+' antes':t+' depois';
+}
+function tatPrazo(h){return h>24*365?'':tatDias(h).replace(' depois','');} // prazo prometido médio (horas)
+function viewTat(){
+  if(!D.tempoEntrega)return `<div class="notice warn" style="margin-top:20px"><b>Ainda não há dados de tempo de entrega.</b> Substitua o <code>coletar_area_tecnica.py</code> na VM pela versão nova: ele passa a enviar esses dados 1x por dia.</div>`;
+  const ms=tatMesesFechados();if(!ms.length)return '<div class="empty">Ainda não há um mês completo de dados.</div>';
+  if(!ms.includes(S.tat.mes))S.tat.mes=ms[ms.length-1];
+  const i=ms.indexOf(S.tat.mes),ant=i>0?ms[i-1]:null,ult3=ms.slice(Math.max(0,i-2),i+1);
+  const tot=m=>{const o={q:0,np:0,hd:0,hp:0};tatAgg([m],()=>0).forEach(x=>{o.q+=x.q;o.np+=x.np;o.hd+=x.hd;o.hp+=x.hp;});return o;};
+  const T=tot(S.tat.mes),TA=ant?tot(ant):null,pct=o=>o.q?o.np/o.q*100:0;
+  const cor=p=>p>=95?'var(--good)':p>=85?'var(--warn)':'var(--bad)';
+  const setNome=id=>{const s=D.setores.find(x=>x.id===id);return s?s.nome.charAt(0)+s.nome.slice(1).toLowerCase():'Setor '+id;};
+  const exNome=new Map(D.exames.map(e=>[e.cod,e.nome]));
+  // por setor
+  const gS=tatAgg([S.tat.mes],k=>k[1]),gSA=ant?tatAgg([ant],k=>k[1]):new Map();
+  const setores=[...gS.entries()].filter(([,o])=>o.q>=10).sort((a,b)=>pct(b[1])-pct(a[1]));
+  const atrasoTot=T.q-T.np,gAtr=[...gS.entries()].map(([k,o])=>[k,o.q-o.np]).sort((a,b)=>b[1]-a[1])[0];
+  // por exame, últimos 3 meses fechados
+  const gE=[...tatAgg(ult3,k=>k[2]+'|'+k[1]).entries()].map(([k,o])=>({cod:k.split('|')[0],st:+k.split('|')[1],...o})).filter(o=>o.q>=20);
+  const piores=gE.filter(o=>pct(o)<90).sort((a,b)=>pct(a)-pct(b)).slice(0,8);
+  const folga=gE.filter(o=>pct(o)>=98&&o.hd/o.q<=-24).sort((a,b)=>a.hd/a.q-b.hd/b.q).slice(0,8);
+  // tendência: até 6 meses fechados
+  const tend=ms.slice(Math.max(0,i-5),i+1).map(m=>({m,p:pct(tot(m))}));
+  const mesL=ym=>MES[+ym.slice(5)-1]+'/'+ym.slice(2,4),mesLL=ym=>MESL[+ym.slice(5)-1]+'/'+ym.slice(0,4);
+  const k=(l,v,s,tc,ex)=>`<div class="card kpi ${tc}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div>${ex?`<div class="s kpi-extra">${ex}</div>`:''}</div>`;
+  const pts=(()=>{if(tend.length<2)return '';const W=260,H=120,mn=Math.min(80,...tend.map(x=>Math.floor(x.p/5)*5)),X=j=>30+j*(W-50)/(tend.length-1),Y=p=>H-22-(p-mn)/(100-mn)*(H-40);
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${[mn,100].map(g=>`<line x1="30" x2="${W-10}" y1="${Y(g)}" y2="${Y(g)}" stroke="#e6ecf5"/><text x="26" y="${Y(g)+4}" text-anchor="end" font-size="10" fill="#80868b">${g}%</text>`).join('')}<path d="M${tend.map((x,j)=>X(j)+','+Y(x.p)).join(' L')}" fill="none" stroke="#1f63c6" stroke-width="2.2"/>${tend.map((x,j)=>`<circle cx="${X(j)}" cy="${Y(x.p)}" r="3.2" fill="#1f63c6"/><text x="${X(j)}" y="${Y(x.p)-8}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1f63c6">${fD1.format(x.p)}</text><text x="${X(j)}" y="${H-5}" text-anchor="middle" font-size="10" fill="#80868b">${mesL(x.m)}</text>`).join('')}</svg>`;})();
+  let h=`<div class="secao-topo" style="margin-top:22px"><div class="secao-head"><h2 style="margin:0">Tempo de entrega</h2><span class="sub">exames liberados, pelo mês de entrada</span>
+     <label class="fld" style="margin-left:auto;flex-direction:row;align-items:center;gap:8px">Mês<select id="tatMes">${ms.slice().reverse().map(m=>`<option value="${m}" ${m===S.tat.mes?'selected':''}>${mesLL(m)}</option>`).join('')}</select></label></div>
+   <div class="kpis-dia">
+    ${k('Entregues no prazo '+ajuda('Exames liberados até a data e hora prometidas ao paciente, entre os que deram entrada no mês escolhido.'),fD1.format(pct(T))+'%',`de ${fNum.format(T.q)} exames liberados`,'t-exa',TA?`${mesLL(ant)} <b>${fD1.format(pct(TA))}%</b> ${delta(pct(TA),pct(T))}`:'')}
+    ${k('Entregues atrasados',fNum.format(atrasoTot)+' exames',fD1.format(T.q?atrasoTot/T.q*100:0)+'% do total','t-bad',gAtr&&atrasoTot?`${fD1.format(gAtr[1]/atrasoTot*100)}% são da ${setNome(gAtr[0])}`:'')}
+    ${k('Folga média '+ajuda('Em média, quanto tempo antes (ou depois) do prazo prometido o laudo foi liberado.'),tatDias(T.q?T.hd/T.q:0),'em relação ao prazo prometido','t-atd',T.q&&tatPrazo(T.hp/T.q)?`prometemos ${tatPrazo(T.hp/T.q)} após a entrada`:'')}
+    <div class="card kpi t-neu"><div class="l">No prazo, mês a mês</div>${pts}</div>
+   </div></div>
+   <h2>Por setor<small>% entregue no prazo · verde 95%+ · laranja 85 a 95% · vermelho abaixo de 85%</small></h2>
+   <div class="card tw"><table class="tb-set"><thead><tr><th class="nm">Setor</th><th class="part">No prazo em ${mesLL(S.tat.mes)}</th><th>${ant?mesLL(ant):''}</th><th>Exames</th><th>Em média entrega</th></tr></thead><tbody>
+   ${setores.map(([id,o])=>{const p=pct(o),pa=gSA.get(id);return `<tr><td class="nm"><span class="semaf" style="background:${cor(p)}"></span><b>${esc(setNome(id))}</b></td><td class="part"><div class="part-in"><div class="pbar"><b style="width:${p.toFixed(1)}%;background:${cor(p)}"></b></div><span style="color:${cor(p)}">${fD1.format(p)}%</span></div></td><td>${pa?fD1.format(pct(pa))+'% '+delta(pct(pa),p):'—'}</td><td>${fNum.format(o.q)}</td><td>${tatDias(o.hd/o.q)}</td></tr>`;}).join('')}
+   </tbody></table></div>
+   <div class="saude-grid" style="margin-top:18px">
+    <div class="card tw"><h3 class="card-tit"><span class="dl dn">▼</span> Exames que mais atrasam</h3><p class="hint" style="margin:0 0 8px">últimos 3 meses · rever o processo ou aumentar o prazo prometido</p>
+     ${piores.length?`<table><thead><tr><th>Cód.</th><th class="nm">Exame</th><th>Prazo</th><th>Atrasaram</th><th>No prazo</th></tr></thead><tbody>${piores.map(o=>`<tr><td>${esc(o.cod)}</td><td class="nm"><b>${esc(exNome.get(o.cod)||o.cod)}</b><span class="mt" style="display:block;font-size:12px;color:var(--muted)">${esc(setNome(o.st))} · ${fNum.format(o.q)} exames</span></td><td>${tatPrazo(o.hp/o.q)||'—'}</td><td><b style="color:var(--bad)">${fNum.format(o.q-o.np)} exames</b></td><td>${fD1.format(pct(o))}%</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Nenhum exame com menos de 90% no prazo. 👍</div>'}</div>
+    <div class="card tw"><h3 class="card-tit"><span class="dl up">▲</span> Prometemos demais, entregamos bem antes</h3><p class="hint" style="margin:0 0 8px">últimos 3 meses · dá pra prometer menos dias ao paciente</p>
+     ${folga.length?`<table><thead><tr><th>Cód.</th><th class="nm">Exame</th><th>Prazo</th><th>Em média</th><th>No prazo</th></tr></thead><tbody>${folga.map(o=>`<tr><td>${esc(o.cod)}</td><td class="nm"><b>${esc(exNome.get(o.cod)||o.cod)}</b><span class="mt" style="display:block;font-size:12px;color:var(--muted)">${esc(setNome(o.st))} · ${fNum.format(o.q)} exames</span></td><td>${tatPrazo(o.hp/o.q)||'—'}</td><td><b style="color:var(--good)">${tatDias(o.hd/o.q)}</b></td><td>${fD1.format(pct(o))}%</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Nenhum exame com folga grande.</div>'}</div>
+   </div>`;
+  return h;
+}
+function bindTat(){const s=$('#tatMes');if(s)s.onchange=()=>{S.tat.mes=s.value;go();};}
+
+/* ---------- pacientes novos x que voltam (Saúde do Negócio) ---------- */
+S.pac={mes:''};
+function viewPacientes(){
+  if(!D.pacientes)return `<div class="notice warn" style="margin-top:20px"><b>Ainda não há dados de pacientes.</b> Coloque o <code>coletar_pacientes.py</code> na VM e rode uma vez: ele envia só os totais por mês e unidade.</div>`;
+  const L=D.pacientes.linhas,atual=ULT.slice(0,7),ms=[...new Set(L.map(l=>l[0]))].filter(m=>m<atual).sort();
+  if(!ms.length)return '<div class="empty">Ainda não há um mês completo de dados.</div>';
+  if(!ms.includes(S.pac.mes))S.pac.mes=ms[ms.length-1];
+  const i=ms.indexOf(S.pac.mes),ant=i>0?ms[i-1]:null,get=(m,u)=>L.find(l=>l[0]===m&&l[1]===u);
+  const T=get(S.pac.mes,0)||[0,0,0,0,0,0],TA=ant?get(ant,0):null;
+  // "voltaram em até 6 meses": mês mais recente que já completou 6 meses (base = todos os novos)
+  const mad=[...ms].reverse().map(m=>get(m,0)).find(l=>l&&l[4]>0&&l[4]===l[3]);
+  const madAnoAnt=mad?get((+mad[0].slice(0,4)-1)+mad[0].slice(4),0):null;
+  const mesLL=ym=>MESL[+ym.slice(5)-1]+'/'+ym.slice(0,4);
+  const k=(l,v,s,tc,ex)=>`<div class="card kpi ${tc}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div>${ex?`<div class="s kpi-extra">${ex}</div>`:''}</div>`;
+  const ret=T[2]-T[3],retA=TA?TA[2]-TA[3]:0;
+  const unid=D.unidades.map(u=>({u,l:get(S.pac.mes,+u.cod)})).filter(x=>x.l&&x.l[2]>0).sort((a,b)=>b.l[2]-a.l[2]);
+  let h=`<div class="secao-topo" style="margin-top:22px"><div class="secao-head"><h2 style="margin:0">Pacientes novos e que voltam</h2><span class="sub">${mesLL(S.pac.mes)}</span>
+     <label class="fld" style="margin-left:auto;flex-direction:row;align-items:center;gap:8px">Mês<select id="pacMes">${ms.slice(-24).reverse().map(m=>`<option value="${m}" ${m===S.pac.mes?'selected':''}>${mesLL(m)}</option>`).join('')}</select></label></div>
+   <div class="kpis-dia">
+    ${k('Pacientes no mês '+ajuda('Pessoas diferentes atendidas no mês (quem veio 2 vezes conta 1).'),fNum.format(T[2]),'pessoas diferentes atendidas','t-atd',TA?`${mesLL(ant)} <b>${fNum.format(TA[2])}</b> ${delta(TA[2],T[2])}`:'')}
+    ${k('Primeira vez aqui',fNum.format(T[3]),fD1.format(T[2]?T[3]/T[2]*100:0)+'% dos pacientes','t-exa',TA?`${mesLL(ant)} <b>${fNum.format(TA[3])}</b> ${delta(TA[3],T[3])}`:'')}
+    ${k('Já eram pacientes',fNum.format(ret),fD1.format(T[2]?ret/T[2]*100:0)+'% dos pacientes','t-fat',TA?`${mesLL(ant)} <b>${fNum.format(retA)}</b> ${delta(retA,ret)}`:'')}
+    ${mad?k('Voltaram em até 6 meses '+ajuda('Dos pacientes que vieram pela primeira vez naquele mês, quantos fizeram outro atendimento em até 6 meses.'),fD1.format(mad[5]/mad[4]*100)+'%',`dos pacientes novos de ${mesLL(mad[0])}`,'t-prj',madAnoAnt&&madAnoAnt[4]?`mesmo mês do ano anterior <b>${fD1.format(madAnoAnt[5]/madAnoAnt[4]*100)}%</b>`:''):''}
+   </div></div>
+   <h2>Por unidade<small>barra escura = pacientes novos · clara = pacientes que já vieram antes</small></h2>
+   <div class="card tw"><table class="tb-set"><thead><tr><th class="nm">Unidade</th><th>Pacientes</th><th>Novos</th><th>Já vieram antes</th><th class="part">% de novos</th></tr></thead><tbody>
+   ${unid.map(({u,l})=>{const p=l[2]?l[3]/l[2]*100:0;return `<tr><td class="nm"><b>${esc(u.nome)}</b></td><td>${fNum.format(l[2])}</td><td>${fNum.format(l[3])}</td><td>${fNum.format(l[2]-l[3])}</td><td class="part"><div class="part-in"><div class="pbar" style="display:flex"><b style="width:${p.toFixed(1)}%;background:#0e7490;border-radius:99px 0 0 99px"></b><b style="width:${(100-p).toFixed(1)}%;background:#a9c3ec;border-radius:0 99px 99px 0"></b></div><span>${fD1.format(p)}%</span></div></td></tr>`;}).join('')}
+   </tbody></table></div>
+   <p class="hint" style="margin-top:10px">Unidade com muitos novos atrai gente nova (campanha, médico novo na região). Com poucos novos, depende de quem já é paciente. Na unidade, "novo" é quem veio ao laboratório pela primeira vez por ela.</p>`;
+  return h;
+}
+function bindPacientes(){const s=$('#pacMes');if(s)s.onchange=()=>{S.pac.mes=s.value;go();};}
 /* ---------- exames & setores ---------- */
 function viewExames(){
   const PER=periodo(),B=D.B,dd=dims(),nB=B.mo.length;
@@ -2251,12 +2398,12 @@ function bindAreaTecnica(){
 }
 
 /* ---------- roteamento ---------- */
-const VIEWS={geral:[viewGeral,bindGeral],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],exames:[viewExames,bindExames],saude:[viewSaude,null],apoio:[viewApoio,bindApoio],areaTecnica:[viewAreaTecnica,bindAreaTecnica],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null],finGeral:[viewFinanceiro,bindFinanceiro],finPagar:[viewFinPagar,bindFinPagar],finReceber:[viewFinReceber,bindFinReceber],finDRE:[viewFinDRE,bindFinDRE]};
+const VIEWS={geral:[viewGeral,bindGeral],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],medalertas:[viewMedAlertas,null],tat:[viewTat,bindTat],pacientes:[viewPacientes,bindPacientes],exames:[viewExames,bindExames],saude:[viewSaude,null],apoio:[viewApoio,bindApoio],areaTecnica:[viewAreaTecnica,bindAreaTecnica],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null],finGeral:[viewFinanceiro,bindFinanceiro],finPagar:[viewFinPagar,bindFinPagar],finReceber:[viewFinReceber,bindFinReceber],finDRE:[viewFinDRE,bindFinDRE]};
 const GROUPS={geral:{tabs:['geral'],lbl:{geral:'Visão Diária'}},
-  saude:{tabs:['saude'],lbl:{saude:'Saúde do Negócio'}},
+  saude:{tabs:['saude','pacientes'],lbl:{saude:'Ano atual × anterior',pacientes:'Pacientes novos'}},
   apoio:{tabs:['apoio'],lbl:{apoio:'Laboratório de Apoio'}},
-  areaTecnica:{tabs:['areaTecnica'],lbl:{areaTecnica:'Área Técnica'}},
-  fat:{tabs:['anual','periodos','exames','rank'],lbl:{anual:'Comparativo Anual',periodos:'Comparar Períodos',exames:'Setores',rank:'Convênios e Médicos'}},
+  areaTecnica:{tabs:['areaTecnica','tat'],lbl:{areaTecnica:'Exames em andamento',tat:'Tempo de entrega'}},
+  fat:{tabs:['anual','periodos','exames','rank','medalertas'],lbl:{anual:'Comparativo Anual',periodos:'Comparar Períodos',exames:'Setores',rank:'Convênios e Médicos',medalertas:'Médicos (alertas)'}},
   custos:{tabs:['precosconv'],lbl:{precosconv:'Preços por Convênio'}},
   // tela técnica (conferência dos arquivos): fora do menu, abre pelo link "Configurações" no topo
   config:{tabs:['qualidade'],lbl:{qualidade:'Qualidade dos Dados'}},
@@ -2276,9 +2423,10 @@ function go(){
   const per=['geral','rank','exames','anual'].includes(S.tab);
   $('#fgPeriodo').style.display=(per&&S.tab!=='geral')?'':'none';
   $('#fgAtalhos').style.display=S.tab==='geral'?'none':'';
-  $('#fgMedico').style.display=S.tab==='geral'?'none':'';
-  $('#filters').style.display=(S.tab==='qualidade'||S.tab==='apoio'||S.tab==='areaTecnica'||S.tab==='precosconv'||S.tab==='saude'||S.tab==='finGeral'||S.tab==='finPagar'||S.tab==='finReceber'||S.tab==='finDRE')?'none':'';
-  $('#fHint').textContent=per?'':(S.tab==='anual'?'Nesta aba os anos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.':'Nesta aba os períodos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.');
+  $('#fgMedico').style.display=(S.tab==='geral'||S.tab==='medalertas')?'none':'';
+  $('#fgAtalhos').style.display=(S.tab==='geral'||S.tab==='medalertas')?'none':'';
+  $('#filters').style.display=(S.tab==='tat'||S.tab==='pacientes'||S.tab==='qualidade'||S.tab==='apoio'||S.tab==='areaTecnica'||S.tab==='precosconv'||S.tab==='saude'||S.tab==='finGeral'||S.tab==='finPagar'||S.tab==='finReceber'||S.tab==='finDRE')?'none':'';
+  $('#fHint').textContent=per?'':S.tab==='medalertas'?'Esta aba usa sempre os últimos 30 dias. Unidade e convênio continuam valendo.':(S.tab==='anual'?'Nesta aba os anos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.':'Nesta aba os períodos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.');
   syncFilters();
   const [v,b]=VIEWS[S.tab];
   $('#view').innerHTML=v();
