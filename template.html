@@ -457,6 +457,7 @@ table{font-size:14.5px}
 .gr{stroke:#e6ecf5}.vl{font-size:13px}
 /* contorno branco nos números dos gráficos: continuam legíveis quando passam por cima de outra barra/linha */
 .vl{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+.mg-scroll{max-height:520px;overflow:auto}.mg-scroll thead th{position:sticky;top:0;background:var(--card,#fff);z-index:1}
 .mg-filtros{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin:10px 0 4px}
 details.mg-perda{border-bottom:1px solid var(--line,#e6ecf5);padding:10px 0}details.mg-perda:last-child{border-bottom:0}
 details.mg-perda summary{display:flex;align-items:center;gap:14px;font-size:16px;cursor:pointer}
@@ -1977,7 +1978,7 @@ function viewQualidade(){
 const normTxt=s=>String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 S.ap={q:'',f:'todos',ord:null,dir:1,pg:0,ex:false};
 const AP_PAGE=50;
-S.pc={q:'',conv:'1',ativos:true,ord:null,dir:1,pg:0};  /* conv 1 = Particular */
+S.pc={q:'',conv:'1',ativos:true,ord:null,dir:1,pg:0,ref:'min',neg:false};  /* conv 1 = Particular */
 const PC_PAGE=50;
 const AP_F=[['todos','Todos os exames'],['ambos','Com os dois preços'],['d','DB mais barato'],['h','HP mais barato'],['=','Preços iguais'],['?','Conferir (mais de um preço)'],['sd','Só o DB tem preço'],['sh','Só o HP tem preço'],['sp','Mapeado, sem preço na tabela'],['nm','Sem mapeamento']];
 const apHay=r=>r._h||(r._h=normTxt([r.c,r.n,r.m,r.d&&r.d.c,r.d&&r.d.n,r.h&&r.h.c,r.h&&r.h.n].join(' ')));
@@ -2107,9 +2108,11 @@ function pcRows(){
     const nome=PC.exames[ei];
     if(q && !normTxt(nome).includes(q)) continue;
     const cDB=PC.custoDB[ei], cHP=PC.custoHP[ei];
-    const custo=[cDB,cHP].filter(v=>v!=null).length?Math.min(...[cDB,cHP].filter(v=>v!=null)):null;
+    const custo=S.pc.ref==='db'?(cDB==null?null:cDB):S.pc.ref==='hp'?(cHP==null?null:cHP):
+      ([cDB,cHP].filter(v=>v!=null).length?Math.min(...[cDB,cHP].filter(v=>v!=null)):null);
     let dif=null,marg=null;
     if(custo!=null && valor>0){ dif=valor-custo; marg=dif/valor*100; }
+    if(S.pc.neg && !(marg!=null && marg<0)) continue;
     out.push({ei,cod:PC.exameCod[ei],nome,cv,ativo,valor,cDB,cHP,dif,marg});
   }
   const ord=S.pc.ord,dir=S.pc.dir||1,vol=volumeAnoExame();
@@ -2161,9 +2164,11 @@ function viewPrecosConv(){
   let h=`<div class="kpis-dia" style="margin-top:22px">${k('Exames no relatório',fNum.format(PC.exames.length),'do CONCENT','t-exa')}${k('Com custo de apoio',fNum.format(comCusto),'têm preço no DB ou no HP','t-db')}${k('Convênios',fNum.format(PC.convenios.length),'na tabela de preços','t-neu')}${k('Prejuízo nos últimos 12 meses '+ajuda('Soma, nos últimos 12 meses, dos exames enviados ao laboratório de apoio em que o convênio pagou menos do que o apoio cobrou (pelo mais barato entre DB e HP). Só conta exames que foram feitos de verdade.'),fBRL0.format(prej.perda),`${fNum.format(prej.exames)} exames de apoio pagos abaixo do custo${prej.top?` · ${fD1.format(prej.top.pct)}% na ${esc(prej.top.nome)}`:''}`,'t-bad')}</div>`;
   h+=`<div class="apbar" id="pcBar"><label class="fld" style="flex:1 1 320px">Buscar exame<input type="search" id="pcQ" placeholder="Nome do exame..." autocomplete="off" style="width:100%;font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 12px;height:40px;background:#fff"></label>
     <label class="fld">Convênio<select id="pcConv" style="max-width:260px">${convs.map(c=>`<option value="${esc(c.c)}">${esc(c.n)}</option>`).join('')}<option value="">Todos os convênios</option></select></label>
+    <label class="fld">Comparar com<select id="pcRef"><option value="min">O mais barato (DB ou Pardini)</option><option value="db">Tabela DB</option><option value="hp">Tabela Pardini (HP)</option></select></label>
     <label class="apck"><input type="checkbox" id="pcAtivos"> Somente convênios ativos</label>
+    <label class="apck"><input type="checkbox" id="pcNeg"> Só os com prejuízo</label>
     <button class="btn" id="pcCsv" type="button">Baixar CSV</button></div>
-    <p class="hint">Margem = quanto sobra do preço pago depois do custo do apoio (o mais barato entre DB e HP).</p><div id="pcRes"></div>`;
+    <p class="hint" id="pcHint"></p><div id="pcRes"></div>`;
   return h;
 }
 function pcCel(v){return v==null?`<span class="mut">—</span>`:fBRL.format(v);}
@@ -2175,7 +2180,7 @@ function renderPrecosConv(){
   const ini=S.pc.pg*PC_PAGE,vis=rows.slice(ini,ini+PC_PAGE);
   const padraoTop50=!S.pc.ord&&!S.pc.q.trim();
   let h=`<p class="sub" style="margin:10px 0 6px">${fNum.format(n)} ${n===1?'resultado':'resultados'}${S.pc.q.trim()?` para “${esc(S.pc.q.trim())}”`:''}${padraoTop50?' · ordenado pelos exames mais feitos no ano':''} · verde = sobra dinheiro, vermelho = prejuízo · clique no título da coluna para ordenar</p>`;
-  if(!n){$('#pcRes').innerHTML=h+'<div class="empty">Nenhum preço encontrado. Tente outro nome, ou troque o convênio.</div>';return;}
+  if(!n){$('#pcRes').innerHTML=h+`<div class="empty">${S.pc.neg?'Nenhum exame com prejuízo neste filtro. 👍':'Nenhum preço encontrado. Tente outro nome, ou troque o convênio.'}</div>`;const hn=$('#pcHint');if(hn)hn.textContent='';return;}
   h+=`<div class="card tw"><table class="aptb"><thead><tr>${th('cod','Cód.','cd')}${th('exame','Exame','nm')}${th('conv','Convênio','nm')}${th('valor','Preço pago','pc')}${th('db','<span style="color:var(--c-db)">Preço DB</span>','pc')}${th('hp','<span style="color:var(--c-hp)">Preço HP</span>','pc')}${th('marg','Margem','pc st')}</tr></thead><tbody>`;
   vis.forEach(r=>{
     const boa=r.marg!=null&&r.marg>=0, ruim=r.marg!=null&&r.marg<0;
@@ -2189,6 +2194,7 @@ function renderPrecosConv(){
   h+='</tbody></table></div>';
   if(pgs>1)h+=`<div class="row" style="margin:10px 0 0"><button class="btn" data-pc-pg="-1" ${S.pc.pg?'':'disabled'}>← Anterior</button><span class="sub" style="margin:0">Página ${S.pc.pg+1} de ${pgs} · resultados ${fNum.format(ini+1)} a ${fNum.format(Math.min(ini+PC_PAGE,n))} de ${fNum.format(n)}</span><button class="btn" data-pc-pg="1" ${S.pc.pg<pgs-1?'':'disabled'}>Próxima →</button></div>`;
   $('#pcRes').innerHTML=h;
+  const hint=$('#pcHint');if(hint)hint.textContent='Margem = quanto sobra do preço pago depois do custo do apoio ('+({min:'o mais barato entre DB e HP',db:'tabela do DB',hp:'tabela do Pardini (HP)'}[S.pc.ref])+').';
   $$('[data-pc-ord]').forEach(t=>t.onclick=()=>{const k=t.dataset.pcOrd;if(S.pc.ord===k)S.pc.dir*=-1;else{S.pc.ord=k;S.pc.dir=1;}S.pc.pg=0;renderPrecosConv();});
   $$('[data-pc-pg]').forEach(b=>b.onclick=()=>{S.pc.pg+=+b.dataset.pcPg;renderPrecosConv();$('#pcBar').scrollIntoView({block:'start'});});
 }
@@ -2199,6 +2205,9 @@ function bindPrecosConv(){
   let t=null; q.oninput=()=>{clearTimeout(t);t=setTimeout(()=>{S.pc.q=q.value;S.pc.pg=0;renderPrecosConv();},120);};
   conv.onchange=()=>{S.pc.conv=conv.value;S.pc.pg=0;renderPrecosConv();};
   ativos.onchange=()=>{S.pc.ativos=ativos.checked;S.pc.pg=0;renderPrecosConv();};
+  const ref=$('#pcRef'),neg=$('#pcNeg');ref.value=S.pc.ref;neg.checked=S.pc.neg;
+  ref.onchange=()=>{S.pc.ref=ref.value;S.pc.pg=0;renderPrecosConv();};
+  neg.onchange=()=>{S.pc.neg=neg.checked;S.pc.pg=0;renderPrecosConv();};
   $('#pcCsv').onclick=()=>{
     const cel=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
     const linhas=[['Cód. CONCENT','Exame','Convênio','Ativo','Preço pago','Preço DB','Preço HP','Diferença R$','Margem %'].map(cel).join(';')];
@@ -2276,15 +2285,13 @@ function viewMargem(){
     <td>${mgMil(o.fat)}</td><td style="color:var(--muted)">${mgMil(o.custo)}</td><td><b style="font-size:18px;color:${o.sobra<0?'var(--bad)':'var(--c-exa)'}">${mgMil(o.sobra)}</b></td>
     <td style="min-width:170px"><div class="pbar" style="height:14px;display:flex;background:#c3ccd8"><b style="width:${ps.toFixed(1)}%;background:var(--c-exa)"></b></div></td>
     <td>${o.prej>=100?`<span class="pill venc">⚠ ${fNum.format(o.exprej)} exames abaixo do custo</span>`:''}</td></tr>`;}).join('');
-  const perdas=rows.filter(o=>o.prej>=100).sort((a,b)=>b.prej-a.prej).slice(0,8);
+  const perdas=rows.filter(o=>o.prej>=100).sort((a,b)=>b.prej-a.prej);
   if(S.mg.aberto==null&&perdas.length)S.mg.aberto=perdas[0].nome;
   const blocos=perdas.map(o=>{
-    const top=o.piores.slice(0,10),resto=o.prej-top.reduce((s,p)=>s+p.p,0);
     return `<details class="mg-perda" data-nome="${esc(o.nome)}" ${S.mg.aberto===o.nome?'open':''}>
     <summary><b class="mg-n">${esc(o.nome)}</b><span class="mg-q">${fNum.format(o.exprej)} exames</span><b class="mg-v">${fBRL0.format(o.prej)}</b></summary>
-    <div class="mg-wrap"><table class="tb"><thead><tr><th class="nm">Exame</th><th>Quantos</th><th>Convênio paga</th><th>Apoio cobra</th><th>Perdemos</th></tr></thead><tbody>
-    ${top.map(p=>`<tr><td class="nm"><b>${esc(p.nome)}</b></td><td>${fNum.format(p.q)}</td><td>${fBRL.format(p.valor)}</td><td>${fBRL.format(p.custo)} <span style="color:var(--muted);font-size:12px">${p.de}</span></td><td><b style="color:var(--bad)">${fBRL0.format(p.p)}</b></td></tr>`).join('')}
-    ${resto>=1?`<tr><td class="nm" style="color:var(--muted)">outros exames</td><td></td><td></td><td></td><td style="color:var(--muted)">${fBRL0.format(resto)}</td></tr>`:''}
+    <div class="mg-wrap mg-scroll"><table class="tb"><thead><tr><th class="nm">Exame</th><th>Quantos</th><th>Convênio paga</th><th>Apoio cobra</th><th>Perdemos</th></tr></thead><tbody>
+    ${o.piores.map(p=>`<tr><td class="nm"><b>${esc(p.nome)}</b></td><td>${fNum.format(p.q)}</td><td>${fBRL.format(p.valor)}</td><td>${fBRL.format(p.custo)} <span style="color:var(--muted);font-size:12px">${p.de}</span></td><td><b style="color:var(--bad)">${fBRL0.format(p.p)}</b></td></tr>`).join('')}
     </tbody></table></div></details>`;}).join('');
   const avisos=[];
   if(T.qFb)avisos.push(`${fNum.format(T.qFb)} exames não têm preço na ${S.mg.tab==='DB'?'tabela do DB':'tabela do HP'}: para eles usamos o preço do ${S.mg.tab==='DB'?'HP':'DB'}.`);
