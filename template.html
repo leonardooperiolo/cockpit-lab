@@ -457,6 +457,12 @@ table{font-size:14.5px}
 .gr{stroke:#e6ecf5}.vl{font-size:13px}
 /* contorno branco nos números dos gráficos: continuam legíveis quando passam por cima de outra barra/linha */
 .vl{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+.mg-filtros{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin:10px 0 4px}
+details.mg-perda{border-bottom:1px solid var(--line,#e6ecf5);padding:10px 0}details.mg-perda:last-child{border-bottom:0}
+details.mg-perda summary{display:flex;align-items:center;gap:14px;font-size:16px;cursor:pointer}
+details.mg-perda .mg-n{flex:1}details.mg-perda .mg-q{color:var(--muted);font-size:14px}details.mg-perda .mg-v{color:var(--bad);font-size:19px;min-width:110px;text-align:right}
+details.mg-perda table{margin-top:8px}
+@media(max-width:700px){.mg-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.mg-wrap table{min-width:560px}.mg-wrap .nm{white-space:normal;min-width:150px}details.mg-perda summary{flex-wrap:wrap;gap:4px 10px}details.mg-perda .mg-v{min-width:0}}
 </style>
 </head>
 <body>
@@ -1175,7 +1181,7 @@ function bindTat(){const s=$('#tatMes');if(s)s.onchange=()=>{S.tat.mes=s.value;g
 /* ---------- pacientes novos x que voltam (Saúde do Negócio) ---------- */
 S.pac={mes:''};
 function viewPacientes(){
-  if(!D.pacientes)return `<div class="notice warn" style="margin-top:20px"><b>Ainda não há dados de pacientes.</b> Coloque o <code>coletar_pacientes.py</code> na VM e rode uma vez: ele envia só os totais por mês e unidade.</div>`;
+  if(!D.pacientes)return `<div class="notice warn" style="margin-top:20px"><b>Ainda não há dados de pacientes.</b> Atualize o <code>coletar_concent.py</code> na VM: ele passa a enviar, 1x por dia, só os totais por mês e unidade.</div>`;
   const L=D.pacientes.linhas,atual=ULT.slice(0,7),ms=[...new Set(L.map(l=>l[0]))].filter(m=>m<atual).sort();
   if(!ms.length)return '<div class="empty">Ainda não há um mês completo de dados.</div>';
   if(!ms.includes(S.pac.mes))S.pac.mes=ms[ms.length-1];
@@ -2202,6 +2208,117 @@ function bindPrecosConv(){
   renderPrecosConv();
 }
 
+/* ---------- margem por convênio (Preços por Convênio > Margem por Convênio) ----------
+   Só exames do setor Laboratório Apoio (fato D.AP, por dia). Faturamos = líquido faturado
+   desses exames; Pagamos ao apoio = quantidade x preço da tabela escolhida (DB, HP ou a mais
+   barata; se o exame não tem preço na tabela escolhida, usa a outra e avisa). Perdemos =
+   exames em que o preço do convênio (tabela de preços) é menor que o custo do apoio. */
+S.mg={per:'12m',de:'',ate:'',tab:'DB',todos:false,aberto:null};
+const MG_PER={'12m':'Últimos 12 meses','6m':'Últimos 6 meses','3m':'Últimos 3 meses','mes':'Este mês','ano':'Este ano','custom':'Escolher datas'};
+const MG_TAB={DB:'Tabela DB',HP:'Tabela HP',min:'A mais barata (DB ou HP)'};
+function mgMil(v){const a=Math.abs(v);return a>=1e6?'R$ '+fD2.format(v/1e6)+' mi':a>=1e4?'R$ '+fD1.format(v/1e3)+' mil':fBRL0.format(v);}
+function mgLimites(){let mn=NDIAS-1;for(const d of D.AP.d)if(d<mn)mn=d;return {min:D.dias[mn],max:ULT};}
+function mgPeriodo(){
+  const L=mgLimites(),volta=m=>{const d=new Date(ULT+'T12:00:00');d.setMonth(d.getMonth()-m);d.setDate(d.getDate()+1);return atISO(d);};
+  let ini,fim=ULT;
+  if(S.mg.per==='12m')ini=volta(12);else if(S.mg.per==='6m')ini=volta(6);else if(S.mg.per==='3m')ini=volta(3);
+  else if(S.mg.per==='mes')ini=ULT.slice(0,8)+'01';else if(S.mg.per==='ano')ini=ULT.slice(0,5)+'01-01';
+  else{ini=S.mg.de||volta(12);fim=S.mg.ate||ULT;}
+  if(ini<L.min)ini=L.min;if(fim>L.max)fim=L.max;if(fim<ini)fim=ini;
+  return {ini,fim};
+}
+function mgCustos(tab){
+  const PC=D.precosConv,m=new Map();
+  PC.exameCod.forEach((cod,i)=>{const db=PC.custoDB[i],hp=PC.custoHP[i];let v=null,de='',fb=false;
+    if(tab==='DB'){if(db!=null){v=db;de='DB';}else if(hp!=null){v=hp;de='HP';fb=true;}}
+    else if(tab==='HP'){if(hp!=null){v=hp;de='HP';}else if(db!=null){v=db;de='DB';fb=true;}}
+    else{if(db!=null&&(hp==null||db<=hp)){v=db;de='DB';}else if(hp!=null){v=hp;de='HP';}}
+    if(v!=null)m.set(cod,{v,de,fb});});
+  return m;
+}
+function mgCalc(){
+  const {ini,fim}=mgPeriodo(),PC=D.precosConv,cus=mgCustos(S.mg.tab),AP=D.AP;
+  let i0=0;while(i0<NDIAS&&D.dias[i0]<ini)i0++;let i1=NDIAS-1;while(i1>0&&D.dias[i1]>fim)i1--;
+  const porC=new Map(),qtd=new Map(),T={q:0,fat:0,custo:0,qSem:0,qFb:0};
+  for(let i=0;i<AP.d.length;i++){
+    const d=AP.d[i];if(d<i0||d>i1)continue;
+    const cv=D.convenios[AP.c[i]],ex=D.exames[AP.x[i]],q=AP.e[i],l=AP.l[i];
+    let o=porC.get(cv.id);if(!o){o={id:cv.id,nome:cv.nome,q:0,fat:0,custo:0,prej:0,exprej:0,piores:[]};porC.set(cv.id,o);}
+    o.q+=q;o.fat+=l;T.q+=q;T.fat+=l;
+    const c=cus.get(ex.cod);
+    if(c){o.custo+=q*c.v;T.custo+=q*c.v;if(c.fb)T.qFb+=q;}else T.qSem+=q;
+    const k=ex.cod+'|'+cv.id;qtd.set(k,(qtd.get(k)||0)+q);
+  }
+  T.prej=0;T.exprej=0;
+  for(const [ei,ci,ativo,valor] of PC.linhas){
+    if(!ativo||!(valor>0))continue;
+    const cod=PC.exameCod[ei],c=cus.get(cod);if(!c||valor>=c.v)continue;
+    const cv=PC.convenios[ci];if(normTxt(cv.n).includes('cortesia'))continue;
+    const q=qtd.get(cod+'|'+cv.c)||0;if(!q)continue;
+    const o=porC.get(cv.c);if(!o)continue;
+    const p=q*(c.v-valor);o.prej+=p;o.exprej+=q;T.prej+=p;T.exprej+=q;
+    o.piores.push({nome:PC.exames[ei],q,valor,custo:c.v,de:c.de,p});
+  }
+  const rows=[...porC.values()].map(o=>(o.sobra=o.fat-o.custo,o)).sort((a,b)=>b.fat-a.fat);
+  rows.forEach(o=>o.piores.sort((a,b)=>b.p-a.p));
+  T.sobra=T.fat-T.custo;
+  return {ini,fim,rows,T};
+}
+function viewMargem(){
+  if(!D.AP||!D.AP.d.length)return '<div class="notice warn" style="margin-top:20px"><b>Ainda não há dados dos exames de apoio por dia.</b></div>';
+  if(!D.precosConv)return '<div class="notice warn" style="margin-top:20px"><b>Ainda não há a lista de preços por convênio.</b> Ela é usada para saber quanto cada convênio paga.</div>';
+  const {ini,fim,rows,T}=mgCalc(),L=mgLimites();
+  const k=(l,v,s,tc)=>`<div class="card kpi ${tc}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  const nTab=S.mg.tab==='min'?'pelo preço mais barato entre DB e HP':S.mg.tab==='DB'?'pela tabela do DB':'pela tabela do HP';
+  const lista=S.mg.todos?rows.filter(o=>o.q>0):rows.slice(0,15);
+  const lin=lista.map(o=>{const ps=o.fat>0?Math.max(0,Math.min(100,o.sobra/o.fat*100)):0;
+    return `<tr><td class="nm"><b>${esc(o.nome)}</b><span style="display:block;font-size:12.5px;color:var(--muted)">${fNum.format(o.q)} exames enviados</span></td>
+    <td>${mgMil(o.fat)}</td><td style="color:var(--muted)">${mgMil(o.custo)}</td><td><b style="font-size:18px;color:${o.sobra<0?'var(--bad)':'var(--c-exa)'}">${mgMil(o.sobra)}</b></td>
+    <td style="min-width:170px"><div class="pbar" style="height:14px;display:flex;background:#c3ccd8"><b style="width:${ps.toFixed(1)}%;background:var(--c-exa)"></b></div></td>
+    <td>${o.prej>=100?`<span class="pill venc">⚠ ${fNum.format(o.exprej)} exames abaixo do custo</span>`:''}</td></tr>`;}).join('');
+  const perdas=rows.filter(o=>o.prej>=100).sort((a,b)=>b.prej-a.prej).slice(0,8);
+  if(S.mg.aberto==null&&perdas.length)S.mg.aberto=perdas[0].nome;
+  const blocos=perdas.map(o=>{
+    const top=o.piores.slice(0,10),resto=o.prej-top.reduce((s,p)=>s+p.p,0);
+    return `<details class="mg-perda" data-nome="${esc(o.nome)}" ${S.mg.aberto===o.nome?'open':''}>
+    <summary><b class="mg-n">${esc(o.nome)}</b><span class="mg-q">${fNum.format(o.exprej)} exames</span><b class="mg-v">${fBRL0.format(o.prej)}</b></summary>
+    <div class="mg-wrap"><table class="tb"><thead><tr><th class="nm">Exame</th><th>Quantos</th><th>Convênio paga</th><th>Apoio cobra</th><th>Perdemos</th></tr></thead><tbody>
+    ${top.map(p=>`<tr><td class="nm"><b>${esc(p.nome)}</b></td><td>${fNum.format(p.q)}</td><td>${fBRL.format(p.valor)}</td><td>${fBRL.format(p.custo)} <span style="color:var(--muted);font-size:12px">${p.de}</span></td><td><b style="color:var(--bad)">${fBRL0.format(p.p)}</b></td></tr>`).join('')}
+    ${resto>=1?`<tr><td class="nm" style="color:var(--muted)">outros exames</td><td></td><td></td><td></td><td style="color:var(--muted)">${fBRL0.format(resto)}</td></tr>`:''}
+    </tbody></table></div></details>`;}).join('');
+  const avisos=[];
+  if(T.qFb)avisos.push(`${fNum.format(T.qFb)} exames não têm preço na ${S.mg.tab==='DB'?'tabela do DB':'tabela do HP'}: para eles usamos o preço do ${S.mg.tab==='DB'?'HP':'DB'}.`);
+  if(T.qSem)avisos.push(`${fNum.format(T.qSem)} exames não têm preço em nenhuma das duas tabelas e ficaram sem custo.`);
+  return `<div class="secao-topo" style="margin-top:22px"><div class="secao-head"><h2 style="margin:0">Exames que mandamos para o apoio</h2><span class="sub">de ${isoBR(ini)} a ${isoBR(fim)} · só os exames do setor Laboratório Apoio</span>${btnImprimir()}</div>
+  <div class="mg-filtros">
+    <label class="fld">Período<select id="mgPer">${Object.entries(MG_PER).map(([v,t])=>`<option value="${v}" ${S.mg.per===v?'selected':''}>${t}</option>`).join('')}</select></label>
+    ${S.mg.per==='custom'?`<label class="fld">De<input type="date" id="mgDe" min="${L.min}" max="${L.max}" value="${ini}"></label><label class="fld">Até<input type="date" id="mgAte" min="${L.min}" max="${L.max}" value="${fim}"></label>`:''}
+    <label class="fld">Preço do apoio<select id="mgTab">${Object.entries(MG_TAB).map(([v,t])=>`<option value="${v}" ${S.mg.tab===v?'selected':''}>${t}</option>`).join('')}</select></label>
+  </div>
+  <div class="kpis-dia">
+    ${k('Faturamos',mgMil(T.fat),`${fNum.format(T.q)} exames enviados ao apoio`,'t-fat')}
+    ${k('Pagamos ao apoio '+ajuda('Quantidade de cada exame vezes o preço do laboratório de apoio na tabela escolhida no filtro “Preço do apoio”.'),mgMil(T.custo),nTab,'t-neu')}
+    ${k('Sobrou para o laboratório',mgMil(T.sobra),'faturamos menos o que pagamos ao apoio','t-exa')}
+    ${k('Perdemos '+ajuda('Soma da diferença nos exames em que o preço do convênio é menor do que o apoio cobra. Cortesia não entra.'),mgMil(T.prej),`em ${fNum.format(T.exprej)} exames que o convênio paga menos do que o apoio cobra`,'t-bad')}
+  </div></div>
+  <h2>Por convênio<small>só exames enviados ao apoio · barra: <b style="color:var(--c-exa)">sobrou</b> e <b style="color:#8a94a3">pagamos ao apoio</b></small></h2>
+  <div class="card tw"><div class="mg-wrap"><table class="tb"><thead><tr><th class="nm">Convênio</th><th>Faturamos</th><th>Pagamos ao apoio</th><th>Sobrou</th><th></th><th></th></tr></thead><tbody>${lin}</tbody></table></div>
+  ${rows.length>15?`<button class="btn" id="mgTodos" style="margin-top:10px">${S.mg.todos?'Mostrar só os 15 maiores':'Mostrar todos os '+rows.filter(o=>o.q>0).length+' convênios'}</button>`:''}
+  <p class="hint" style="margin:10px 0 0">Não desconta reagentes, salários e aluguel; é só o que entra menos o que vai para o apoio.${avisos.length?' '+avisos.join(' '):''}</p></div>
+  <h2>Onde estamos perdendo dinheiro<small>clique no convênio para ver os exames · renegociar com o convênio ou conferir a tabela</small></h2>
+  <div class="card tw">${blocos||'<div class="empty">Nenhum exame abaixo do custo neste período. 👍</div>'}</div>`;
+}
+function bindMargem(){
+  const per=$('#mgPer');if(!per)return;
+  per.onchange=()=>{S.mg.per=per.value;if(per.value==='custom'&&!S.mg.de){const p=mgPeriodo();S.mg.de=p.ini;S.mg.ate=p.fim;}go();};
+  $('#mgTab').onchange=e=>{S.mg.tab=e.target.value;go();};
+  const de=$('#mgDe'),ate=$('#mgAte');
+  if(de)de.onchange=()=>{S.mg.de=de.value;go();};
+  if(ate)ate.onchange=()=>{S.mg.ate=ate.value;go();};
+  const t=$('#mgTodos');if(t)t.onclick=()=>{S.mg.todos=!S.mg.todos;go();};
+  document.querySelectorAll('details.mg-perda').forEach(d=>d.ontoggle=()=>{if(d.open)S.mg.aberto=d.dataset.nome;else if(S.mg.aberto===d.dataset.nome)S.mg.aberto='';});
+}
+
 /* ---------- área técnica (prazo de entrega) ---------- */
 /* Mesma lógica do relatório "Previsões de Entrega" do CONCENT: setor -> requisição
    (paciente) -> exames daquela requisição naquele setor, numerados em ordem (1,2,3...),
@@ -2398,13 +2515,13 @@ function bindAreaTecnica(){
 }
 
 /* ---------- roteamento ---------- */
-const VIEWS={geral:[viewGeral,bindGeral],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],medalertas:[viewMedAlertas,null],tat:[viewTat,bindTat],pacientes:[viewPacientes,bindPacientes],exames:[viewExames,bindExames],saude:[viewSaude,null],apoio:[viewApoio,bindApoio],areaTecnica:[viewAreaTecnica,bindAreaTecnica],precosconv:[viewPrecosConv,bindPrecosConv],qualidade:[viewQualidade,null],finGeral:[viewFinanceiro,bindFinanceiro],finPagar:[viewFinPagar,bindFinPagar],finReceber:[viewFinReceber,bindFinReceber],finDRE:[viewFinDRE,bindFinDRE]};
+const VIEWS={geral:[viewGeral,bindGeral],anual:[viewAnual,bindAnual],periodos:[viewPeriodos,bindPeriodos],rank:[viewRank,bindRank],medalertas:[viewMedAlertas,null],tat:[viewTat,bindTat],pacientes:[viewPacientes,bindPacientes],exames:[viewExames,bindExames],saude:[viewSaude,null],apoio:[viewApoio,bindApoio],areaTecnica:[viewAreaTecnica,bindAreaTecnica],precosconv:[viewPrecosConv,bindPrecosConv],margem:[viewMargem,bindMargem],qualidade:[viewQualidade,null],finGeral:[viewFinanceiro,bindFinanceiro],finPagar:[viewFinPagar,bindFinPagar],finReceber:[viewFinReceber,bindFinReceber],finDRE:[viewFinDRE,bindFinDRE]};
 const GROUPS={geral:{tabs:['geral'],lbl:{geral:'Visão Diária'}},
   saude:{tabs:['saude','pacientes'],lbl:{saude:'Ano atual × anterior',pacientes:'Pacientes novos'}},
   apoio:{tabs:['apoio'],lbl:{apoio:'Laboratório de Apoio'}},
   areaTecnica:{tabs:['areaTecnica','tat'],lbl:{areaTecnica:'Exames em andamento',tat:'Tempo de entrega'}},
   fat:{tabs:['anual','periodos','exames','rank','medalertas'],lbl:{anual:'Comparativo Anual',periodos:'Comparar Períodos',exames:'Setores',rank:'Convênios e Médicos',medalertas:'Médicos (alertas)'}},
-  custos:{tabs:['precosconv'],lbl:{precosconv:'Preços por Convênio'}},
+  custos:{tabs:['precosconv','margem'],lbl:{precosconv:'Preços por Convênio',margem:'Margem por Convênio'}},
   // tela técnica (conferência dos arquivos): fora do menu, abre pelo link "Configurações" no topo
   config:{tabs:['qualidade'],lbl:{qualidade:'Qualidade dos Dados'}},
   financeiro:{tabs:['finGeral','finPagar','finReceber','finDRE'],lbl:{finGeral:'Visão Geral',finPagar:'Contas a Pagar',finReceber:'Contas a Receber',finDRE:'Demonstrativos de Resultado'}}};
@@ -2425,7 +2542,7 @@ function go(){
   $('#fgAtalhos').style.display=S.tab==='geral'?'none':'';
   $('#fgMedico').style.display=(S.tab==='geral'||S.tab==='medalertas')?'none':'';
   $('#fgAtalhos').style.display=(S.tab==='geral'||S.tab==='medalertas')?'none':'';
-  $('#filters').style.display=(S.tab==='tat'||S.tab==='pacientes'||S.tab==='qualidade'||S.tab==='apoio'||S.tab==='areaTecnica'||S.tab==='precosconv'||S.tab==='saude'||S.tab==='finGeral'||S.tab==='finPagar'||S.tab==='finReceber'||S.tab==='finDRE')?'none':'';
+  $('#filters').style.display=(S.tab==='tat'||S.tab==='pacientes'||S.tab==='margem'||S.tab==='qualidade'||S.tab==='apoio'||S.tab==='areaTecnica'||S.tab==='precosconv'||S.tab==='saude'||S.tab==='finGeral'||S.tab==='finPagar'||S.tab==='finReceber'||S.tab==='finDRE')?'none':'';
   $('#fHint').textContent=per?'':S.tab==='medalertas'?'Esta aba usa sempre os últimos 30 dias. Unidade e convênio continuam valendo.':(S.tab==='anual'?'Nesta aba os anos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.':'Nesta aba os períodos são escolhidos no próprio painel. Unidade, convênio e médico continuam valendo.');
   syncFilters();
   const [v,b]=VIEWS[S.tab];

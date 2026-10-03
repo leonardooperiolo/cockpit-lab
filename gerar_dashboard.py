@@ -508,6 +508,21 @@ def construir_dados(df: pd.DataFrame, medicos: dict, excl: dict, arquivos: list,
         "l": [round(float(v), 2) for v in b["l"]],
     }
 
+    # ---------- fato AP: dia x convênio x exame, SÓ do setor Laboratório Apoio e só dos últimos
+    # ~2 anos (aba Margem por Convênio, que filtra por data exata). Fica pequeno porque é 1 setor.
+    def _sem_acento(t):
+        return unicodedata.normalize("NFKD", str(t)).encode("ascii", "ignore").decode().lower()
+    set_apoio = {sd["id"] for sd in set_dim if "laboratorio apoio" in _sem_acento(sd["nome"])}
+    ap = df[df["Setor"].astype(int).isin(set_apoio) & (df["dia"] >= dias[-1] - pd.Timedelta(days=800))]
+    ap = ap.groupby(["dia", "Convênio", "exame"]).agg(e=("req", "size"), l=("Líquido", "sum")).reset_index()
+    AP = {
+        "d": [dia_idx[v] for v in ap["dia"]],
+        "c": [conv_idx[int(v)] for v in ap["Convênio"]],
+        "x": [ex_idx[v] for v in ap["exame"]],
+        "e": [int(v) for v in ap["e"]],
+        "l": [round(float(v), 2) for v in ap["l"]],
+    }
+
     # ---------- qualidade dos dados
     total_l, total_r = len(df), float(df["Líquido"].sum())
     q_med = df["med"].map(lambda c: med_dim[med_idx[int(c)]]["q"])
@@ -549,7 +564,7 @@ def construir_dados(df: pd.DataFrame, medicos: dict, excl: dict, arquivos: list,
         "meses": meses,
         "unidades": uni_dim, "convenios": conv_dim, "medicos": med_dim,
         "setores": set_dim, "exames": ex_dim,
-        "A": A, "B": B, "qualidade": qual,
+        "A": A, "B": B, "AP": AP, "qualidade": qual,
     }
 
 
