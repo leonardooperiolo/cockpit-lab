@@ -6,6 +6,8 @@ on:
       - "data/**"
       - "template.html"
       - "logo.png"
+      - "demo/**"
+      - "demo_disfarce.py"
       - "gerar_dashboard.py"
       - "cripto_arquivos.py"
       - "requirements.txt"
@@ -40,11 +42,20 @@ jobs:
           DASHBOARD_SENHA: ${{ secrets.DASHBOARD_SENHA }}
         run: python gerar_dashboard.py
 
+      - name: Gerar a versão de demonstração (nomes e valores fictícios)
+        env:
+          DASHBOARD_SENHA: ${{ secrets.DASHBOARD_SENHA }}
+          DASHBOARD_SENHA_PAGINA: demo
+          DASHBOARD_DEMO: "1"
+          DASHBOARD_SAIDA: _site/demo/index.html
+        run: python gerar_dashboard.py
+
       - name: Montar o site
         run: |
-          mkdir _site
+          mkdir -p _site/demo
           cp index.html _site/index.html
           cp logo.png _site/logo.png 2>/dev/null || true
+          cp demo/logo.png _site/demo/logo.png 2>/dev/null || true
 
       - uses: actions/upload-pages-artifact@v5
         with:

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Celape · Painel de Gestão</title>
+<title>{{LAB_CURTO}} · Painel de Gestão</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
 html{scroll-padding-top:150px}
 body{margin:0;font:15px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
 .wrap{max-width:1240px;margin:0 auto;padding:22px 24px 60px}
-.top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px 24px}.top .stamp{justify-self:end}.top-l .logo{max-height:92px;max-width:260px;display:block}@media(max-width:900px){.top{grid-template-columns:1fr}.top-l{justify-self:center}.top .brand{justify-self:center}.top .stamp{justify-self:center;text-align:center}}
+.top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px 24px}.top .stamp{justify-self:end}.top-l .logo{max-height:92px;max-width:330px;display:block}@media(max-width:900px){.top{grid-template-columns:1fr}.top-l{justify-self:center}.top .brand{justify-self:center}.top .stamp{justify-self:center;text-align:center}}
 
 h1{line-height:1.12;margin:6px 0 0;color:var(--ink)}
 .stamp{color:var(--muted);text-align:right}
@@ -103,7 +103,7 @@ h3{font-size:15px;color:var(--ink);margin:0 0 2px}
 body.locked>*:not(.gate){display:none}
 .gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:999;padding:20px}
 .gate-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px 26px;max-width:360px;width:100%;box-shadow:0 8px 30px rgba(15,31,61,.08);display:flex;flex-direction:column;gap:12px}
-.gate-box h1{margin:0;font:700 24px 'Source Sans 3',system-ui,sans-serif;color:var(--ink)}.gate-box .logo{max-height:56px;max-width:220px;align-self:flex-start;margin-bottom:4px}.gate-lab{color:var(--accent);font-weight:700;font-size:13px}
+.gate-box h1{margin:0;font:700 24px 'Source Sans 3',system-ui,sans-serif;color:var(--ink)}.gate-box .logo{max-height:60px;max-width:280px;align-self:flex-start;margin-bottom:4px}.gate-lab{color:var(--accent);font-weight:700;font-size:13px}
 .gate-box p{margin:0;color:var(--muted)}
 .gate-box input[type=password]{font:inherit;font-size:16px;border:1px solid #cfdaee;border-radius:9px;padding:10px 12px;height:44px}
 .gate-box button{font:inherit;font-weight:700;color:#fff;background:var(--blue);border:0;border-radius:9px;height:44px;cursor:pointer}
@@ -478,15 +478,17 @@ details.mg-perda table{margin-top:8px}
 body.oculto #view .card > *:not(h2):not(h3):not(.l):not(.card-tit):not(.hint):not(.sub):not(p):not(table):not(.subtabs):not(.seg):not(.row):not(.semaf-tit),body.oculto #view tbody,body.oculto #view tfoot,body.oculto #view .notice b,body.oculto #view .dl{filter:blur(7px);user-select:none}
 body.oculto #view .kpi .v{filter:blur(10px)}
 #btnOcultar .ti{vertical-align:-3px;margin:0}#btnOcultar[aria-pressed="true"]{background:var(--c-fat);color:#fff;border-color:var(--c-fat)}
+.demo-bar{background:#fff7ed;border:1px solid #fdba74;color:#9a3412;border-radius:10px;padding:7px 14px;font-weight:700;font-size:14px;text-align:center;margin:0 0 14px}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="demo-bar" id="demoBar" hidden>Painel de demonstração · todos os nomes e valores são fictícios</div>
   <header class="top">
     <div class="top-l"><img class="logo" src="logo.png" alt="" onerror="this.remove()"></div>
     <div class="brand">
       <h1>Painel de Gestão</h1>
-      <div class="eyebrow">Celape · Centro Laboratorial Periolo</div>
+      <div class="eyebrow">{{LAB_LINHA}}</div>
     </div>
     <div class="stamp"><span id="stAtual"></span><br><button class="lnk cfg-lnk" type="button" data-go="qualidade">⚙ Configurações e qualidade dos dados</button> <button class="btn btn-zoom" type="button" id="btnZoom" title="Letras maiores / menores">A+</button> <button class="btn btn-zoom" type="button" id="btnOcultar" title="Esconder os valores (para abrir o painel perto de outras pessoas)"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
   </header>
@@ -540,7 +542,7 @@ if(RAW.enc)abrirComSenha(RAW);else start(RAW);
 function abrirComSenha(RAW){
   document.body.classList.add('locked');
   const g=document.createElement('div');g.className='gate';
-  g.innerHTML='<form class="gate-box" autocomplete="on"><img class="logo" src="logo.png" alt="" onerror="this.remove()"><div class="gate-lab">Celape · Centro Laboratorial Periolo</div><h1>Painel de Gestão</h1><p>Digite a senha para entrar.</p><input type="password" id="gSenha" placeholder="Senha" autocomplete="current-password" autofocus><label class="gate-ck"><input type="checkbox" id="gLembrar"> Lembrar neste computador</label><button type="submit">Entrar</button><div class="gate-err" id="gErr" role="alert"></div></form>';
+  g.innerHTML='<form class="gate-box" autocomplete="on"><img class="logo" src="logo.png" alt="" onerror="this.remove()"><div class="gate-lab">{{LAB_LINHA}}</div><h1>Painel de Gestão</h1><p>Digite a senha para entrar.</p><input type="password" id="gSenha" placeholder="Senha" autocomplete="current-password" autofocus><label class="gate-ck"><input type="checkbox" id="gLembrar"> Lembrar neste computador</label><button type="submit">Entrar</button><div class="gate-err" id="gErr" role="alert"></div></form>';
   document.body.appendChild(g);
   const err=g.querySelector('#gErr'),btn=g.querySelector('button'),inp=g.querySelector('#gSenha');
   const b64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
@@ -845,6 +847,7 @@ $$('#tabs button').forEach(b=>b.onclick=()=>{S.tab=GROUPS[b.dataset.group].tabs[
   const ap=()=>{document.body.classList.toggle('oculto',on);b.setAttribute('aria-pressed',on);b.title=on?'Mostrar os valores':'Esconder os valores (para abrir o painel perto de outras pessoas)';b.innerHTML=on?olhoF:olho;};
   ap();b.onclick=()=>{on=!on;try{localStorage.setItem('cockpit_oculto',on?'1':'0');}catch(e){}ap();};})();
 (function(){const b=$('#btnZoom');let on=false;try{on=localStorage.getItem('cockpit_zoom')==='1';}catch(e){}const ap=()=>{document.body.classList.toggle('zoom',on);b.textContent=on?'A−':'A+';b.setAttribute('aria-pressed',on);};ap();b.onclick=()=>{on=!on;try{localStorage.setItem('cockpit_zoom',on?'1':'0');}catch(e){}ap();};})();
+if(D.meta&&D.meta.demo){$('#demoBar').hidden=false;}
 (function(){const g=D.meta.geradoEm||'',gd=g.slice(0,10),gh=g.slice(11,16),hoje=isoBR(atHojeISO()),ontem=isoBR(atISO(new Date(Date.now()-864e5)));
   const q=gd===hoje?'hoje':gd===ontem?'ontem':'em '+gd,dados=isoBR(ULT)===gd?'':` · dados até <b>${isoBR(ULT)}</b>`;
   $('#stAtual').innerHTML=`Atualizado <b>${q} às ${gh}</b>${dados}`;})();

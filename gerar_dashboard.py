@@ -77,7 +77,10 @@ def _abrir_enc(p: Path) -> Path:
     destino.write_bytes(dados)
     return destino
 TEMPLATE = RAIZ / "template.html"
-SAIDA = RAIZ / "index.html"
+SAIDA = Path(os.environ.get("DASHBOARD_SAIDA") or (RAIZ / "index.html"))
+# Identidade do painel (nome do laboratório) e versão de demonstração (ver demo_disfarce.py).
+DEMO = os.environ.get("DASHBOARD_DEMO", "").strip() in ("1", "true", "sim")
+LAB_LINHA = os.environ.get("DASHBOARD_LAB", "Celape · Centro Laboratorial Periolo").strip()
 
 COLUNAS = [
     "Convênio", "Nome Convênio", "Entrada", "Código Requisição", "Setor",
@@ -2289,14 +2292,23 @@ def main():
     dados["filiais"] = carregar_filiais()
     if dados["filiais"]:
         print(f"Filiais: {len(dados['filiais'])} cadastradas em data/filiais.")
+    lab_linha = LAB_LINHA
+    if DEMO:
+        import demo_disfarce
+        dados = demo_disfarce.disfarcar(dados)
+        lab_linha = demo_disfarce.LAB_LINHA
+        print("DEMO: nomes e valores disfarçados (demo_disfarce.py).")
     payload = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-    html = TEMPLATE.read_text(encoding="utf-8")
+    html = TEMPLATE.read_text(encoding="utf-8").replace("{{LAB_LINHA}}", lab_linha).replace("{{LAB_CURTO}}", lab_linha.split("·")[0].strip())
     if "/*__DATA__*/null" not in html:
         sys.exit("ERRO: o template.html não tem o marcador /*__DATA__*/null")
-    if SENHA:
+    # a senha da PÁGINA pode ser diferente da dos arquivos (a demo usa uma senha simples)
+    senha_pagina = os.environ.get("DASHBOARD_SENHA_PAGINA", "").strip() or SENHA
+    if senha_pagina:
         from cripto_arquivos import criptografar_para_pagina
-        payload = json.dumps(criptografar_para_pagina(payload, SENHA), separators=(",", ":"))
+        payload = json.dumps(criptografar_para_pagina(payload, senha_pagina), separators=(",", ":"))
         print("Painel protegido por senha (dados criptografados no index.html).")
+    SAIDA.parent.mkdir(parents=True, exist_ok=True)
     SAIDA.write_text(html.replace("/*__DATA__*/null", payload), encoding="utf-8")
     m = dados["meta"]
     print(f"OK -> {SAIDA.name} | {m['dataMin']} a {m['dataMax']} | "
