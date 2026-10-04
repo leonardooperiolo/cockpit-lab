@@ -13,7 +13,7 @@
 html{scroll-padding-top:150px}
 body{margin:0;font:15px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
 .wrap{max-width:1240px;margin:0 auto;padding:22px 24px 60px}
-.top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap}
+.top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px 24px}.top .stamp{justify-self:end}.top-l .logo{max-height:92px;max-width:260px;display:block}@media(max-width:900px){.top{grid-template-columns:1fr}.top-l{justify-self:center}.top .brand{justify-self:center}.top .stamp{justify-self:center;text-align:center}}
 
 h1{line-height:1.12;margin:6px 0 0;color:var(--ink)}
 .stamp{color:var(--muted);text-align:right}
@@ -163,7 +163,7 @@ tr.tot td{font-weight:700;border-top:2px solid var(--line)}
 td.nm,th.nm{white-space:normal;min-width:220px;text-align:left}
 .bar{background:linear-gradient(#a9c3ec,#a9c3ec) left bottom/var(--w) 4px no-repeat}
 .dl{font-weight:700;font-size:12.5px}
-.dl.up{color:var(--green)} .dl.dn{color:var(--red)} .dl.eq,.dl.na{color:var(--muted)}
+.dl.up{color:var(--green)} .dl.dn{color:#d97706} .dl.eq,.dl.na{color:var(--muted)}
 .tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;background:#eef1f7;color:var(--muted);margin-left:6px}
 .tag.w{background:#fff3e2;color:var(--amber)}
 .seg{display:inline-flex;border:1px solid #cfdaee;border-radius:10px;overflow:hidden;background:#fff}
@@ -361,11 +361,12 @@ tr.tot td{background:none}
 :root{--bg:#f1f5fb;--line:#e0e7f1;--accent:#1f63c6;--accent-soft:#e3edfb;--muted:#5f6b7a;--c-fat:#1f63c6;--c-atd:#7a3fd1;--c-exa:#0e7490;--c-prj:#b45309}
 body{font-size:16px}
 .filters{background:rgba(241,245,251,.95)}
-.brand{display:flex;align-items:center;gap:14px}.brand .logo{max-height:52px;max-width:180px}
+.brand{text-align:center;justify-self:center}.brand h1{font-size:38px;margin:0}.brand .eyebrow{font-size:16px;color:var(--accent);font-weight:700;margin-top:2px}
+.btn .ti,.tabs .ti{width:17px;height:17px;margin-right:7px;vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .eyebrow{color:var(--accent);text-transform:none;letter-spacing:.01em;font-size:13px;font-weight:700}
 h1{font-size:26px}
 .tabs{gap:4px;border-bottom:2px solid var(--accent)}
-.tabs button{font-size:16px;padding:11px 16px;color:#475569;border-radius:10px 10px 0 0;border:0;margin-bottom:0}
+.tabs button{font-size:16px;padding:11px 11px;color:#475569;border-radius:10px 10px 0 0;border:0;margin-bottom:0}.tabs{justify-content:space-between}
 .tabs button:hover{background:#e3edfb;color:var(--ink)}
 .tabs button[aria-selected=true]{background:var(--accent);color:#fff;border-radius:10px 10px 0 0;border:0}
 .subtabs button{font-size:15px;padding:7px 14px;border:1px solid #cfdcef;border-radius:20px;background:#fff;color:#475569}
@@ -464,36 +465,36 @@ table{font-size:14.5px}
 .semaf-dot{width:14px;height:14px;border-radius:50%;flex:none;margin-top:3px}.semaf-it b{display:block;font-size:15px}.semaf-s{color:var(--muted);font-size:13px;display:block}
 @media(max-width:820px){.semaf-grid{grid-template-columns:1fr}}
 body.zoom{zoom:1.15}.btn-zoom{padding:2px 10px;font-weight:700;margin-left:8px}
-#fData[aria-pressed="true"]{background:var(--c-fat);color:#fff;border-color:var(--c-fat)}
+#fData .ti{vertical-align:-3px;margin-right:6px}#fData[aria-pressed="true"]{background:var(--c-fat);color:#fff;border-color:var(--c-fat)}
 .mg-filtros{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin:10px 0 4px}
 details.mg-perda{border-bottom:1px solid var(--line,#e6ecf5);padding:10px 0}details.mg-perda:last-child{border-bottom:0}
 details.mg-perda summary{display:flex;align-items:center;gap:14px;font-size:16px;cursor:pointer}
 details.mg-perda .mg-n{flex:1}details.mg-perda .mg-q{color:var(--muted);font-size:14px}details.mg-perda .mg-v{color:var(--bad);font-size:19px;min-width:110px;text-align:right}
 details.mg-perda table{margin-top:8px}
 @media(max-width:700px){.mg-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.mg-wrap table{min-width:560px}.mg-wrap .nm{white-space:normal;min-width:150px}details.mg-perda summary{flex-wrap:wrap;gap:4px 10px}details.mg-perda .mg-v{min-width:0}}
+.tabs{gap:2px}
+@media(max-width:1180px){.tabs button{font-size:15px;padding:10px 8px}.tabs .ti{display:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
+    <div class="top-l"><img class="logo" src="logo.png" alt="" onerror="this.remove()"></div>
     <div class="brand">
-      <img class="logo" src="logo.png" alt="" onerror="this.remove()">
-      <div>
-        <div class="eyebrow">Celape · Centro Laboratorial Periolo</div>
-        <h1>Painel de Gestão</h1>
-      </div>
+      <h1>Painel de Gestão</h1>
+      <div class="eyebrow">Celape · Centro Laboratorial Periolo</div>
     </div>
-    <div class="stamp">Dados até <b id="stDados"></b><br>Atualizado em <b id="stGerado"></b><br><button class="lnk cfg-lnk" type="button" data-go="qualidade">⚙ Configurações e qualidade dos dados</button> <button class="btn btn-zoom" type="button" id="btnZoom" title="Letras maiores / menores">A+</button></div>
+    <div class="stamp"><span id="stAtual"></span><br><button class="lnk cfg-lnk" type="button" data-go="qualidade">⚙ Configurações e qualidade dos dados</button> <button class="btn btn-zoom" type="button" id="btnZoom" title="Letras maiores / menores">A+</button></div>
   </header>
 
   <nav class="tabs" id="tabs" role="tablist">
-    <button role="tab" data-group="geral">Visão Diária</button>
-    <button role="tab" data-group="saude">Saúde do Negócio</button>
-    <button role="tab" data-group="areaTecnica">Área Técnica</button>
-    <button role="tab" data-group="apoio">Laboratório de Apoio</button>
-    <button role="tab" data-group="custos">Preços por Convênio</button>
-    <button role="tab" data-group="fat">Faturamento e Exames</button>
-    <button role="tab" data-group="financeiro">Financeiro</button>
+    <button role="tab" data-group="geral"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Visão Diária</button>
+    <button role="tab" data-group="saude"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg>Saúde do Negócio</button>
+    <button role="tab" data-group="areaTecnica"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></svg>Área Técnica</button>
+    <button role="tab" data-group="apoio"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l9-4 9 4-9 4-9-4zM3 8v8l9 4 9-4V8M12 12v8"/></svg>Laboratório de Apoio</button>
+    <button role="tab" data-group="custos"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 5L5 19"/><circle cx="7.5" cy="7.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>Convênios e Margem</button>
+    <button role="tab" data-group="fat"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Indicadores</button>
+    <button role="tab" data-group="financeiro"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7zM3 7a2 2 0 0 1 2-2h11v2"/><circle cx="16" cy="14" r="1.5"/></svg>Financeiro</button>
   </nav>
   <nav class="subtabs" id="subtabs" role="tablist"></nav>
 
@@ -503,7 +504,7 @@ details.mg-perda table{margin-top:8px}
       <button class="btn atalho" type="button" data-atalho="mes">Este Mês</button>
       <button class="btn atalho" type="button" data-atalho="mesAnterior">Mês Passado</button>
       <button class="btn atalho" type="button" data-atalho="ano">Ano Atual</button>
-      <button class="btn" type="button" id="fData">📅 Filtrar por data</button>
+      <button class="btn" type="button" id="fData"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Filtrar por data</button>
     </div>
     <div class="fgroup" id="fgPeriodo">
       <label class="fld">Ano<select id="fAno"></select></label>
@@ -836,7 +837,9 @@ $('#fData').onclick=()=>{S.fData=!S.fData;if(!S.fData){S.ano=S.mes=S.ini=S.fim='
 function syncFilters(){$('#fAno').value=S.ano;$('#fMes').value=S.mes;$('#fIni').value=S.ini;$('#fFim').value=S.fim;}
 $$('#tabs button').forEach(b=>b.onclick=()=>{S.tab=GROUPS[b.dataset.group].tabs[0];go();});
 (function(){const b=$('#btnZoom');let on=false;try{on=localStorage.getItem('cockpit_zoom')==='1';}catch(e){}const ap=()=>{document.body.classList.toggle('zoom',on);b.textContent=on?'A−':'A+';b.setAttribute('aria-pressed',on);};ap();b.onclick=()=>{on=!on;try{localStorage.setItem('cockpit_zoom',on?'1':'0');}catch(e){}ap();};})();
-$('#stDados').textContent=isoBR(ULT);$('#stGerado').textContent=D.meta.geradoEm;
+(function(){const g=D.meta.geradoEm||'',gd=g.slice(0,10),gh=g.slice(11,16),hoje=isoBR(atHojeISO()),ontem=isoBR(atISO(new Date(Date.now()-864e5)));
+  const q=gd===hoje?'hoje':gd===ontem?'ontem':'em '+gd,dados=isoBR(ULT)===gd?'':` · dados até <b>${isoBR(ULT)}</b>`;
+  $('#stAtual').innerHTML=`Atualizado <b>${q} às ${gh}</b>${dados}`;})();
 
 /* ---------- visão geral ---------- */
 function previsaoFechamentoMes(dd){
