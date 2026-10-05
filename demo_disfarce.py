@@ -68,7 +68,7 @@ def _h(texto, mod):
 def pessoa(nome):
     """Nome fictício, sempre o mesmo para o mesmo original."""
     n = str(nome or "").strip()
-    if not n:
+    if not n or n.upper() == "PARTICULAR":
         return n
     k = n.upper()
     a = NOMES[_h("a" + k, len(NOMES))]

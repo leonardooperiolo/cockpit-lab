@@ -1360,18 +1360,93 @@ MESES_JANELA_RECORRENCIA = 12
 MIN_MESES_RECORRENTE = 10  # aparece em pelo menos 10 dos ultimos 12 meses = considerado recorrente
 
 
+# Arquivos grandes do financeiro chegam em DUAS partes (ver coletar_contas_pagar.py):
+#   <base>_hist     tudo, enviado 1x por mês
+#   <base>_recente  só os títulos mexidos nos últimos 360 dias (emitidos, com baixa ou
+#                   com movimento), enviado a cada rodada
+# Para cada título que aparece no recente, vale o recente (inclusive para sumir: título
+# cancelado vem no recente com situação diferente de 'A' e é retirado). O resultado é
+# um CSV igual ao "completo" de antes, e o resto do código nem percebe a diferença.
+# Posição das colunas da chave do título (FILCOD, TITNRDOCTO, SERIECOD, EMITCOD, ESPDCCOD)
+# em cada arquivo; "sit" = posição da coluna extra TITSITUACAO no recente (None = não tem).
+# "ordem" = tipos das colunas do ORDER BY da consulta (n = número, s = texto): o arquivo
+# juntado é reordenado igual ao export completo, porque partes do painel dependem da ordem
+# das linhas (ex.: qual nome aparece quando dois títulos têm o mesmo número no posto).
+_ORD_CAT, _ORD_5 = "nsssssnssn", "nssss"
+FIN_PARTES = {
+    "categoria": ("contas_pagar_categoria", (0, 1, 2, 11, 12), 13, _ORD_CAT),
+    "categoria_receber": ("contas_receber_categoria", (0, 1, 2, 11, 12), 13, _ORD_CAT),
+    "valor_titulo": ("contas_pagar_valor_titulo", (0, 1, 2, 3, 4), 6, "nssns"),
+    "valor_titulo_receber": ("contas_receber_valor_titulo", (0, 1, 2, 3, 4), 6, "nssns"),
+    "baixas": ("contas_pagar_baixas", (0, 1, 2, 7, 8), None, _ORD_5),
+    "baixas_receber": ("contas_receber_baixas", (0, 1, 2, 7, 8), None, _ORD_5),
+}
+
+
+def _juntar_hist_recente(hist: Path, recente: Path, idx_chave, idx_sit, ordem) -> Path:
+    def chave(campos):
+        return tuple(campos[i].strip() for i in idx_chave)
+    linhas_rec = _texto_arquivo(recente).splitlines()
+    rec = [(r, l) for r, l in zip(csv.reader(linhas_rec), linhas_rec) if r]
+    chaves_rec = {chave(r) for r, _ in rec}
+    saida = []
+    linhas_hist = _texto_arquivo(hist).splitlines()
+    for r, l in zip(csv.reader(linhas_hist), linhas_hist):
+        if r and chave(r) not in chaves_rec:
+            saida.append((r, l))
+    for r, l in rec:
+        if idx_sit is not None:
+            if r[idx_sit].strip() != "A":
+                continue                      # título cancelado: sai do painel
+            l = l.rsplit(",", 1)[0]           # tira a coluna extra da situação
+        saida.append((r, l))
+
+    def ord_chave(item):
+        r = item[0]
+        k = []
+        for i, t in enumerate(ordem):
+            v = r[i] if i < len(r) else ""
+            if t == "n":
+                try:
+                    k.append((0, float(v.strip() or 0), ""))
+                except ValueError:
+                    k.append((1, 0.0, v))
+            else:
+                k.append((0, 0.0, v))
+        return k
+    saida.sort(key=ord_chave)
+    saida = [l for _, l in saida]
+    pasta = Path(tempfile.mkdtemp(prefix="cockpit_fin_"))
+    atexit.register(shutil.rmtree, pasta, ignore_errors=True)
+    destino = pasta / (hist.name.split(".")[0].replace("_hist", "") + "_juntado.csv")
+    destino.write_text("\n".join(saida) + "\n", encoding="utf-8")
+    return destino
+
+
 def achar_arquivos_financeiro():
     achados = {}
     if not PASTA_FINANCEIRO.is_dir():
         return achados
+    partes = {}
     for p in sorted(PASTA_FINANCEIRO.iterdir()):
         if not p.is_file() or p.name.startswith(".") or not p.name.lower().endswith((".xlsx", ".csv", ".gz", ".enc")):
             continue
         nome = _sa(p.name).replace(" ", "_")
+        base = nome.split(".")[0]
+        if base.endswith("_hist") or base.endswith("_recente"):
+            partes[base] = p
+            continue
         for papel, inicios in ARQ_FINANCEIRO.items():
             if papel not in achados and nome.startswith(inicios):
                 achados[papel] = _abrir_enc(p)
                 break
+    for papel, (base, idx_chave, idx_sit, ordem) in FIN_PARTES.items():
+        h, r = partes.get(base + "_hist"), partes.get(base + "_recente")
+        if h and r:
+            achados[papel] = _juntar_hist_recente(_abrir_enc(h), _abrir_enc(r), idx_chave, idx_sit, ordem)
+        elif h or r:
+            print(f"AVISO: financeiro - {base}: chegou só {'o histórico' if h else 'o recente'}; "
+                  "usando o arquivo completo antigo, se existir.")
     return achados
 
 
@@ -1399,6 +1474,12 @@ def _fim_mes(d):
 def _add_meses(ano, mes, k):
     m = mes - 1 + k
     return ano + m // 12, m % 12 + 1
+
+
+def _ordem_baixa(b):
+    """Ordem fixa da lista de baixas (data, posto, título, parcela, nome, valor) - não depende
+    da ordem em que as linhas chegaram nos arquivos."""
+    return (b["data"], b["filial"], b["titulo"], b["parcela"], b.get("fornecedor") or b.get("cliente") or "", b["valor"])
 
 
 def carregar_financeiro(movimento_diario=None):
@@ -1510,7 +1591,10 @@ def carregar_financeiro(movimento_diario=None):
         if len(row) < 10:
             continue
         filcod_c, titnr_c, serie_c, fornecedor_c = row[0], row[1], row[2], row[3]
-        fornecedor_por_titulo[(filcod_c.strip().rstrip("."), titnr_c, serie_c)] = _nome_curto(fornecedor_c)
+        k3 = (filcod_c.strip().rstrip("."), titnr_c, serie_c)
+        fornecedor_por_titulo[k3] = _nome_curto(fornecedor_c)
+        if len(row) > 12:   # chave completa: o mesmo número de título pode existir pra 2 fornecedores
+            fornecedor_por_titulo[k3 + (row[11].strip().rstrip("."), row[12].strip())] = _nome_curto(fornecedor_c)
 
     baixas = []
     if "baixas" in arqs:
@@ -1525,7 +1609,9 @@ def carregar_financeiro(movimento_diario=None):
                 baixas.append({
                     "data": d, "valor": _preco(valor) or 0.0, "titulo": titnr_b, "parcela": parcela_b,
                     "filial": filcod_b,
-                    "fornecedor": fornecedor_por_titulo.get((filcod_b, titnr_b, serie_b), ""),
+                    "fornecedor": fornecedor_por_titulo.get(
+                        (filcod_b, titnr_b, serie_b) + ((row[7].strip().rstrip("."), row[8].strip()) if len(row) > 8 else ()),
+                        fornecedor_por_titulo.get((filcod_b, titnr_b, serie_b), "")),
                 })
 
     pago_mes = None
@@ -1578,7 +1664,10 @@ def carregar_financeiro(movimento_diario=None):
             if len(row) < 10:
                 continue
             filcod_c, titnr_c, serie_c, cliente_c = row[0], row[1], row[2], row[3]
-            cliente_por_titulo[(filcod_c.strip().rstrip("."), titnr_c, serie_c)] = _nome_curto(cliente_c)
+            k3 = (filcod_c.strip().rstrip("."), titnr_c, serie_c)
+            cliente_por_titulo[k3] = _nome_curto(cliente_c)
+            if len(row) > 12:
+                cliente_por_titulo[k3 + (row[11].strip().rstrip("."), row[12].strip())] = _nome_curto(cliente_c)
 
     baixas_r = []
     if "baixas_receber" in arqs:
@@ -1594,7 +1683,9 @@ def carregar_financeiro(movimento_diario=None):
                 baixas_r.append({
                     "data": d, "valor": _preco(valor) or 0.0, "titulo": titnr_b, "parcela": parcela_b,
                     "filial": filcod_b, "tipo": "C" if tipo_b == "C" else "P",
-                    "cliente": cliente_por_titulo.get((filcod_b, titnr_b, serie_b), ""),
+                    "cliente": cliente_por_titulo.get(
+                        (filcod_b, titnr_b, serie_b) + ((row[7].strip().rstrip("."), row[8].strip()) if len(row) > 8 else ()),
+                        cliente_por_titulo.get((filcod_b, titnr_b, serie_b), "")),
                 })
 
     recebido_mes = None
@@ -1632,7 +1723,8 @@ def carregar_financeiro(movimento_diario=None):
                          "s": round(a["saldo"], 2)} for a in aberto_r],
             "baixados": [{"f": b["cliente"], "t": b["titulo"], "p": b["parcela"], "fil": b["filial"],
                           "tp": b["tipo"],
-                          "v": b["data"].strftime("%Y-%m-%d"), "s": round(b["valor"], 2)} for b in baixas_r],
+                          "v": b["data"].strftime("%Y-%m-%d"), "s": round(b["valor"], 2)}
+                         for b in sorted(baixas_r, key=_ordem_baixa)],
         }
 
     # títulos "não integrados": exame já faturado (RQEXDTFATURA preenchida no CONCENT),
@@ -1738,7 +1830,8 @@ def carregar_financeiro(movimento_diario=None):
                      "v": a["vencimento"].strftime("%Y-%m-%d") if a["vencimento"] else None,
                      "s": round(a["saldo"], 2)} for a in aberto],
         "baixados": [{"f": b["fornecedor"], "t": b["titulo"], "p": b["parcela"], "fil": b["filial"],
-                      "v": b["data"].strftime("%Y-%m-%d"), "s": round(b["valor"], 2)} for b in baixas],
+                      "v": b["data"].strftime("%Y-%m-%d"), "s": round(b["valor"], 2)}
+                     for b in sorted(baixas, key=_ordem_baixa)],
         # aba Contas a Receber (espelha a de Contas a Pagar acima) - None enquanto os
         # arquivos de aberto_receber/baixas_receber não forem enviados
         "receber": financeiro_receber,
