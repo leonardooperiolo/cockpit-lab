@@ -479,6 +479,7 @@ body.oculto #view .card > *:not(h2):not(h3):not(.l):not(.card-tit):not(.hint):no
 body.oculto #view .kpi .v{filter:blur(10px)}
 #btnOcultar .ti{vertical-align:-3px;margin:0}#btnOcultar[aria-pressed="true"]{background:var(--c-fat);color:#fff;border-color:var(--c-fat)}
 .demo-bar{background:#fff7ed;border:1px solid #fdba74;color:#9a3412;border-radius:10px;padding:7px 14px;font-weight:700;font-size:14px;text-align:center;margin:0 0 14px}
+.pill.pill-ent{background:#e3eefc;color:#1f4fa3}.pill.pill-fil{background:#efe7fb;color:#5b2bab}
 </style>
 </head>
 <body>
@@ -536,6 +537,10 @@ body.oculto #view .kpi .v{filter:blur(10px)}
 const RAW=/*__DATA__*/null;
 if(!RAW){document.body.innerHTML='<p style="padding:32px;font-family:sans-serif">Este é o template, sem dados. Rode <code>python gerar_dashboard.py</code> para gerar o index.html.</p>';return;}
 if(!RAW){document.body.innerHTML='<p style="padding:32px;font-family:sans-serif">Este é o template, sem dados. Rode <code>python gerar_dashboard.py</code> para gerar o index.html.</p>';return;}
+// painel real e demo ficam no mesmo endereço (a demo em /demo/), então dividem o mesmo
+// armazenamento do navegador: cada um guarda a senha "lembrada" numa chave própria, senão
+// abrir a demo apagava a senha lembrada do painel real (e vice-versa).
+const CHAVE_SENHA='cockpit_senha'+(/\/demo\/?/.test(location.pathname)?'_demo':'');
 if(RAW.enc)abrirComSenha(RAW);else start(RAW);
 
 /* ---------- painel protegido por senha (dados criptografados: AES-256-GCM + PBKDF2) ---------- */
@@ -559,16 +564,16 @@ function abrirComSenha(RAW){
     err.textContent='';btn.disabled=true;btn.textContent='Abrindo...';
     try{
       const D=await abrir(senha);
-      try{if(lembrar)localStorage.setItem('cockpit_senha',senha);else localStorage.removeItem('cockpit_senha');}catch(e){}
+      try{if(lembrar)localStorage.setItem(CHAVE_SENHA,senha);else localStorage.removeItem(CHAVE_SENHA);}catch(e){}
       g.remove();document.body.classList.remove('locked');start(D);
     }catch(e){
-      try{localStorage.removeItem('cockpit_senha');}catch(x){}
+      try{localStorage.removeItem(CHAVE_SENHA);}catch(x){}
       err.textContent=(e&&e.name==='OperationError')?(auto?'':'Senha incorreta.'):'Não foi possível abrir: '+(e&&e.message||e);
       btn.disabled=false;btn.textContent='Entrar';inp.focus();
     }
   }
   g.querySelector('form').onsubmit=ev=>{ev.preventDefault();if(inp.value)tentar(inp.value,g.querySelector('#gLembrar').checked,false);};
-  try{const guardada=localStorage.getItem('cockpit_senha');if(guardada)tentar(guardada,true,true);}catch(e){}
+  try{const guardada=localStorage.getItem(CHAVE_SENHA);if(guardada)tentar(guardada,true,true);}catch(e){}
 }
 
 function start(D){
@@ -2524,12 +2529,20 @@ function atExameLinha(e){
   }
   return `<li style="margin-bottom:5px;white-space:nowrap;overflow-x:auto">${rotulo} — ${esc(e.exame)}${direita}</li>`;
 }
+// data de entrada da requisição no laboratório (a mais antiga entre os exames dela) e a
+// filial onde foi cadastrada - no mesmo formato de "pílula" da data de prazo dos exames
+function atReqInfo(g){
+  const ents=g.exames.map(e=>e.entrada).filter(Boolean).sort(),fil=g.exames.length?g.exames[0].fil:null;
+  const nomeFil=fil==null?'':((D.filiais&&D.filiais[String(fil)])||('Filial '+fil));
+  return (ents.length?`<span class="pill pill-ent" style="margin-left:22px" title="Entrada no laboratório">Entrada ${atBR(ents[0])}</span>`:'')
+        +(nomeFil?`<span class="pill pill-fil" style="margin-left:8px" title="Filial do cadastro">${esc(nomeFil)}</span>`:'');
+}
 function atRenderGrupos(reqs,mostrarSetor){
   return reqs.map(g=>{
     const temAtraso=g.exames.some(e=>e.atrasado);
     return `<div class="card" style="margin-bottom:8px${temAtraso?';border-left:4px solid #b3261e':''}">
       <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">
-        <div><b style="font-size:15px">${esc(g.paciente)}</b><span style="margin-left:22px;font-size:15px"><b>Requisição <code style="font-size:15px">${esc(g.req)}</code></b></span>${mostrarSetor?` <span class="tag">${esc(g.setor)}</span>`:''}</div>
+        <div><b style="font-size:15px">${esc(g.paciente)}</b><span style="margin-left:22px;font-size:15px"><b>Requisição <code style="font-size:15px">${esc(g.req)}</code></b></span>${atReqInfo(g)}${mostrarSetor?` <span class="tag">${esc(g.setor)}</span>`:''}</div>
       </div>
       <ol style="margin:6px 0 0;padding-left:22px">${g.exames.map(atExameLinha).join('')}</ol></div>`;
   }).join('');
