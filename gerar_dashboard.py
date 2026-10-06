@@ -289,8 +289,99 @@ def carregar_filiais():
     return mapa
 
 
-def carregar_medicos():
-    """Devolve dict codigo -> [nomes distintos]. Códigos com mais de um nome ficam ambíguos."""
+# --------------------------------------------------------------------------- cadastros do CONCENT
+# data/cadastros/, enviado 1x por dia pelo coletar_cadastros.py: tabelas de cadastro do CONCENT
+# (convênios, planos, tabelas de preço, valor dos exames nas tabelas, exames e médicos). As duas
+# grandes vêm como <nome>_base (completa, 1x por mês) + <nome>_delta (só o que mudou desde a
+# base: "A" = linha nova/alterada, "R" = removida). Quando existem, substituem o lista_medico e o
+# precos_convenio enviados à mão.
+PASTA_CAD = PASTA_DADOS / "cadastros"
+
+
+def _cad_ler(nome):
+    """Linhas de data/cadastros/<nome>.csv(.gz)(.enc); None se o arquivo não existe."""
+    if not PASTA_CAD.is_dir():
+        return None
+    p = next((PASTA_CAD / f"{nome}{ext}" for ext in (".csv.gz.enc", ".csv.gz", ".csv.enc", ".csv")
+              if (PASTA_CAD / f"{nome}{ext}").is_file()), None)
+    if p is None:
+        return None
+    p = _abrir_enc(p)
+    dados = p.read_bytes()
+    if p.name.lower().endswith(".gz"):
+        dados = gzip.decompress(dados)
+    return [r for r in csv.reader(dados.decode("utf-8").splitlines()) if r]
+
+
+def _cad_tabela(nome, nchave):
+    """Tabela pequena (<nome>) ou grande (<nome>_base + <nome>_delta) já com as diferenças
+    aplicadas. None se não veio."""
+    linhas = _cad_ler(nome)
+    if linhas is not None:
+        return linhas
+    base = _cad_ler(f"{nome}_base")
+    if base is None:
+        return None
+    tab = {tuple(r[:nchave]): r for r in base}
+    for r in _cad_ler(f"{nome}_delta") or []:
+        op, resto = r[0], r[1:]
+        if op == "A":
+            tab[tuple(resto[:nchave])] = resto
+        elif op == "R":
+            tab.pop(tuple(resto[:nchave]), None)
+    return list(tab.values())
+
+
+def _cad_num(s, padrao=0.0):
+    try:
+        return float(str(s).strip() or padrao)
+    except ValueError:
+        return padrao
+
+
+def _precos_dos_cadastros():
+    """Mesmo formato do _ler_precos_convenio: (cod_exame, nome_exame, cod_conv, nome_conv,
+    ativo, valor), montado a partir das tabelas do CONCENT. Valor = valor do exame na tabela x
+    índice da tabela (ex.: valor do CH) x índice do convênio/plano - conferido contra o valor
+    cobrado de verdade nos atendimentos. Convênio com planos entra uma vez por plano (cada
+    plano pode ter tabela e índice próprios; plano sem tabela própria usa a do convênio).
+    Ficam de fora exames desativados e valores zerados (exame sem preço naquela tabela)."""
+    conv = _cad_tabela("cad_convenios", 1)
+    tabs = _cad_tabela("cad_tabelas", 1)
+    te = _cad_tabela("cad_tab_exame", 2)
+    exs = _cad_tabela("cad_exames", 1)
+    if not (conv and tabs and te and exs):
+        return None
+    planos = _cad_tabela("cad_planos", 2) or []
+    idx_tab = {r[0]: _cad_num(r[2], 1.0) or 1.0 for r in tabs if len(r) >= 3}
+    nome_ex = {r[0]: r[1] for r in exs if len(r) >= 3 and r[2].upper() == "S" and r[0]}   # só exames ativos (igual ao relatório antigo)
+    por_tab = defaultdict(list)
+    for r in te:
+        if len(r) >= 3 and r[1] in nome_ex:
+            v = _cad_num(r[2])
+            if v > 0:
+                por_tab[r[0]].append((r[1], v))
+    planos_conv = defaultdict(list)
+    for p in planos:
+        if len(p) >= 6:
+            planos_conv[p[0]].append(p)
+    saida = []
+    for c in conv:
+        if len(c) < 5 or not c[0].isdigit():
+            continue
+        cod, nome, tab_conv, idx_conv = int(c[0]), _nome_curto(c[1]), c[2], _cad_num(c[3], 1.0) or 1.0
+        combos = [(tab_conv, idx_conv, True)] if not planos_conv[c[0]] else [
+            (p[3] if _cad_num(p[3]) else tab_conv, _cad_num(p[4], 1.0) or idx_conv, p[5].upper() == "S")
+            for p in planos_conv[c[0]]]
+        for tab, idx, ativo in combos:
+            fator = idx_tab.get(tab, 1.0) * idx
+            for cod_ex, v in por_tab.get(tab, []):
+                saida.append((cod_ex, nome_ex[cod_ex], cod, nome, ativo, round(v * fator, 2)))
+    return saida
+
+
+def _medicos_do_arquivo():
+    """lista_medico enviado à mão (csv ou xlsx); None se não existe."""
     pares = None
     pc = PASTA_DADOS / "lista_medico.csv"
     if not pc.exists() and (PASTA_DADOS / "lista_medico.csv.enc").exists():
@@ -303,7 +394,7 @@ def carregar_medicos():
             p = _abrir_enc(PASTA_DADOS / "lista_medico.xlsx.enc")
         if not p.exists():
             print("AVISO: data/lista_medico não encontrado - médicos aparecerão só pelo código.")
-            return {}
+            return None
         try:
             from openpyxl import load_workbook
             wb = load_workbook(p, read_only=True)
@@ -313,6 +404,20 @@ def carregar_medicos():
             pares = None
         if not pares:
             pares = _ler_lista_medicos_xml(p)
+    return pares
+
+
+def carregar_medicos():
+    """Devolve dict codigo -> [nomes distintos]. Códigos com mais de um nome ficam ambíguos."""
+    pares = None
+    cad = _cad_tabela("cad_medicos", 1)
+    if cad:
+        pares = [(r[0], r[1]) for r in cad if len(r) >= 2]
+        print(f"Médicos: {len(pares):,} do cadastro do CONCENT (data/cadastros).".replace(",", "."))
+    if not pares:
+        pares = _medicos_do_arquivo()
+        if pares is None:
+            return {}
     mapa = {}
     for cod, nome in pares:
         try:
@@ -2272,11 +2377,17 @@ def carregar_precos_convenio(apoio):
     custo do laboratório de apoio pelo código do exame. Quando um convênio tem mais
     de um plano para o mesmo exame, fica só o de maior valor (o plano em si não é
     mostrado no painel). Devolve None se o arquivo não foi enviado."""
-    arqs = achar_arquivos_apoio()
-    if "precos_conv" not in arqs:
-        return None
-    print(f"Lendo {arqs['precos_conv'].name}...")
-    linhas = _ler_precos_convenio(arqs["precos_conv"])
+    linhas = _precos_dos_cadastros()
+    if linhas:
+        origem = "cadastros do CONCENT (data/cadastros)"
+        print(f"Preços por convênio: montados dos {origem}...")
+    else:
+        arqs = achar_arquivos_apoio()
+        if "precos_conv" not in arqs:
+            return None
+        origem = arqs["precos_conv"].name
+        print(f"Lendo {origem}...")
+        linhas = _ler_precos_convenio(arqs["precos_conv"])
 
     custo_db, custo_hp = {}, {}
     if apoio:
@@ -2329,7 +2440,7 @@ def carregar_precos_convenio(apoio):
         "custoHP": custo_apoio_hp,
         "convenios": convenios,
         "linhas": linhas_out,
-        "arquivo": arqs["precos_conv"].name,
+        "arquivo": origem,
     }
 
 
