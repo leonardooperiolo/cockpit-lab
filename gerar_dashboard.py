@@ -1248,7 +1248,7 @@ def carregar_acompanhamento_apoio(arqs, obrig, digit, agora):
     linhas = []
     for (fil, req, seq, cod), r in agrup.items():
         (_f, _r, _s, _c, dt_entrada, dt_promessa, hr_promessa, conferido, liberado, cancelado,
-         paciente, exame, strcod, setor, coletado, triado, _hc, _ht, lib_em) = r
+         paciente, exame, strcod, setor, coletado, triado, hr_coleta, _ht, lib_em) = r
         lib_em = _data_hora_db2(lib_em)
         if sim(cancelado):
             continue
@@ -1256,8 +1256,12 @@ def carregar_acompanhamento_apoio(arqs, obrig, digit, agora):
         status = ("lib" if sim(liberado) else "c" if sim(conferido) else "d" if ob > 0 and dg >= ob
                   else "dp" if dg > 0 else "t" if sim(triado) else "col" if sim(coletado) else "nc")
         entrada, prazo = _data_db2(dt_entrada), _data_db2(dt_promessa)
-        auto = (status != "lib" and _dbnum(strcod) == SETOR_APOIO and entrada and prazo and
-                (datetime.fromisoformat(prazo) - datetime.fromisoformat(entrada)).days > PRAZO_APOIO_DIAS)
+        # o prazo conta a partir da COLETA (quando o CONCENT tem a data): exame cadastrado e
+        # coletado muito depois ganha um prazo longo desde a entrada, mas não é exame demorado
+        coleta = (_data_hora_db2(hr_coleta) or "")[:10] or None
+        inicio = coleta if coleta and entrada and coleta > entrada else entrada
+        auto = (status != "lib" and _dbnum(strcod) == SETOR_APOIO and inicio and prazo and
+                (datetime.fromisoformat(prazo) - datetime.fromisoformat(inicio)).days > PRAZO_APOIO_DIAS)
         man = req in req_inteira or (req, cod.upper()) in req_exame
         if req in req_inteira:
             sit[(req, "")].append((status, lib_em))
