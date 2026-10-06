@@ -2576,6 +2576,7 @@ def recortar_tela_tecnica(dados):
     estruturas que o painel monta ao abrir vão vazias."""
     at = dict(dados["areaTecnica"])
     at.pop("arquivos", None)
+    at.pop("apoio", None)   # o bloco do laboratório de apoio não aparece nessa página
     meta = {k: dados["meta"][k] for k in ("geradoEm", "dataMin", "dataMax") if k in dados["meta"]}
     meta.update({"tela": "tecnica", "editaApoio": False})
     return {

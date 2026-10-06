@@ -2634,7 +2634,7 @@ function viewAreaTecnica(){
     <label class="fld">Até<input type="date" id="atAte" style="font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 10px;height:40px;background:#fff"></label>
     <div class="fld" style="flex:1 1 220px">Exame<div id="atExameSel"></div></div></div>
     <div class="apbar" id="atStatusFld" style="margin-top:8px;justify-content:center">${Object.entries(AT_STATUS).filter(([k])=>k!=='c').map(([k,t])=>`<label style="display:inline-flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:var(--ink)"><input type="checkbox" class="atSts" data-k="${k}" ${S.at.sts[k]?'checked':''} style="width:17px;height:17px"> ${t}</label>`).join('')}</div>
-<div id="atRes"></div><div id="atApoio">${atApoioHTML()}</div>`;
+<div id="atRes"></div>${TELA==='tecnica'?'':`<div id="atApoio">${atApoioHTML()}</div>`}`;
   return h;
 }
 /* ---------- acompanhamento do laboratório de apoio ----------
