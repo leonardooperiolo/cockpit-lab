@@ -1092,6 +1092,43 @@ PRAZO_APOIO_DIAS = 10
 APOIO_ENTRADA_DESDE = "2026-01-01"
 
 
+def _pascoa(ano):
+    """Domingo de Páscoa (algoritmo de Meeus/Jones/Butcher)."""
+    a, b, c = ano % 19, ano // 100, ano % 100
+    d, e = b // 4, b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = c // 4, c % 4
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    mes = (h + l - 7 * m + 114) // 31
+    return date(ano, mes, (h + l - 7 * m + 114) % 31 + 1)
+
+
+_FERIADOS = {}
+
+
+def _feriados(ano):
+    """Feriados nacionais + Carnaval (seg/ter), Sexta-feira Santa e Corpus Christi."""
+    if ano not in _FERIADOS:
+        p = _pascoa(ano)
+        fixos = [(1, 1), (4, 21), (5, 1), (9, 7), (10, 12), (11, 2), (11, 15), (11, 20), (12, 25)]
+        _FERIADOS[ano] = {date(ano, m, d) for m, d in fixos} | {
+            p - timedelta(days=48), p - timedelta(days=47), p - timedelta(days=2), p + timedelta(days=60)}
+    return _FERIADOS[ano]
+
+
+def _dias_uteis(inicio, fim):
+    """Dias úteis (seg a sex, fora feriados) depois de `inicio` até `fim`, inclusive."""
+    d, n = inicio + timedelta(days=1), 0
+    while d <= fim:
+        if d.weekday() < 5 and d not in _feriados(d.year):
+            n += 1
+        d += timedelta(days=1)
+    return n
+
+
 def achar_arquivos_area_tecnica():
     achados = {}
     if not PASTA_AREA_TEC.is_dir():
@@ -1259,13 +1296,14 @@ def carregar_acompanhamento_apoio(arqs, obrig, digit, agora):
         status = ("lib" if sim(liberado) else "c" if sim(conferido) else "d" if ob > 0 and dg >= ob
                   else "dp" if dg > 0 else "t" if sim(triado) else "col" if sim(coletado) else "nc")
         entrada, prazo = _data_db2(dt_entrada), _data_db2(dt_promessa)
-        # o prazo conta a partir da COLETA (quando o CONCENT tem a data): exame cadastrado e
+        # prazo em DIAS ÚTEIS (seg a sex, sem feriados nacionais), contado a partir da COLETA
+        # (quando o CONCENT tem a data): exame cadastrado e
         # coletado muito depois ganha um prazo longo desde a entrada, mas não é exame demorado
         coleta = (_data_hora_db2(hr_coleta) or "")[:10] or None
         inicio = coleta if coleta and entrada and coleta > entrada else entrada
         auto = (status != "lib" and _dbnum(strcod) == SETOR_APOIO and inicio and prazo and
                 entrada >= APOIO_ENTRADA_DESDE and
-                (datetime.fromisoformat(prazo) - datetime.fromisoformat(inicio)).days > PRAZO_APOIO_DIAS)
+                _dias_uteis(date.fromisoformat(inicio), date.fromisoformat(prazo)) > PRAZO_APOIO_DIAS)
         man = req in req_inteira or (req, cod.upper()) in req_exame
         if req in req_inteira:
             sit[(req, "")].append((status, lib_em))

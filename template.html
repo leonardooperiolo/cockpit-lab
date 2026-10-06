@@ -2739,10 +2739,10 @@ function atApoioHTML(){
   const todasAbertas=lista.length&&lista.every(g=>APO.reqAbertas.has(g.fil+'|'+g.req));
   const tog=lista.length?`<div style="text-align:right;margin:-4px 0 6px"><a href="#" id="apoTodos" class="lnk" style="font-size:13px;font-weight:600">${todasAbertas?'Fechar todos':'Abrir todos'}</a></div>`:'';
   const msg=APO.msg?`<div class="apo-msg ${APO.erro?'erro':''}" role="status">${esc(APO.msg)}</div>`:'';
-  return `<details class="ap-atencao at-apoio" open><summary><h2 style="display:inline">Laboratório de apoio · prazo acima de ${AP.prazoMinDias||10} dias</h2> <span class="sub">${fNum.format(lista.length)} requisições · ${fNum.format(nEx)} exames · fora dos números e filtros de cima</span></summary>
-    <p class="hint" style="margin:6px 0 10px">Exames do apoio com prazo no CONCENT maior que ${AP.prazoMinDias||10} dias, mais as requisições acompanhadas à mão. Cada exame só sai daqui quando for <b>liberado</b> no CONCENT. Não coletados não aparecem.</p>
+  return `<details class="ap-atencao at-apoio" open><summary><h2 style="display:inline">Acompanhamento de exames de longa data</h2> <span class="sub">${fNum.format(lista.length)} requisições · ${fNum.format(nEx)} exames · fora dos números e filtros de cima</span></summary>
+    <p class="hint" style="margin:6px 0 10px">Exames do apoio com prazo no CONCENT maior que ${AP.prazoMinDias||10} dias úteis (contados da coleta), mais as requisições acompanhadas à mão. Cada exame só sai daqui quando for <b>liberado</b> no CONCENT. Não coletados não aparecem.</p>
     ${barra}${msg}${tog}
-    ${AP.coletado===false&&!semExame.length?'<div class="empty">Ainda não chegou a primeira leitura do apoio (o coletor da VM precisa da versão nova).</div>':(cards?`<div class="apo-lista">${cards}</div>`:'<div class="empty">Nenhum exame do apoio com prazo acima de 10 dias agora.</div>')}</details>`;
+    ${AP.coletado===false&&!semExame.length?'<div class="empty">Ainda não chegou a primeira leitura do apoio (o coletor da VM precisa da versão nova).</div>':(cards?`<div class="apo-lista">${cards}</div>`:'<div class="empty">Nenhum exame do apoio com prazo acima de 10 dias úteis agora.</div>')}</details>`;
 }
 // liberado há menos de 1 hora (horário do CONCENT, o mesmo do computador do laboratório)
 function apoLibRecente(iso){
