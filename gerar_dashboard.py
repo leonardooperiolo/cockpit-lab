@@ -1087,6 +1087,9 @@ ARQ_AREA_TEC_OPC = {"apoio": ("area_tecnica_apoio",)}
 ARQ_ACOMP_APOIO = "acompanhamento_apoio.json"
 SETOR_APOIO = 30
 PRAZO_APOIO_DIAS = 10
+# pendências mais antigas que isso (esquecidas no CONCENT) não entram sozinhas no bloco;
+# requisição adicionada à mão entra sempre
+APOIO_ENTRADA_DESDE = "2026-01-01"
 
 
 def achar_arquivos_area_tecnica():
@@ -1261,6 +1264,7 @@ def carregar_acompanhamento_apoio(arqs, obrig, digit, agora):
         coleta = (_data_hora_db2(hr_coleta) or "")[:10] or None
         inicio = coleta if coleta and entrada and coleta > entrada else entrada
         auto = (status != "lib" and _dbnum(strcod) == SETOR_APOIO and inicio and prazo and
+                entrada >= APOIO_ENTRADA_DESDE and
                 (datetime.fromisoformat(prazo) - datetime.fromisoformat(inicio)).days > PRAZO_APOIO_DIAS)
         man = req in req_inteira or (req, cod.upper()) in req_exame
         if req in req_inteira:
