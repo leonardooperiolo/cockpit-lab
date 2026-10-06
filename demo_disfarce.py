@@ -250,6 +250,20 @@ def disfarcar(dados):
                     r["paciente"] = pessoa(r["paciente"])
                 if "req" in r and isinstance(r["req"], int):
                     r["req"] += 100000
+        ap = at.get("apoio")
+        if ap:
+            for r in ap.get("rows") or []:
+                r["paciente"] = pessoa(r["paciente"])
+                r["req"] += 100000
+            for r in ap.get("reqs") or []:
+                r["req"] += 100000
+            prom = {}
+            for k, v in (ap.get("promessas") or {}).items():
+                p = k.split("|")
+                if len(p) == 4 and p[1].isdigit():
+                    p[1] = str(int(p[1]) + 100000)
+                prom["|".join(p)] = v
+            ap["promessas"] = prom
 
     te = dados.get("tempoEntrega")
     if te:

@@ -671,6 +671,7 @@ def construir_dados(df: pd.DataFrame, medicos: dict, excl: dict, arquivos: list,
             "geradoEm": agora.strftime("%d/%m/%Y %H:%M"),
             "dataMin": dias[0].strftime("%Y-%m-%d"),
             "dataMax": dias[-1].strftime("%Y-%m-%d"),
+            "repo": os.environ.get("GITHUB_REPOSITORY", ""),
         },
         "dias": [d.strftime("%Y-%m-%d") for d in dias],
         "meses": meses,
@@ -1077,6 +1078,17 @@ STATUS_AT = {
 }
 
 
+# opcional: acompanhamento do laboratório de apoio. O coletar_area_tecnica.py exporta os exames
+# do setor apoio com prazo do CONCENT > 10 dias (ainda não liberados) + todos os exames das
+# requisições que o usuário mandou acompanhar pelo painel. A promessa do apoio (digitada no
+# painel) e a lista dessas requisições ficam em data/area_tecnica/acompanhamento_apoio.json.enc,
+# gravado pelo PRÓPRIO painel via API do GitHub (criptografado no navegador com a mesma senha).
+ARQ_AREA_TEC_OPC = {"apoio": ("area_tecnica_apoio",)}
+ARQ_ACOMP_APOIO = "acompanhamento_apoio.json"
+SETOR_APOIO = 30
+PRAZO_APOIO_DIAS = 10
+
+
 def achar_arquivos_area_tecnica():
     achados = {}
     if not PASTA_AREA_TEC.is_dir():
@@ -1085,7 +1097,7 @@ def achar_arquivos_area_tecnica():
         if not p.is_file() or p.name.startswith(".") or not p.name.lower().endswith((".csv", ".gz", ".enc")):
             continue
         nome = _sa(p.name).replace(" ", "_")
-        for papel, inicios in ARQ_AREA_TEC.items():
+        for papel, inicios in {**ARQ_AREA_TEC, **ARQ_AREA_TEC_OPC}.items():
             if papel not in achados and nome.startswith(inicios):
                 achados[papel] = _abrir_enc(p)
                 break
@@ -1180,6 +1192,109 @@ def carregar_pacientes():
         except (KeyError, ValueError):
             continue
     return {"linhas": linhas} if linhas else None
+
+
+def _ler_acompanhamento_apoio():
+    """{"promessas": {"fil|req|seq|cod": {"p": "aaaa-mm-dd", "o": "obs", "em": iso}},
+        "reqs": [{"req": 123, "cod": "TSH" ou "" (requisição inteira), "em": iso}]} - vazio se o painel
+    ainda não gravou nada."""
+    vazio = {"promessas": {}, "reqs": []}
+    cand = [PASTA_AREA_TEC / (ARQ_ACOMP_APOIO + ".enc"), PASTA_AREA_TEC / ARQ_ACOMP_APOIO]
+    p = next((c for c in cand if c.is_file()), None)
+    if not p:
+        return vazio
+    try:
+        obj = json.loads(_abrir_enc(p).read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"AVISO: {p.name} ilegível ({e}); acompanhamento do apoio sem promessas.")
+        return vazio
+    prom = {str(k): {"p": str(v.get("p") or "")[:10], "o": str(v.get("o") or "")[:200], "em": v.get("em")}
+            for k, v in (obj.get("promessas") or {}).items() if isinstance(v, dict)}
+    reqs = []
+    for r in obj.get("reqs") or []:
+        try:
+            reqs.append({"req": int(r["req"]), "cod": str(r.get("cod") or "").strip().upper(), "em": r.get("em")})
+        except (KeyError, TypeError, ValueError):
+            continue
+    return {"promessas": prom, "reqs": reqs}
+
+
+def carregar_acompanhamento_apoio(arqs, obrig, digit, agora):
+    """Lista independente dos filtros/KPIs da área técnica: exames do apoio com prazo do
+    CONCENT > 10 dias + exames das requisições acompanhadas à mão. Sai só quem foi liberado;
+    não coletados ficam de fora. Exame acompanhado à mão que foi liberado continua aparecendo
+    (com a pílula "Liberado") por 1 hora depois da liberação - o painel esconde depois disso."""
+    acomp = _ler_acompanhamento_apoio()
+    req_inteira = {r["req"] for r in acomp["reqs"] if not r["cod"]}
+    req_exame = {(r["req"], r["cod"]) for r in acomp["reqs"] if r["cod"]}
+    # situação de cada acompanhamento manual: quais status os exames dele têm agora
+    sit = defaultdict(list)
+    agrup = {}
+    if "apoio" in arqs:
+        for r in _linhas_db2(arqs["apoio"]):
+            if len(r) < 18:
+                continue
+            k = (_dbnum(r[0]), _dbnum(r[1]), _dbnum(r[2]), r[3].strip())
+            r = (list(r) + [""])[:19]   # 19ª coluna: data/hora da liberação (coletor mais novo)
+            if k not in agrup:
+                agrup[k] = r
+            else:   # cópias do mesmo exame (ver "agrupado" em carregar_area_tecnica): vale o mais avançado
+                for i in (7, 8, 9, 14, 15):
+                    if (r[i] or "").strip().upper() == "S":
+                        agrup[k][i] = r[i]
+                if not _data_hora_db2(agrup[k][18]):
+                    agrup[k][18] = r[18]
+    sim = lambda v: (v or "").strip().upper() == "S"
+    linhas = []
+    for (fil, req, seq, cod), r in agrup.items():
+        (_f, _r, _s, _c, dt_entrada, dt_promessa, hr_promessa, conferido, liberado, cancelado,
+         paciente, exame, strcod, setor, coletado, triado, _hc, _ht, lib_em) = r
+        lib_em = _data_hora_db2(lib_em)
+        if sim(cancelado):
+            continue
+        ob, dg = obrig.get(cod, 0), digit.get((fil, req, seq, cod), 0)
+        status = ("lib" if sim(liberado) else "c" if sim(conferido) else "d" if ob > 0 and dg >= ob
+                  else "dp" if dg > 0 else "t" if sim(triado) else "col" if sim(coletado) else "nc")
+        entrada, prazo = _data_db2(dt_entrada), _data_db2(dt_promessa)
+        auto = (status != "lib" and _dbnum(strcod) == SETOR_APOIO and entrada and prazo and
+                (datetime.fromisoformat(prazo) - datetime.fromisoformat(entrada)).days > PRAZO_APOIO_DIAS)
+        man = req in req_inteira or (req, cod.upper()) in req_exame
+        if req in req_inteira:
+            sit[(req, "")].append((status, lib_em))
+        if (req, cod.upper()) in req_exame:
+            sit[(req, cod.upper())].append((status, lib_em))
+        # liberado só volta para a lista se for acompanhado à mão e liberado há pouco (o painel
+        # esconde depois de 1h; aqui uma folga de 2h por causa do intervalo entre atualizações)
+        lib_recente = (status == "lib" and man and lib_em and
+                       timedelta(0) <= agora - datetime.fromisoformat(lib_em) <= timedelta(hours=2))
+        if status == "nc" or not (auto or man) or (status == "lib" and not lib_recente):
+            continue
+        linha = {"fil": fil, "req": req, "seq": seq, "cod": cod, "exame": (exame or "").strip(),
+                 "paciente": (paciente or "").strip(), "setor": (setor or "").strip() or "Sem setor",
+                 "status": status, "entrada": entrada, "prazo": prazo, "prazoHora": _hora_db2(hr_promessa),
+                 "manual": not auto, "doApoio": _dbnum(strcod) == SETOR_APOIO}
+        if status == "lib":
+            linha["liberadoEm"] = lib_em
+            linha["atrasado"], linha["horasRestantes"] = None, None
+        elif prazo:
+            prazo_dt = datetime.fromisoformat(prazo + "T" + (linha["prazoHora"] or "23:59") + ":00")
+            linha["atrasado"] = agora > prazo_dt
+            linha["horasRestantes"] = round((prazo_dt - agora).total_seconds() / 3600, 1)
+        else:
+            linha["atrasado"], linha["horasRestantes"] = None, None
+        linhas.append(linha)
+    # "andamento": tem exame na lista | "coleta": só falta coletar | "liberado": tudo liberado
+    # (o painel tira sozinho) | "nada": não achou no CONCENT (ainda não lido, ou número/código errado)
+    if "apoio" in arqs:
+        for r in acomp["reqs"]:
+            st = [x for x, _ in sit.get((r["req"], r["cod"]), [])]
+            r["estado"] = ("nada" if not st else "liberado" if all(x == "lib" for x in st)
+                           else "andamento" if any(x not in ("lib", "nc") for x in st) else "coleta")
+            if r["estado"] == "liberado":   # quando foi liberado o último (o painel tira 1h depois)
+                r["liberadoEm"] = max((t for _, t in sit[(r["req"], r["cod"])] if t), default=None)
+    linhas.sort(key=lambda l: (l["prazo"] or "9999", l["req"], l["seq"] or 0))
+    return {"coletado": "apoio" in arqs, "rows": linhas, "promessas": acomp["promessas"],
+            "reqs": acomp["reqs"], "prazoMinDias": PRAZO_APOIO_DIAS}
 
 
 def carregar_area_tecnica():
@@ -1314,7 +1429,10 @@ def carregar_area_tecnica():
         pendentes.append(linha)
 
     pendentes.sort(key=lambda r: (r["horasRestantes"] is None, r["horasRestantes"] if r["horasRestantes"] is not None else 0))
+
+    apoio = carregar_acompanhamento_apoio(arqs, obrig, digit, agora)
     return {
+        "apoio": apoio,
         "rows": pendentes,
         "aguardandoColeta": aguardando,
         "arquivos": [{"papel": NOME_PAPEL_AT[k], "nome": arqs[k].name} for k in ARQ_AREA_TEC if k in arqs],
@@ -2445,9 +2563,9 @@ def carregar_precos_convenio(apoio):
 
 
 def recortar_tela_tecnica(dados):
-    """Só o necessário para a tela Exames em andamento: área técnica e nomes das filiais.
-    Faturamento, financeiro, médicos, convênios etc. ficam de fora; as estruturas que o painel
-    monta ao abrir vão vazias."""
+    """Só o necessário para a tela Exames em andamento: área técnica (sem edição do apoio) e
+    nomes das filiais. Faturamento, financeiro, médicos, convênios etc. ficam de fora; as
+    estruturas que o painel monta ao abrir vão vazias."""
     at = dict(dados["areaTecnica"])
     at.pop("arquivos", None)
     meta = {k: dados["meta"][k] for k in ("geradoEm", "dataMin", "dataMax") if k in dados["meta"]}
@@ -2518,6 +2636,10 @@ def main():
     if dados["filiais"]:
         print(f"Filiais: {len(dados['filiais'])} cadastradas em data/filiais.")
     lab_linha = LAB_LINHA
+    senha_pagina = os.environ.get("DASHBOARD_SENHA_PAGINA", "").strip() or SENHA
+    # o painel só consegue gravar o acompanhamento do apoio (criptografado no navegador com a
+    # senha da página) se ela for a mesma dos arquivos - na demo nunca
+    dados["meta"]["editaApoio"] = bool(SENHA) and senha_pagina == SENHA and not DEMO
     if DEMO:
         import demo_disfarce
         dados = demo_disfarce.disfarcar(dados)
@@ -2528,7 +2650,6 @@ def main():
     if "/*__DATA__*/null" not in html:
         sys.exit("ERRO: o template.html não tem o marcador /*__DATA__*/null")
     # a senha da PÁGINA pode ser diferente da dos arquivos (a demo usa uma senha simples)
-    senha_pagina = os.environ.get("DASHBOARD_SENHA_PAGINA", "").strip() or SENHA
     if senha_pagina:
         from cripto_arquivos import criptografar_para_pagina
         payload = json.dumps(criptografar_para_pagina(payload, senha_pagina), separators=(",", ":"))

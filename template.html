@@ -480,6 +480,18 @@ body.oculto #view .kpi .v{filter:blur(10px)}
 #btnOcultar .ti{vertical-align:-3px;margin:0}#btnOcultar[aria-pressed="true"]{background:var(--c-fat);color:#fff;border-color:var(--c-fat)}
 .demo-bar{background:#fff7ed;border:1px solid #fdba74;color:#9a3412;border-radius:10px;padding:7px 14px;font-weight:700;font-size:14px;text-align:center;margin:0 0 14px}
 .pill.pill-ent{background:#e3eefc;color:#1f4fa3}.pill.pill-fil{background:#efe7fb;color:#5b2bab}
+.pill.pill-apo{background:#e6f4ea;color:#1e7a3f}.pill.pill-lib{background:#1e7a3f;color:#fff}.pill.pill-obs{background:#fff4d6;color:#7a5a00;font-weight:600;white-space:normal}.pill.pill-apo-ruim{background:#fde7d9;color:#a4410e}
+.apo-li{margin-bottom:6px}.apo-dir{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;margin-left:22px;vertical-align:middle}
+.apo-ed{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink);background:#f1f7f3;border:1px solid #cfe5d6;border-radius:9px;padding:3px 8px}
+.apo-ed input,.apo-edl input[type=text],.apo-bar input,.apo-caixa input{font:inherit;font-size:14px;border:1px solid #cfdaee;border-radius:8px;padding:5px 8px;background:#fff}
+.apo-edl .btn{height:32px}.apo-edl{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 2px}.apo-edl input[type=text]{width:220px}
+.apo-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px;font-size:14px;font-weight:600}
+#apoNovoCod::placeholder{text-transform:none}.apo-lista{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.apo-card{padding:12px 18px;border-bottom:1px solid var(--line);border-left:4px solid transparent}.apo-card:last-child{border-bottom:0}
+.apo-card.atraso{border-left-color:#b3261e}.apo-card.aviso{border-left-color:#f59e0b}.apo-card:has(.apo-exames){background:#fbfcfe}
+.apo-exames{margin:10px 0 2px 24px;padding:10px 14px 6px 34px;background:#f3f6fb;border:1px solid #e3e9f3;border-radius:10px}
+.apo-cab{cursor:pointer;user-select:none}.apo-cab:hover b{color:var(--blue)}.apo-seta{width:16px;height:16px;margin-right:8px;vertical-align:-2px;fill:none;stroke:#64748b;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s}.apo-seta.aberta{transform:rotate(90deg)}.btn.apo-ico{height:26px;width:26px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#94a3b8;border-color:#e2e8f0;vertical-align:middle}.btn.apo-ico:hover{color:var(--blue);border-color:#cfdaee}.btn.apo-ico.apoTirar:hover{color:#b3261e;border-color:#f3c4c4}.btn.apo-ico .ti{margin:0;width:15px;height:15px}.apo-caixa{margin:0 0 10px;border-left:4px solid var(--blue)}
+.apo-msg{background:#e6f4ea;color:#1e7a3f;border-radius:9px;padding:7px 12px;font-size:14px;font-weight:600;margin:0 0 10px}.apo-msg.erro{background:#fde7e7;color:#b3261e}
 </style>
 </head>
 <body>
@@ -541,6 +553,7 @@ if(!RAW){document.body.innerHTML='<p style="padding:32px;font-family:sans-serif"
 // armazenamento do navegador: cada um guarda a senha "lembrada" numa chave própria, senão
 // abrir a demo apagava a senha lembrada do painel real (e vice-versa).
 const CHAVE_SENHA='cockpit_senha'+(/\/demo\/?/.test(location.pathname)?'_demo':/\/tecnica\/?/.test(location.pathname)?'_tecnica':'');
+let SENHA_PAINEL='';   // guardada só em memória: o acompanhamento do apoio é criptografado com ela ao gravar
 if(RAW.enc)abrirComSenha(RAW);else start(RAW);
 
 /* ---------- painel protegido por senha (dados criptografados: AES-256-GCM + PBKDF2) ---------- */
@@ -565,6 +578,7 @@ function abrirComSenha(RAW){
     try{
       const D=await abrir(senha);
       try{if(lembrar)localStorage.setItem(CHAVE_SENHA,senha);else localStorage.removeItem(CHAVE_SENHA);}catch(e){}
+      SENHA_PAINEL=senha;
       g.remove();document.body.classList.remove('locked');start(D);
     }catch(e){
       try{localStorage.removeItem(CHAVE_SENHA);}catch(x){}
@@ -2620,8 +2634,247 @@ function viewAreaTecnica(){
     <label class="fld">Até<input type="date" id="atAte" style="font:inherit;font-size:15px;border:1px solid #cfdaee;border-radius:9px;padding:8px 10px;height:40px;background:#fff"></label>
     <div class="fld" style="flex:1 1 220px">Exame<div id="atExameSel"></div></div></div>
     <div class="apbar" id="atStatusFld" style="margin-top:8px;justify-content:center">${Object.entries(AT_STATUS).filter(([k])=>k!=='c').map(([k,t])=>`<label style="display:inline-flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:var(--ink)"><input type="checkbox" class="atSts" data-k="${k}" ${S.at.sts[k]?'checked':''} style="width:17px;height:17px"> ${t}</label>`).join('')}</div>
-<div id="atRes"></div>`;
+<div id="atRes"></div><div id="atApoio">${atApoioHTML()}</div>`;
   return h;
+}
+/* ---------- acompanhamento do laboratório de apoio ----------
+   Lista à parte (não entra em nenhum número nem filtro de cima): exames do setor Laboratório
+   Apoio com prazo do CONCENT acima de 10 dias + exames das requisições que alguém mandou
+   acompanhar. Só sai daqui quando o exame é liberado no CONCENT; não coletados não entram.
+   A promessa do apoio é digitada aqui mesmo e gravada no repositório (arquivo criptografado
+   no navegador, mesmo formato do cripto_arquivos.py) pela API do GitHub, com uma chave de
+   acesso guardada só neste computador. */
+const APO_ICO_EDITAR='<svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4zM13.5 6.5l4 4"/></svg>';
+const APO_ICO_EXCLUIR='<svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
+const APO_ARQ='data/area_tecnica/acompanhamento_apoio.json.enc',APO_TOKEN='cockpit_gh_token';
+const APO={caixa:false,msg:'',erro:false,ocupado:false,abertos:new Set(),reqAbertas:new Set()};
+const apoDados=()=>{const a=(D.areaTecnica&&D.areaTecnica.apoio)||{};a.rows=a.rows||[];a.promessas=a.promessas||{};a.reqs=a.reqs||[];return a;};
+const apoKeyEx=e=>`${e.fil}|${e.req}|${e.seq}|${e.cod}`;
+function apoToken(){try{return localStorage.getItem(APO_TOKEN)||'';}catch(e){return '';}}
+const apoEditando=()=>!!(D.meta.editaApoio&&apoToken());
+function apoRepo(){
+  if(D.meta.repo)return D.meta.repo;
+  const m=location.hostname.match(/^([^.]+)\.github\.io$/),seg=location.pathname.split('/').filter(Boolean)[0];
+  return m&&seg?m[1]+'/'+seg:'';
+}
+function atApoioHTML(){
+  const AP=apoDados(),edit=apoEditando();
+  const reqInteira=new Set(AP.reqs.filter(r=>!r.cod).map(r=>r.req));
+  const reqExame=new Set(AP.reqs.filter(r=>r.cod).map(r=>r.req+'|'+r.cod));
+  const acompanhado=e=>reqInteira.has(e.req)||reqExame.has(e.req+'|'+String(e.cod).toUpperCase());
+  // acompanhamento tirado some na hora (sem esperar a próxima leitura do CONCENT); exame
+  // acompanhado à mão que foi liberado fica 1h com a pílula "Liberado" e depois some
+  const rows=AP.rows.filter(e=>(!e.manual||acompanhado(e))&&(e.status!=='lib'||apoLibRecente(e.liberadoEm)));
+  const grupos=new Map();
+  rows.forEach(e=>{const k=e.fil+'|'+e.req;let g=grupos.get(k);if(!g){g={fil:e.fil,req:e.req,paciente:e.paciente,exames:[]};grupos.set(k,g);}g.exames.push(e);});
+  const lista=[...grupos.values()].map(g=>(g.min=g.exames.reduce((m,e)=>e.prazo&&e.prazo<m?e.prazo:m,'9999'),g)).sort((a,b)=>a.min<b.min?-1:a.min>b.min?1:a.req-b.req);
+  // acompanhamentos sem exame na lista agora (os já liberados somem sozinhos)
+  const semExame=AP.reqs.filter(r=>!(r.estado==='liberado'&&!apoLibRecente(r.liberadoEm))&&!rows.some(e=>e.req===r.req&&(!r.cod||String(e.cod).toUpperCase()===r.cod)));
+  const mut='color:#94a3b8;font-size:11.5px';
+  const linha=e=>{
+    const k=apoKeyEx(e),pr=AP.promessas[k];
+    if(e.status==='lib')return `<li class="apo-li"><span style="white-space:nowrap"><code>${esc(e.cod)}</code></span> <span>— ${esc(e.exame)}</span><span class="apo-dir"><span class="pill pill-lib" title="Some daqui 1 hora depois da liberação">Liberado${e.liberadoEm?' '+atBR(e.liberadoEm.slice(0,10)).slice(0,5)+' às '+e.liberadoEm.slice(11,16):''}</span></span></li>`;
+    const pill=atPillInfo(e);
+    let h=`<span style="white-space:nowrap"><code>${esc(e.cod)}</code> <span style="${mut}">(${esc(AT_STATUS[e.status]||e.status)})</span></span> <span>— ${esc(e.exame)}</span>`;
+    const cu=String(e.cod).toUpperCase();
+    if(e.manual&&reqExame.has(e.req+'|'+cu))h+=`${edit?`<button class="btn apo-ico apoTirar" data-req="${e.req}" data-cod="${esc(cu)}" title="Excluir" aria-label="Excluir" style="margin-left:6px" ${APO.ocupado?'disabled':''}>${APO_ICO_EXCLUIR}</button>`:''}`;
+    h+=`<span class="apo-dir">${e.prazo?`<span class="pill" title="Prazo no CONCENT">${atBR(e.prazo)}</span>`:`<span style="${mut}">sem prazo</span>`}${pill?`<span class="pill ${pill.cls}">${esc(pill.txt)}</span>`:''}`;
+    // promessa do apoio só existe pra exame do setor Laboratório de Apoio
+    const doApoio=e.doApoio!=null?e.doApoio:normTxt(e.setor).includes('apoio');
+    const abrir=edit&&doApoio&&(!pr||APO.abertos.has(k));
+    if(pr&&pr.p&&!abrir){
+      const depois=e.prazo&&pr.p>e.prazo;
+      h+=`<span class="pill ${depois?'pill-apo-ruim':'pill-apo'}" title="${depois?'O apoio promete entregar depois do nosso prazo no CONCENT':'Promessa de entrega no sistema do laboratório de apoio'}">Data apoio: ${atBR(pr.p)}</span>`;
+    }else if(!abrir&&doApoio)h+=`<span style="${mut}">sem promessa do apoio</span>`;
+    if(pr&&pr.o&&!abrir)h+=`<span class="pill pill-obs" title="Observação">${esc(pr.o)}</span>`;
+    if(edit&&pr&&doApoio&&!abrir)h+=`<button class="btn apo-ico apoEditar" data-k="${esc(k)}" title="Editar" aria-label="Editar" ${APO.ocupado?'disabled':''}>${APO_ICO_EDITAR}</button>`;
+    if(abrir){
+      h+=`</span><div class="apo-edl"><label class="apo-ed">Promessa do apoio <input type="date" class="apoP" data-k="${esc(k)}" value="${esc(pr&&pr.p||'')}"></label><input type="text" class="apoO" data-k="${esc(k)}" maxlength="200" placeholder="observação (opcional)" value="${esc(pr&&pr.o||'')}"><button class="btn apoSalvar" data-k="${esc(k)}" ${APO.ocupado?'disabled':''}>Salvar</button>${pr?`<button class="btn apoCancelar" data-k="${esc(k)}" style="color:var(--muted)">Cancelar</button>`:''}</div><span>`;
+    }
+    return `<li class="apo-li">${h}</span></li>`;
+  };
+  const tirar=(req,cod)=>edit?`<button class="btn apo-ico apoTirar" data-req="${req}" data-cod="${esc(cod||'')}" title="Excluir" aria-label="Excluir" style="margin-left:8px" ${APO.ocupado?'disabled':''}>${APO_ICO_EXCLUIR}</button>`:'';
+  const cards=lista.map(g=>{
+    const manual=reqInteira.has(g.req)&&g.exames.some(e=>e.manual),atraso=g.exames.some(e=>e.atrasado);
+    const gk=g.fil+'|'+g.req,aberto=APO.reqAbertas.has(gk);
+    // resumo da requisição fechada: exames, o prazo mais apertado e a situação da data do apoio
+    const exApoio=g.exames.filter(e=>e.doApoio!=null?e.doApoio:normTxt(e.setor).includes('apoio'));
+    const proms=exApoio.map(e=>AP.promessas[apoKeyEx(e)]).filter(p=>p&&p.p);
+    const faltam=exApoio.length-proms.length;
+    let res='';
+    if(exApoio.length&&!faltam){
+      const ult=proms.map(p=>p.p).sort().pop(),depois=exApoio.some(e=>{const p=AP.promessas[apoKeyEx(e)];return e.prazo&&p.p>e.prazo;});
+      res+=`<span class="pill ${depois?'pill-apo-ruim':'pill-apo'}" style="margin-left:8px">Data apoio: ${atBR(ult)}</span>`;
+    }else if(faltam)res+=`<span style="margin-left:10px;${mut}">${faltam===exApoio.length?'sem data do apoio':faltam+' sem data do apoio'}</span>`;
+    const nLib=g.exames.filter(e=>e.status==='lib').length;
+    if(nLib)res=(nLib===g.exames.length?'':res)+`<span class="pill pill-lib" style="margin-left:8px">${nLib===g.exames.length?'Liberado':nLib+' liberado'+(nLib>1?'s':'')}</span>`;
+    return `<div class="apo-card${atraso?' atraso':''}">
+      <div class="apo-cab" data-g="${esc(gk)}" role="button" tabindex="0" aria-expanded="${aberto}"><svg class="apo-seta${aberto?' aberta':''}" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><b style="font-size:15px">${esc(g.paciente)}</b><span style="margin-left:22px;font-size:15px"><b>Requisição <code style="font-size:15px">${esc(g.req)}</code></b></span>${atReqInfo(g)}${aberto?'':res}${manual?tirar(g.req,''):''}</div>
+      ${aberto?`<ol class="apo-exames">${g.exames.map(linha).join('')}</ol>`:''}</div>`;}).join('')
+    +semExame.map(r=>{
+      const txt=r.estado==='coleta'?(r.cod?'Este exame ainda não foi coletado. Aparece aqui assim que for coletado.':'Os exames desta requisição ainda não foram coletados. Aparecem aqui assim que forem coletados.')
+        :r.estado==='nada'?(r.cod?'Não achei este exame nesta requisição no CONCENT. Confira o número e o código.':'Não achei esta requisição no CONCENT. Confira o número.')
+        :r.estado==='andamento'?'':'Acabou de ser adicionado: aparece na próxima leitura do CONCENT (até uns 20 minutos).';
+      return `<div class="apo-card${r.estado==='nada'?' aviso':''}" style="padding-left:40px"><b style="font-size:15px">Requisição <code style="font-size:15px">${esc(r.req)}</code>${r.cod?` · exame <code style="font-size:15px">${esc(r.cod)}</code>`:''}</b>${tirar(r.req,r.cod)}
+      <div class="hint" style="margin:6px 0 0">${txt}</div></div>`;}).join('');
+  const nEx=rows.length;
+  let barra='';
+  if(D.meta.editaApoio){
+    if(edit){
+      barra=`<div class="apo-bar"><label>Acompanhar requisição: <input type="text" inputmode="numeric" id="apoNovaReq" placeholder="nº da requisição" style="width:150px"></label><label>exame: <input type="text" id="apoNovoCod" placeholder="código (vazio = todos)" style="width:190px;text-transform:uppercase"></label><button class="btn" id="apoAddReq" ${APO.ocupado?'disabled':''}>+ Acompanhar</button>
+        <span style="flex:1"></span><span class="hint" style="margin:0">Edição ativada neste computador · <a href="#" id="apoSair">desativar</a></span></div>`;
+    }else{
+      barra=`<div class="apo-bar"><button class="btn" id="apoAtivar">${APO_ICO_EDITAR}Preencher promessas / acompanhar requisições</button></div>`;
+      if(APO.caixa)barra+=`<div class="card apo-caixa"><b>Ativar a edição neste computador</b> <span class="hint">(faz uma vez só)</span>
+        <p style="margin:8px 0">Para gravar daqui o painel precisa de uma <b>chave de acesso do GitHub</b>. Ela fica guardada só neste computador.</p>
+        <details><summary style="cursor:pointer;color:var(--blue);font-weight:600">Como criar a chave</summary><ol style="margin:6px 0 8px;line-height:1.6">
+          <li>Entre no GitHub com a sua conta e abra <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a></li>
+          <li><b>Token name</b>: painel apoio · <b>Expiration</b>: 1 ano (ou o que preferir)</li>
+          <li><b>Repository access</b>: <i>Only select repositories</i> → escolha <b>${esc(apoRepo().split('/')[1]||'o repositório do painel')}</b></li>
+          <li><b>Permissions</b> → <b>Contents</b>: <i>Read and write</i> (só essa)</li>
+          <li>Clique em <b>Generate token</b>, copie e cole aqui embaixo.</li></ol></details>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><input type="password" id="apoTok" placeholder="cole a chave aqui (github_pat_...)" style="flex:1 1 280px"><button class="btn" id="apoTokOk">Ativar</button></div></div>`;
+    }
+  }
+  const todasAbertas=lista.length&&lista.every(g=>APO.reqAbertas.has(g.fil+'|'+g.req));
+  const tog=lista.length?`<div style="text-align:right;margin:-4px 0 6px"><a href="#" id="apoTodos" class="lnk" style="font-size:13px;font-weight:600">${todasAbertas?'Fechar todos':'Abrir todos'}</a></div>`:'';
+  const msg=APO.msg?`<div class="apo-msg ${APO.erro?'erro':''}" role="status">${esc(APO.msg)}</div>`:'';
+  return `<details class="ap-atencao at-apoio" open><summary><h2 style="display:inline">Laboratório de apoio · prazo acima de ${AP.prazoMinDias||10} dias</h2> <span class="sub">${fNum.format(lista.length)} requisições · ${fNum.format(nEx)} exames · fora dos números e filtros de cima</span></summary>
+    <p class="hint" style="margin:6px 0 10px">Exames do apoio com prazo no CONCENT maior que ${AP.prazoMinDias||10} dias, mais as requisições acompanhadas à mão. Cada exame só sai daqui quando for <b>liberado</b> no CONCENT. Não coletados não aparecem.</p>
+    ${barra}${msg}${tog}
+    ${AP.coletado===false&&!semExame.length?'<div class="empty">Ainda não chegou a primeira leitura do apoio (o coletor da VM precisa da versão nova).</div>':(cards?`<div class="apo-lista">${cards}</div>`:'<div class="empty">Nenhum exame do apoio com prazo acima de 10 dias agora.</div>')}</details>`;
+}
+// liberado há menos de 1 hora (horário do CONCENT, o mesmo do computador do laboratório)
+function apoLibRecente(iso){
+  if(!iso)return false;
+  const t=new Date(iso).getTime();
+  return !isNaN(t)&&Date.now()-t<36e5;
+}
+// com exame "Liberado" na tela, redesenha a cada 5 min para ele sumir na hora certa mesmo
+// com a página aberta sem mexer
+let apoTimer=null;
+function apoRelogio(){
+  clearInterval(apoTimer);apoTimer=null;
+  if(apoDados().rows.some(e=>e.status==='lib'&&apoLibRecente(e.liberadoEm)))
+    apoTimer=setInterval(()=>{if(!APO.ocupado&&!APO.abertos.size&&!document.activeElement?.closest?.('#atApoio'))apoRender();},3e5);
+}
+function apoRender(){const el=$('#atApoio');if(!el)return;el.innerHTML=atApoioHTML();apoBind();}
+function apoAviso(t,erro){APO.msg=t;APO.erro=!!erro;}
+/* --- criptografia: igual ao cripto_arquivos.criptografar_arquivo (CLP1 + nonce + AES-GCM) --- */
+let apoChave=null;
+async function apoKey(){
+  if(!apoChave){
+    const te=new TextEncoder(),km=await crypto.subtle.importKey('raw',te.encode(SENHA_PAINEL),'PBKDF2',false,['deriveKey']);
+    apoChave=await crypto.subtle.deriveKey({name:'PBKDF2',salt:te.encode('cockpit-laboratorio/arquivos/v1'),iterations:600000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  }
+  return apoChave;
+}
+const apoB64=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s);};
+const apoDeB64=t=>Uint8Array.from(atob(t.replace(/\s/g,'')),c=>c.charCodeAt(0));
+async function apoCifrar(obj){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const c=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await apoKey(),new TextEncoder().encode(JSON.stringify(obj))));
+  const out=new Uint8Array(16+c.length);out.set([67,76,80,49]);out.set(iv,4);out.set(c,16);return out;
+}
+async function apoAbrir(b){
+  if(b.length<32||b[0]!==67||b[1]!==76||b[2]!==80||b[3]!==49)throw new Error('o arquivo do acompanhamento no GitHub não está no formato esperado');
+  try{return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b.slice(4,16)},await apoKey(),b.slice(16))));}
+  catch(e){throw new Error('não consegui abrir o arquivo do acompanhamento com a senha do painel');}
+}
+function apoErroHttp(st){
+  if(st===401)return 'a chave de acesso do GitHub não vale mais (venceu ou foi apagada). Clique em "desativar" e ative de novo com uma chave nova.';
+  if(st===403||st===404)return 'a chave de acesso não tem permissão de gravar neste repositório (precisa de Contents: Read and write).';
+  return 'o GitHub respondeu com erro '+st+'. Tente de novo daqui a pouco.';
+}
+/* lê a versão mais nova do GitHub, aplica a mudança e grava (se outro computador gravou no meio, tenta de novo) */
+async function apoGravar(mudar,mensagem){
+  const repo=apoRepo(),tok=apoToken();
+  if(!repo)throw new Error('não sei qual é o repositório do painel');
+  const url=`https://api.github.com/repos/${repo}/contents/${APO_ARQ}`;
+  const hd={Authorization:'Bearer '+tok,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+  for(let tent=0;tent<3;tent++){
+    const r=await fetch(url+'?t='+Date.now(),{headers:hd,cache:'no-store'});
+    let obj={v:1,promessas:{},reqs:[]},sha;
+    if(r.ok){const j=await r.json();sha=j.sha;obj=await apoAbrir(apoDeB64(j.content||''));}
+    else if(r.status!==404)throw new Error(apoErroHttp(r.status));
+    obj.v=1;obj.promessas=obj.promessas||{};obj.reqs=obj.reqs||[];
+    const lib=new Set(apoDados().reqs.filter(r=>r.estado==='liberado'&&!apoLibRecente(r.liberadoEm)).map(r=>r.req+'|'+(r.cod||'')));
+    obj.reqs=obj.reqs.filter(r=>!lib.has(r.req+'|'+String(r.cod||'').toUpperCase()));
+    mudar(obj);
+    const body={message:mensagem,content:apoB64(await apoCifrar(obj))};if(sha)body.sha=sha;
+    const w=await fetch(url,{method:'PUT',headers:{...hd,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(w.ok)return obj;
+    if(w.status!==409&&w.status!==422)throw new Error(apoErroHttp(w.status));
+  }
+  throw new Error('outra pessoa estava gravando ao mesmo tempo. Tente de novo.');
+}
+async function apoExecutar(mudar,mensagem,ok,depois){
+  if(APO.ocupado)return;
+  APO.ocupado=true;apoAviso('Salvando...');apoRender();
+  try{
+    const obj=await apoGravar(mudar,mensagem);
+    const AP=apoDados(),est=new Map(AP.reqs.map(r=>[r.req+'|'+(r.cod||''),r]));
+    AP.promessas=obj.promessas;AP.reqs=obj.reqs.map(r=>{const c=String(r.cod||'').toUpperCase(),a=est.get(r.req+'|'+c)||{};return {...r,cod:c,estado:a.estado,liberadoEm:a.liberadoEm};});
+    D.areaTecnica.apoio=AP;
+    if(depois)depois();
+    apoAviso(ok+' Os outros computadores veem em uns 5 minutos (quando o painel atualizar).');
+  }catch(e){apoAviso('Não salvou: '+(e&&e.message||e),true);}
+  APO.ocupado=false;apoRender();
+}
+function apoBind(){
+  const el=$('#atApoio');if(!el)return;
+  apoRelogio();
+  $$('.apo-cab',el).forEach(c=>{
+    const tg=()=>{const k=c.dataset.g;if(APO.reqAbertas.has(k))APO.reqAbertas.delete(k);else APO.reqAbertas.add(k);apoRender();};
+    c.onclick=ev=>{if(ev.target.closest('button,a,input'))return;tg();};
+    c.onkeydown=ev=>{if((ev.key==='Enter'||ev.key===' ')&&ev.target===c){ev.preventDefault();tg();}};
+  });
+  const todos=$('#apoTodos',el);
+  if(todos)todos.onclick=ev=>{ev.preventDefault();const ks=$$('.apo-cab',el).map(c=>c.dataset.g);
+    if(ks.every(k=>APO.reqAbertas.has(k)))ks.forEach(k=>APO.reqAbertas.delete(k));else ks.forEach(k=>APO.reqAbertas.add(k));apoRender();};
+  const at=$('#apoAtivar',el);if(at)at.onclick=()=>{APO.caixa=!APO.caixa;apoRender();};
+  const ok=$('#apoTokOk',el);
+  if(ok)ok.onclick=async()=>{
+    const t=($('#apoTok',el).value||'').trim();if(!t)return;
+    ok.disabled=true;ok.textContent='Verificando...';
+    let st=0;try{st=(await fetch(`https://api.github.com/repos/${apoRepo()}`,{headers:{Authorization:'Bearer '+t}})).status;}catch(e){}
+    if(st!==200){APO.caixa=true;apoAviso(st===401?'Essa chave não foi aceita pelo GitHub. Confira se copiou inteira.':'Não consegui conferir a chave agora (sem internet?). Tente de novo.',true);apoRender();return;}
+    try{localStorage.setItem(APO_TOKEN,t);}catch(e){}
+    APO.caixa=false;apoAviso('Edição ativada neste computador.');apoRender();
+  };
+  const sair=$('#apoSair',el);if(sair)sair.onclick=ev=>{ev.preventDefault();if(!confirm('Desativar a edição neste computador? (a chave é apagada daqui)'))return;try{localStorage.removeItem(APO_TOKEN);}catch(e){}apoAviso('');apoRender();};
+  $$('.apoEditar',el).forEach(b=>b.onclick=()=>{APO.abertos.add(b.dataset.k);apoAviso('');apoRender();const i=$(`.apoP[data-k="${CSS.escape(b.dataset.k)}"]`,el);if(i)i.focus();});
+  $$('.apoCancelar',el).forEach(b=>b.onclick=()=>{APO.abertos.delete(b.dataset.k);apoRender();});
+  $$('.apoSalvar',el).forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k,p=$(`.apoP[data-k="${CSS.escape(k)}"]`,el).value,o=$(`.apoO[data-k="${CSS.escape(k)}"]`,el).value.trim().slice(0,200);
+    const req=k.split('|')[1];
+    if(!p&&!o&&!apoDados().promessas[k]){apoAviso('Preencha a data da promessa do apoio (ou uma observação) antes de salvar.',true);apoRender();return;}
+    apoExecutar(obj=>{if(p||o)obj.promessas[k]={p,o,em:new Date().toISOString()};else delete obj.promessas[k];},
+      `Apoio: promessa da requisição ${req}`,p||o?'Promessa salva.':'Promessa apagada.',()=>APO.abertos.delete(k));
+  });
+  const add=$('#apoAddReq',el),inp=$('#apoNovaReq',el),inpC=$('#apoNovoCod',el);
+  if(add){
+    const fazer=()=>{
+      const n=parseInt((inp.value||'').replace(/\D/g,''),10),c=(inpC.value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+      const erro=t=>{apoAviso(t,true);apoRender();};
+      if(!n)return erro('Digite o número da requisição.');
+      const reqs=apoDados().reqs;
+      if(reqs.some(r=>r.req===n&&!r.cod))return erro(`A requisição ${n} inteira já está sendo acompanhada.`);
+      if(c&&reqs.some(r=>r.req===n&&r.cod===c))return erro(`O exame ${c} da requisição ${n} já está sendo acompanhado.`);
+      const nome=c?`o exame ${c} da requisição ${n}`:`a requisição ${n}`;
+      apoExecutar(obj=>{
+        if(!c)obj.reqs=obj.reqs.filter(r=>+r.req!==n);   // a requisição inteira já cobre os exames dela
+        if(!obj.reqs.some(r=>+r.req===n&&String(r.cod||'').toUpperCase()===c))obj.reqs.push({req:n,cod:c,em:new Date().toISOString()});
+      },`Apoio: acompanhar ${c?'exame '+c+' da ':''}requisição ${n}`,`Adicionado ${nome}; aparece na próxima leitura do CONCENT (até uns 20 minutos).`);
+    };
+    add.onclick=fazer;inp.onkeydown=inpC.onkeydown=ev=>{if(ev.key==='Enter')fazer();};
+  }
+  $$('.apoTirar',el).forEach(b=>b.onclick=()=>{
+    const n=+b.dataset.req,c=b.dataset.cod||'',nome=c?`o exame ${c} da requisição ${n}`:`a requisição ${n}`;
+    if(!confirm(`Excluir ${nome} do acompanhamento?`))return;
+    apoExecutar(obj=>{obj.reqs=obj.reqs.filter(r=>!(+r.req===n&&String(r.cod||'').toUpperCase()===c));},
+      `Apoio: parar de acompanhar ${c?'exame '+c+' da ':''}requisição ${n}`,`Pronto, ${nome} foi excluído do acompanhamento.`);
+  });
 }
 function bindAreaTecnica(){
   if(!D.areaTecnica)return;
@@ -2635,6 +2888,7 @@ function bindAreaTecnica(){
   $$('.atSts').forEach(cb=>cb.onchange=()=>{S.at.sts[cb.dataset.k]=cb.checked;S.at.pg=0;renderAreaTecnica();});
   multi($('#atExameSel'),{set:S.at.exa,all:'Todos os exames',onChange:()=>{S.at.pg=0;renderAreaTecnica();},items:atExamesDisponiveis()});
   renderAreaTecnica();
+  apoBind();
 }
 
 /* ---------- roteamento ---------- */
