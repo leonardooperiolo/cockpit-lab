@@ -81,6 +81,10 @@ SAIDA = Path(os.environ.get("DASHBOARD_SAIDA") or (RAIZ / "index.html"))
 # Identidade do painel (nome do laboratório) e versão de demonstração (ver demo_disfarce.py).
 DEMO = os.environ.get("DASHBOARD_DEMO", "").strip() in ("1", "true", "sim")
 LAB_LINHA = os.environ.get("DASHBOARD_LAB", "Celape · Centro Laboratorial Periolo").strip()
+# Página só da Área Técnica > Exames em andamento, com senha própria, para quem não pode ver o
+# resto do painel. Só os dados dessa tela vão pra ela (o resto nem entra no arquivo).
+SENHA_TECNICA = os.environ.get("DASHBOARD_SENHA_TECNICA", "").strip()
+SAIDA_TECNICA = Path(os.environ.get("DASHBOARD_SAIDA_TECNICA") or (RAIZ / "_site" / "tecnica" / "index.html"))
 
 COLUNAS = [
     "Convênio", "Nome Convênio", "Entrada", "Código Requisição", "Setor",
@@ -2329,6 +2333,23 @@ def carregar_precos_convenio(apoio):
     }
 
 
+def recortar_tela_tecnica(dados):
+    """Só o necessário para a tela Exames em andamento: área técnica e nomes das filiais.
+    Faturamento, financeiro, médicos, convênios etc. ficam de fora; as estruturas que o painel
+    monta ao abrir vão vazias."""
+    at = dict(dados["areaTecnica"])
+    at.pop("arquivos", None)
+    meta = {k: dados["meta"][k] for k in ("geradoEm", "dataMin", "dataMax") if k in dados["meta"]}
+    meta.update({"tela": "tecnica", "editaApoio": False})
+    return {
+        "meta": meta, "dias": dados["dias"], "meses": dados["meses"],
+        "unidades": [], "convenios": [], "medicos": [], "setores": [], "exames": [],
+        "A": {k: [] for k in dados["A"]}, "B": {k: [] for k in dados["B"]}, "AP": {k: [] for k in dados["AP"]},
+        "qualidade": None, "apoio": None, "precosConv": None, "tempoEntrega": None, "pacientes": None,
+        "reajustesDB": [], "financeiro": None, "areaTecnica": at, "filiais": dados.get("filiais"),
+    }
+
+
 def main():
     arquivos = achar_arquivos_dados()
     partes, resumo = [], []
@@ -2403,6 +2424,15 @@ def main():
         print("Painel protegido por senha (dados criptografados no index.html).")
     SAIDA.parent.mkdir(parents=True, exist_ok=True)
     SAIDA.write_text(html.replace("/*__DATA__*/null", payload), encoding="utf-8")
+    if SENHA_TECNICA and not DEMO and dados.get("areaTecnica"):
+        from cripto_arquivos import criptografar_para_pagina
+        if SENHA_TECNICA in (SENHA, senha_pagina):
+            sys.exit("ERRO: a senha da página da área técnica (DASHBOARD_SENHA_TECNICA) não pode ser igual à do painel.")
+        rec = json.dumps(recortar_tela_tecnica(dados), ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+        rec = json.dumps(criptografar_para_pagina(rec, SENHA_TECNICA), separators=(",", ":"))
+        SAIDA_TECNICA.parent.mkdir(parents=True, exist_ok=True)
+        SAIDA_TECNICA.write_text(html.replace("/*__DATA__*/null", rec), encoding="utf-8")
+        print(f"Página só da área técnica -> {SAIDA_TECNICA} ({SAIDA_TECNICA.stat().st_size/1e6:.1f} MB)")
     m = dados["meta"]
     print(f"OK -> {SAIDA.name} | {m['dataMin']} a {m['dataMax']} | "
           f"{len(dados['A']['d']):,} linhas de resumo | {SAIDA.stat().st_size/1e6:.1f} MB".replace(",", "."))

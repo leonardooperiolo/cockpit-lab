@@ -540,7 +540,7 @@ if(!RAW){document.body.innerHTML='<p style="padding:32px;font-family:sans-serif"
 // painel real e demo ficam no mesmo endereço (a demo em /demo/), então dividem o mesmo
 // armazenamento do navegador: cada um guarda a senha "lembrada" numa chave própria, senão
 // abrir a demo apagava a senha lembrada do painel real (e vice-versa).
-const CHAVE_SENHA='cockpit_senha'+(/\/demo\/?/.test(location.pathname)?'_demo':'');
+const CHAVE_SENHA='cockpit_senha'+(/\/demo\/?/.test(location.pathname)?'_demo':/\/tecnica\/?/.test(location.pathname)?'_tecnica':'');
 if(RAW.enc)abrirComSenha(RAW);else start(RAW);
 
 /* ---------- painel protegido por senha (dados criptografados: AES-256-GCM + PBKDF2) ---------- */
@@ -2648,8 +2648,16 @@ const GROUPS={geral:{tabs:['geral'],lbl:{geral:'Visão Diária'}},
   // tela técnica (conferência dos arquivos): fora do menu, abre pelo link "Configurações" no topo
   config:{tabs:['qualidade'],lbl:{qualidade:'Qualidade dos Dados'}},
   financeiro:{tabs:['finGeral','finPagar','finReceber','finDRE'],lbl:{finGeral:'Vencimentos',finPagar:'Contas a Pagar',finReceber:'Contas a Receber',finDRE:'Demonstrativos de Resultado'}}};
+// página de acesso restrito (só Exames em andamento): os dados das outras telas nem vêm no
+// arquivo; aqui só some o menu e qualquer caminho para outra tela
+const TELA=D.meta.tela||'';
+if(TELA==='tecnica'){
+  GROUPS.areaTecnica.tabs=['areaTecnica'];S.tab='areaTecnica';
+  $('#tabs').style.display='none';$$('.cfg-lnk').forEach(x=>x.remove());
+}
 const tabToGroup=Object.fromEntries(Object.entries(GROUPS).flatMap(([g,o])=>o.tabs.map(t=>[t,g])));
 function go(){
+  if(TELA==='tecnica')S.tab='areaTecnica';
   const curGroup=tabToGroup[S.tab]||'fat';
   $$('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.group===curGroup));
   const grp=GROUPS[curGroup];

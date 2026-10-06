@@ -37,9 +37,10 @@ jobs:
       - name: Instalar dependências
         run: pip install -r requirements.txt
 
-      - name: Gerar index.html
+      - name: Gerar index.html (e a página só da área técnica, se o segredo existir)
         env:
           DASHBOARD_SENHA: ${{ secrets.DASHBOARD_SENHA }}
+          DASHBOARD_SENHA_TECNICA: ${{ secrets.DASHBOARD_SENHA_TECNICA }}
         run: python gerar_dashboard.py
 
       - name: Gerar a versão de demonstração (nomes e valores fictícios)
@@ -56,6 +57,7 @@ jobs:
           cp index.html _site/index.html
           cp logo.png _site/logo.png 2>/dev/null || true
           cp demo/logo.png _site/demo/logo.png 2>/dev/null || true
+          if [ -f _site/tecnica/index.html ]; then cp logo.png _site/tecnica/logo.png 2>/dev/null || true; fi
 
       - uses: actions/upload-pages-artifact@v5
         with:
