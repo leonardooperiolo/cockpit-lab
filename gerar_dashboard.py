@@ -125,6 +125,33 @@ def _tronco(nome: str) -> str:
             return n
 
 
+# Faturamento por DIA de entrada: data/faturamento/dia_aaaammdd.csv.gz.enc, um arquivo por dia,
+# sempre com o dia INTEIRO (o coletor da VM reescreve só os dias que mudaram). Esses arquivos
+# mandam no dia: o que vier dos anuais/diários antigos para um dia que tem arquivo aqui é
+# descartado (assim um atendimento cancelado inteiro também sai). Arquivo só com cabeçalho =
+# dia sem nenhum exame (tudo cancelado).
+PASTA_FAT_DIAS = PASTA_DADOS / "faturamento"
+PRIO_DIA_PARTICAO = 10 ** 12
+
+
+def achar_dias_faturamento():
+    """[(caminho, prioridade, rótulo)] e o conjunto de dias (Timestamp) que esses arquivos cobrem."""
+    achados, dias = [], set()
+    if not PASTA_FAT_DIAS.is_dir():
+        return achados, dias
+    for p in sorted(PASTA_FAT_DIAS.iterdir()):
+        m = re.fullmatch(r"dia_(\d{4})(\d{2})(\d{2})", _tronco(p.name)) if p.is_file() else None
+        if not m:
+            continue
+        try:
+            d = datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            continue
+        achados.append((_abrir_enc(p), PRIO_DIA_PARTICAO + d.toordinal(), d.strftime("%d/%m/%Y")))
+        dias.add(pd.Timestamp(d))
+    return achados, dias
+
+
 def achar_arquivos_dados():
     """Devolve [(caminho, prioridade, rotulo)] em ordem crescente de prioridade.
     Nome = ano (2026) -> arquivo anual, prioridade 0.
@@ -1696,27 +1723,62 @@ def _juntar_hist_recente(hist: Path, recente: Path, idx_chave, idx_sit, ordem) -
     return destino
 
 
+def _aplicar_delta(base: Path, delta: Path) -> Path:
+    """Arquivo base + arquivo de diferenças do coletor (linhas '+...' entraram, '-...' saíram,
+    comparando a linha inteira, do jeito que veio do banco) -> arquivo completo de hoje."""
+    linhas = [l for l in _texto_arquivo(base).splitlines() if l.strip()]
+    sai, entra = defaultdict(int), []
+    for l in _texto_arquivo(delta).splitlines():
+        if l.startswith("-"):
+            sai[l[1:]] += 1
+        elif l.startswith("+"):
+            entra.append(l[1:])
+    saida = []
+    for l in linhas:
+        if sai.get(l):
+            sai[l] -= 1
+            continue
+        saida.append(l)
+    faltou = sum(sai.values())
+    if faltou:
+        print(f"AVISO: financeiro - {delta.name}: {faltou} linha(s) para tirar não estavam na base.")
+    saida.extend(entra)
+    pasta = Path(tempfile.mkdtemp(prefix="cockpit_delta_"))
+    atexit.register(shutil.rmtree, pasta, ignore_errors=True)
+    destino = pasta / (base.name.split(".")[0] + ".csv")
+    destino.write_text("\n".join(saida) + "\n", encoding="utf-8")
+    return destino
+
+
 def achar_arquivos_financeiro():
     achados = {}
     if not PASTA_FINANCEIRO.is_dir():
         return achados
-    partes = {}
+    # arquivo + "<arquivo>_delta": o coletor manda só as diferenças em relação ao arquivo base
+    todos = {}
     for p in sorted(PASTA_FINANCEIRO.iterdir()):
-        if not p.is_file() or p.name.startswith(".") or not p.name.lower().endswith((".xlsx", ".csv", ".gz", ".enc")):
+        if p.is_file() and not p.name.startswith(".") and p.name.lower().endswith((".xlsx", ".csv", ".gz", ".enc")):
+            todos[_sa(p.name).replace(" ", "_").split(".")[0]] = p
+    deltas = {b[:-6]: p for b, p in todos.items() if b.endswith("_delta")}
+    partes = {}
+    for base, p in todos.items():
+        if base.endswith("_delta"):
             continue
+        aberto = _abrir_enc(p)
+        if base in deltas:
+            aberto = _aplicar_delta(aberto, _abrir_enc(deltas[base]))
         nome = _sa(p.name).replace(" ", "_")
-        base = nome.split(".")[0]
         if base.endswith("_hist") or base.endswith("_recente"):
-            partes[base] = p
+            partes[base] = aberto
             continue
         for papel, inicios in ARQ_FINANCEIRO.items():
             if papel not in achados and nome.startswith(inicios):
-                achados[papel] = _abrir_enc(p)
+                achados[papel] = aberto
                 break
     for papel, (base, idx_chave, idx_sit, ordem) in FIN_PARTES.items():
         h, r = partes.get(base + "_hist"), partes.get(base + "_recente")
         if h and r:
-            achados[papel] = _juntar_hist_recente(_abrir_enc(h), _abrir_enc(r), idx_chave, idx_sit, ordem)
+            achados[papel] = _juntar_hist_recente(h, r, idx_chave, idx_sit, ordem)
         elif h or r:
             print(f"AVISO: financeiro - {base}: chegou só {'o histórico' if h else 'o recente'}; "
                   "usando o arquivo completo antigo, se existir.")
@@ -2079,6 +2141,10 @@ def carregar_financeiro(movimento_diario=None):
                 "dias": (hoje - d).days if d else None,
                 "valor": _preco(valor_n) or 0.0,
             })
+        # ordem fixa (não depende da ordem das linhas no arquivo - o coletor pode mandar só as
+        # diferenças, e aí as linhas novas chegam no fim)
+        _n = lambda v: int(v) if str(v).isdigit() else 0
+        linhas_ni.sort(key=lambda r: (r["faturado"] or "", _n(r["filial"]), _n(r["requisicao"]), _n(r["seq"]), r["exame"]))
         nao_integrados = _bloco_nao_integrados(linhas_ni)
 
     dre = _montar_dre(arqs, movimento_diario)
@@ -2302,17 +2368,25 @@ def _parse_movcxb_dre(arqs, mapa_dre, nao_classificados):
 def _resumo_dre(eventos):
     """Agrupa eventos em {mes: {conta_dre: {tipo, valor, lancamentos: [...]}}}, pronto
     pro painel abrir uma conta do DRE e ver os lançamentos que a compõem naquele mês."""
-    out = defaultdict(lambda: defaultdict(lambda: {"tipo": None, "valor": 0.0, "lancamentos": []}))
+    out = defaultdict(lambda: defaultdict(lambda: {"tipo": None, "valor": 0.0, "lancamentos": [],
+                                                             "_peso": {"R": 0.0, "D": 0.0}}))
     for e in eventos:
         bucket = out[e["mes"]][e["conta"]]
-        bucket["tipo"] = e["tipo"]
         bucket["valor"] = round(bucket["valor"] + e["valor"], 2)
+        # conta que recebe os dois tipos (ex.: "Diferença Cartão" = 103 recebidos a maior (R) +
+        # 712 ajuste (D)): antes valia o tipo da ÚLTIMA linha lida, então o sinal dependia da
+        # ordem das linhas no arquivo. Agora vale o lado com mais movimento - sempre o mesmo.
+        bucket["_peso"]["R" if e["tipo"] == "R" else "D"] += abs(e["valor"])
         bucket["lancamentos"].append({"titulo": e["titulo"], "fornecedor": e["fornecedor"],
                                        "valor": e["valor"], "historico": e["historico"],
                                        "filial": e["filial"]})
     for contas in out.values():
         for c in contas.values():
-            c["lancamentos"].sort(key=lambda l: -abs(l["valor"]))
+            peso = c.pop("_peso")
+            c["tipo"] = "R" if peso["R"] > peso["D"] else "D"   # conta de um tipo só: o tipo dela, como antes
+            # desempate fixo: a ordem não pode depender da ordem das linhas nos arquivos
+            c["lancamentos"].sort(key=lambda l: (-abs(l["valor"]), str(l.get("titulo") or ""), str(l.get("fornecedor") or ""),
+                                                 str(l.get("historico") or ""), str(l.get("filial") or ""), l["valor"]))
     return {mes: dict(contas) for mes, contas in out.items()}
 
 
@@ -2628,17 +2702,33 @@ def recortar_tela_tecnica(dados):
 
 def main():
     arquivos = achar_arquivos_dados()
+    fat_dias, dias_cobertos = achar_dias_faturamento()
+    if fat_dias:
+        print(f"Faturamento por dia: {len(fat_dias)} dia(s) em data/faturamento "
+              f"({min(dias_cobertos):%d/%m/%Y} a {max(dias_cobertos):%d/%m/%Y}) - valem no lugar dos outros arquivos nesses dias.")
     partes, resumo = [], []
-    for caminho, prio, rotulo in arquivos:
-        print(f"Lendo {caminho.name} ...")
-        d = preparar(carregar_planilha(caminho), caminho.name)
+    for caminho, prio, rotulo in arquivos + fat_dias:
+        bruto = carregar_planilha(caminho)
+        if prio >= PRIO_DIA_PARTICAO:
+            if bruto.empty:
+                continue   # dia sem exames: só serve para apagar o que os arquivos antigos tinham
+        else:
+            print(f"Lendo {caminho.name} ...")
+        d = preparar(bruto, caminho.name)
         d["prio"] = prio
+        if prio >= PRIO_DIA_PARTICAO:
+            partes.append(d)
+            continue
         print(f"  {len(d):,} linhas ({d['dia'].min():%d/%m/%Y} a {d['dia'].max():%d/%m/%Y})".replace(",", "."))
         resumo.append({"nome": caminho.name, "tipo": "dia" if prio else "ano", "linhas": int(len(d)),
                        "de": d["dia"].min().strftime("%Y-%m-%d"), "ate": d["dia"].max().strftime("%Y-%m-%d")})
         partes.append(d)
     df = pd.concat(partes, ignore_index=True)
     del partes
+    if dias_cobertos:
+        fora = df["dia"].isin(dias_cobertos) & (df["prio"] < PRIO_DIA_PARTICAO)
+        if fora.any():
+            df = df[~fora].copy()
     df, subst = resolver_sobreposicao(df)
     if subst:
         print(f"  {subst:,} linhas de arquivos mais antigos foram substituídas por versões mais novas".replace(",", "."))
