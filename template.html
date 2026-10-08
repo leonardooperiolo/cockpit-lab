@@ -2782,8 +2782,8 @@ async function apoKey(){
   }
   return apoChave;
 }
-const apoB64=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s);};
 const apoDeB64=t=>Uint8Array.from(atob(t.replace(/\s/g,'')),c=>c.charCodeAt(0));
+const apoB64=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s);};
 async function apoCifrar(obj){
   const iv=crypto.getRandomValues(new Uint8Array(12));
   const c=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await apoKey(),new TextEncoder().encode(JSON.stringify(obj))));
@@ -2808,7 +2808,15 @@ async function apoGravar(mudar,mensagem){
   for(let tent=0;tent<3;tent++){
     const r=await fetch(url+'?t='+Date.now(),{headers:hd,cache:'no-store'});
     let obj={v:1,promessas:{},reqs:[]},sha;
-    if(r.ok){const j=await r.json();sha=j.sha;obj=await apoAbrir(apoDeB64(j.content||''));}
+    if(r.ok){
+      sha=(await r.json()).sha;
+      /* os bytes vêm pela API de blobs (pelo sha): na API de conteúdo o GitHub tenta adivinhar a
+         codificação do arquivo e, quando os bytes criptografados parecem UTF-16, devolve o conteúdo
+         transcodificado - mesmo no formato "raw" (quebrou em 08/10/2026). O blob nunca é mexido. */
+      const rb=await fetch(`https://api.github.com/repos/${repo}/git/blobs/${sha}`,{headers:hd,cache:'no-store'});
+      if(!rb.ok)throw new Error(apoErroHttp(rb.status));
+      obj=await apoAbrir(apoDeB64((await rb.json()).content||''));
+    }
     else if(r.status!==404)throw new Error(apoErroHttp(r.status));
     obj.v=1;obj.promessas=obj.promessas||{};obj.reqs=obj.reqs||[];
     const lib=new Set(apoDados().reqs.filter(r=>r.estado==='liberado'&&!apoLibRecente(r.liberadoEm)).map(r=>r.req+'|'+(r.cod||'')));

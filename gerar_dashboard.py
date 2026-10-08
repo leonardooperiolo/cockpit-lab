@@ -1157,16 +1157,25 @@ def _dias_uteis(inicio, fim):
 
 
 def achar_arquivos_area_tecnica():
+    """{papel: caminho aberto}. Arquivo + "<arquivo>_delta": o coletor manda só as diferenças
+    em relação ao arquivo base (mesmo esquema do financeiro)."""
     achados = {}
     if not PASTA_AREA_TEC.is_dir():
         return achados
-    for p in sorted(PASTA_AREA_TEC.iterdir()):
-        if not p.is_file() or p.name.startswith(".") or not p.name.lower().endswith((".csv", ".gz", ".enc")):
+    arquivos = [p for p in sorted(PASTA_AREA_TEC.iterdir())
+                if p.is_file() and not p.name.startswith(".") and p.name.lower().endswith((".csv", ".gz", ".enc"))]
+    deltas = {p.name.split(".")[0][:-6]: p for p in arquivos if p.name.split(".")[0].endswith("_delta")}
+    for p in arquivos:
+        tronco = p.name.split(".")[0]
+        if tronco.endswith("_delta"):
             continue
         nome = _sa(p.name).replace(" ", "_")
         for papel, inicios in {**ARQ_AREA_TEC, **ARQ_AREA_TEC_OPC}.items():
             if papel not in achados and nome.startswith(inicios):
-                achados[papel] = _abrir_enc(p)
+                aberto = _abrir_enc(p)
+                if tronco in deltas:
+                    aberto = _aplicar_delta(aberto, _abrir_enc(deltas[tronco]), "área técnica")
+                achados[papel] = aberto
                 break
     return achados
 
@@ -1723,15 +1732,27 @@ def _juntar_hist_recente(hist: Path, recente: Path, idx_chave, idx_sit, ordem) -
     return destino
 
 
-def _aplicar_delta(base: Path, delta: Path) -> Path:
+def _bytes_arquivo(p: Path) -> bytes:
+    return gzip.open(p, "rb").read() if p.name.lower().endswith(".gz") else p.read_bytes()
+
+
+def _linhas_bytes(dados: bytes) -> list:
+    """Linhas sem o fim de linha (\r\n do Windows ou \n), ignorando as vazias - só isso, sem
+    decodificar; é exatamente como o coletor separa as linhas pra calcular o delta."""
+    return [l.rstrip(b"\r") for l in dados.split(b"\n") if l.strip()]
+
+
+def _aplicar_delta(base: Path, delta: Path, rotulo="financeiro") -> Path:
     """Arquivo base + arquivo de diferenças do coletor (linhas '+...' entraram, '-...' saíram,
-    comparando a linha inteira, do jeito que veio do banco) -> arquivo completo de hoje."""
-    linhas = [l for l in _texto_arquivo(base).splitlines() if l.strip()]
+    comparando a linha inteira, byte a byte, do jeito que veio do banco) -> arquivo completo de
+    hoje. Tudo em bytes, sem decodificar: o coletor compara assim também, então acento nunca
+    vira diferença falsa."""
+    linhas = _linhas_bytes(_bytes_arquivo(base))
     sai, entra = defaultdict(int), []
-    for l in _texto_arquivo(delta).splitlines():
-        if l.startswith("-"):
+    for l in _linhas_bytes(_bytes_arquivo(delta)):
+        if l.startswith(b"-"):
             sai[l[1:]] += 1
-        elif l.startswith("+"):
+        elif l.startswith(b"+"):
             entra.append(l[1:])
     saida = []
     for l in linhas:
@@ -1741,12 +1762,14 @@ def _aplicar_delta(base: Path, delta: Path) -> Path:
         saida.append(l)
     faltou = sum(sai.values())
     if faltou:
-        print(f"AVISO: financeiro - {delta.name}: {faltou} linha(s) para tirar não estavam na base.")
+        print(f"AVISO: {rotulo} - {delta.name}: {faltou} linha(s) para tirar não estavam na base.")
     saida.extend(entra)
     pasta = Path(tempfile.mkdtemp(prefix="cockpit_delta_"))
     atexit.register(shutil.rmtree, pasta, ignore_errors=True)
-    destino = pasta / (base.name.split(".")[0] + ".csv")
-    destino.write_text("\n".join(saida) + "\n", encoding="utf-8")
+    # mesmo nome (e compactação) da base: daqui pra frente é lido igualzinho a um arquivo inteiro
+    destino = pasta / base.name
+    dados = b"\n".join(saida) + b"\n"
+    destino.write_bytes(gzip.compress(dados) if base.name.lower().endswith(".gz") else dados)
     return destino
 
 
