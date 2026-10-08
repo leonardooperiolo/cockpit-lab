@@ -246,6 +246,9 @@ select.simple-sel{font-size:16px;height:48px;min-width:220px;border-radius:12px;
 .secao-topo{margin-top:6px}
 .secao-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .secao-head .sub{color:var(--r3-muted);font-size:13px}
+.secao-head .dia-ref{flex-direction:row;align-items:center;gap:6px;margin-left:6px}
+.secao-head .dia-ref input{font:inherit;font-size:13px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:inherit}
+@media print{.secao-head .dia-ref,#gDiaHoje{display:none}}
 .kpis-dia{display:grid;gap:14px;margin:14px 0 18px}
 @media(max-width:820px){.kpis-dia{grid-template-columns:1fr}}
 .grid-dia{display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start}
@@ -907,26 +910,30 @@ document.addEventListener('click',e=>{
 });
 function viewGeral(){
   const PER=periodo(),dm=PER.mask,dd=dims(),Q=D.qualidade;
-  const ontemIso=isoAdd(ULT,-1);
-  const hoje=agg(maskRange(ULT,ULT),dd,null).tot;
+  // dia de referência do "Acompanhamento do dia": o último dia com dados, ou o que a pessoa escolher
+  const REF=(S.diaRef&&S.diaRef>=PRI&&S.diaRef<=ULT)?S.diaRef:ULT,ehUlt=REF===ULT;
+  const ry=+REF.slice(0,4),rm=+REF.slice(5,7),rdom=+REF.slice(8,10);
+  const lblDia=ehUlt?'hoje':'no dia',lblAnt=ehUlt?'ontem':'dia anterior';
+  const ontemIso=isoAdd(REF,-1);
+  const hoje=agg(maskRange(REF,REF),dd,null).tot;
   const ontem=agg(maskRange(ontemIso,ontemIso),dd,null).tot;
   // mesmo dia da semana passada (laboratório tem padrão por dia da semana: sexta x sexta compara melhor)
-  const semPasIso=isoAdd(ULT,-7),semPas=agg(maskRange(semPasIso,semPasIso),dd,null).tot;
-  const wdU=wdOf(ULT),diaSem=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][wdU]+(wdU===0||wdU===6?' passado':' passada');
-  const mesIni=`${uy}-${pad(um)}-01`,mesAcum=agg(maskRange(mesIni,ULT),dd,null).tot;
-  const uHoje=agg(maskRange(ULT,ULT),dd,i=>A.u[i]).g;
+  const semPasIso=isoAdd(REF,-7),semPas=agg(maskRange(semPasIso,semPasIso),dd,null).tot;
+  const wdU=wdOf(REF),diaSem=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][wdU]+(wdU===0||wdU===6?' passado':' passada');
+  const mesIni=`${ry}-${pad(rm)}-01`,mesAcum=agg(maskRange(mesIni,REF),dd,null).tot;
+  const uHoje=agg(maskRange(REF,REF),dd,i=>A.u[i]).g;
   const uRows=D.unidades.map((u,idx)=>({nome:u.nome,o:uHoje.get(idx)||{f:0,r:0,e:0}})).filter(r=>r.o.f>0||r.o.r>0).sort((a,b)=>b.o.f-a.o.f);
   const uMax=uRows.length?uRows[0].o.f:1;
-  const cHoje=agg(maskRange(ULT,ULT),dd,i=>A.c[i]).g;
+  const cHoje=agg(maskRange(REF,REF),dd,i=>A.c[i]).g;
   const cRows=[...cHoje.entries()].map(([idx,o])=>({nome:D.convenios[idx].nome,o})).sort((a,b)=>b.o.f-a.o.f);
   const cTop=cRows.slice(0,5),cRest=cRows.slice(5);
   const cOutrosF=cRest.reduce((s,r)=>s+r.o.f,0),cOutrosR=cRest.reduce((s,r)=>s+r.o.r,0);
   const cMax=cRows.length?cRows[0].o.f:1;
   const mon12=agg(PER.def?maskRange(range12().ini,range12().fim):PER.mask,dd,i=>diaYM[A.d[i]]).g,ym12=[...mon12.keys()].sort((a,b)=>a-b);
-  // projecao = ritmo diario atual (medio, dias uteis do mes ate hoje) x dias uteis que ainda faltam no mes
-  let diasUteisAte=0;for(let d=1;d<=ULTDOM;d++)if(wdOf(`${uy}-${pad(um)}-${pad(d)}`)!==0)diasUteisAte++;
-  const diasNoMes=new Date(uy,um,0).getDate();
-  let diasUteisRestam=0;for(let d=ULTDOM+1;d<=diasNoMes;d++)if(wdOf(`${uy}-${pad(um)}-${pad(d)}`)!==0)diasUteisRestam++;
+  // projecao = ritmo diario atual (medio, dias uteis do mes ate o dia de referencia) x dias uteis que ainda faltam no mes
+  let diasUteisAte=0;for(let d=1;d<=rdom;d++)if(wdOf(`${ry}-${pad(rm)}-${pad(d)}`)!==0)diasUteisAte++;
+  const diasNoMes=new Date(ry,rm,0).getDate();
+  let diasUteisRestam=0;for(let d=rdom+1;d<=diasNoMes;d++)if(wdOf(`${ry}-${pad(rm)}-${pad(d)}`)!==0)diasUteisRestam++;
   const ritmoDiario=diasUteisAte?mesAcum.f/diasUteisAte:0;
   const projecao=mesAcum.f+ritmoDiario*diasUteisRestam;
   const metaNum=parseFloat((S_metaMes||'').toString().replace(/\./g,'').replace(',','.'))||0;
@@ -934,24 +941,24 @@ function viewGeral(){
   let h=perBar(PER);
   if(Q.pct_linhas_medico_sem_nome>0)h+=`<div class="notice warn"><b>Aviso de qualidade de dados:</b> ${fD1.format(Q.pct_linhas_medico_sem_nome)}% dos exames (${fD1.format(Q.pct_fat_medico_sem_nome)}% do faturamento) têm médico solicitante sem nome na lista de médicos; o filtro e o ranking por médico mostram o código nesses casos. <button class="lnk" data-go="qualidade">Ver detalhes</button></div>`;
   h+=`<div class="secao-topo">
-   <div class="secao-head"><h2 style="margin:0">Acompanhamento do dia</h2><span class="sub">${WDL[wdOf(ULT)]}, ${isoBR(ULT)}</span>${btnImprimir()}</div>
+   <div class="secao-head"><h2 style="margin:0">Acompanhamento do dia</h2><span class="sub">${WDL[wdOf(REF)]}, ${isoBR(REF)}</span><label class="fld dia-ref">Ver outro dia <input type="date" id="gDia" value="${REF}" min="${PRI}" max="${ULT}"></label>${ehUlt?'':`<button class="lnk" id="gDiaHoje" type="button">voltar ao último dia</button>`}${btnImprimir()}</div>
    <div class="kpis-dia">
-    <div class="card kpi t-fat"><div class="l">Faturamento hoje</div><div class="v">${fBRL0.format(hoje.f)}</div><div class="s">${delta(ontem.f,hoje.f)} vs. ontem</div><div class="s kpi-extra">${diaSem} <b>${fBRL0.format(semPas.f)}</b> ${delta(semPas.f,hoje.f)}</div></div>
-    <div class="card kpi t-atd"><div class="l">Atendimentos hoje</div><div class="v">${fNum.format(hoje.r)}</div><div class="s">${delta(ontem.r,hoje.r)} vs. ontem</div><div class="s kpi-extra">Ticket médio ${ajuda('Ticket médio = faturamento dividido pelo número de pacientes atendidos. Mostra quanto, em média, cada paciente deixou no laboratório.')} <b>${fBRL.format(tk(hoje))}</b></div></div>
-    <div class="card kpi t-exa"><div class="l">Exames hoje</div><div class="v">${fNum.format(hoje.e)}</div><div class="s">${delta(ontem.e,hoje.e)} vs. ontem</div><div class="s kpi-extra">Exames por atendimento <b>${fD1.format(hoje.r?hoje.e/hoje.r:0)}</b></div></div>
-    <div class="card kpi kpi-proj t-prj"><div class="l">Projeção de fechamento ${ajuda('Quanto o mês deve fechar se continuar no ritmo atual: média faturada por dia útil até hoje × dias úteis que ainda faltam, somado ao que já entrou.')}</div><div class="proj-linha"><span class="proj-lb">Acumulado do mês</span><span class="proj-vv">${fBRL0.format(mesAcum.f)}</span></div><div class="proj-linha"><span class="proj-lb">Projeção do mês</span><span class="proj-vv proj-dest">${fBRL0.format(projecao)}</span></div><div class="s">Ritmo ${fBRL0.format(ritmoDiario)}/dia · ${diasUteisRestam} dias úteis rest.</div></div>
+    <div class="card kpi t-fat"><div class="l">Faturamento ${lblDia}</div><div class="v">${fBRL0.format(hoje.f)}</div><div class="s">${delta(ontem.f,hoje.f)} vs. ${lblAnt}</div><div class="s kpi-extra">${diaSem} <b>${fBRL0.format(semPas.f)}</b> ${delta(semPas.f,hoje.f)}</div></div>
+    <div class="card kpi t-atd"><div class="l">Atendimentos ${lblDia}</div><div class="v">${fNum.format(hoje.r)}</div><div class="s">${delta(ontem.r,hoje.r)} vs. ${lblAnt}</div><div class="s kpi-extra">Ticket médio ${ajuda('Ticket médio = faturamento dividido pelo número de pacientes atendidos. Mostra quanto, em média, cada paciente deixou no laboratório.')} <b>${fBRL.format(tk(hoje))}</b></div></div>
+    <div class="card kpi t-exa"><div class="l">Exames ${lblDia}</div><div class="v">${fNum.format(hoje.e)}</div><div class="s">${delta(ontem.e,hoje.e)} vs. ${lblAnt}</div><div class="s kpi-extra">Exames por atendimento <b>${fD1.format(hoje.r?hoje.e/hoje.r:0)}</b></div></div>
+    <div class="card kpi kpi-proj t-prj"><div class="l">${diasUteisRestam?'Projeção de fechamento':'Fechamento do mês'} ${ajuda('Quanto o mês deve fechar se continuar no ritmo atual: média faturada por dia útil até o dia escolhido × dias úteis que ainda faltam, somado ao que já entrou.')}</div><div class="proj-linha"><span class="proj-lb">Acumulado do mês${ehUlt?'':' até '+isoBR(REF).slice(0,5)}</span><span class="proj-vv">${fBRL0.format(mesAcum.f)}</span></div><div class="proj-linha"><span class="proj-lb">${diasUteisRestam?'Projeção do mês':'Total do mês'}</span><span class="proj-vv proj-dest">${fBRL0.format(projecao)}</span></div><div class="s">Ritmo ${fBRL0.format(ritmoDiario)}/dia · ${diasUteisRestam} dias úteis rest.</div></div>
    </div>
    <div class="grid-dia">
     <div class="card tw">
-     <h3 class="card-tit">Unidades hoje</h3>
+     <h3 class="card-tit">Unidades ${lblDia}</h3>
      <table><thead><tr><th>Unidade</th><th>Atend.</th><th>Exames</th><th>Faturamento</th><th>Ticket médio</th><th>Participação</th></tr></thead><tbody>
-     ${uRows.length?uRows.map(r=>`<tr><td>${esc(r.nome)}</td><td>${fNum.format(r.o.r)}</td><td>${fNum.format(r.o.e)}</td><td>${fBRL0.format(r.o.f)}</td><td>${fBRL.format(tk(r.o))}</td><td><div class="pbar"><b style="width:${hoje.f?(r.o.f/hoje.f*100).toFixed(1):0}%"></b></div></td></tr>`).join(''):'<tr><td colspan="6" style="color:var(--muted)">Nenhum atendimento registrado hoje ainda.</td></tr>'}
+     ${uRows.length?uRows.map(r=>`<tr><td>${esc(r.nome)}</td><td>${fNum.format(r.o.r)}</td><td>${fNum.format(r.o.e)}</td><td>${fBRL0.format(r.o.f)}</td><td>${fBRL.format(tk(r.o))}</td><td><div class="pbar"><b style="width:${hoje.f?(r.o.f/hoje.f*100).toFixed(1):0}%"></b></div></td></tr>`).join(''):`<tr><td colspan="6" style="color:var(--muted)">${ehUlt?'Nenhum atendimento registrado hoje ainda.':'Nenhum atendimento registrado nesse dia.'}</td></tr>`}
      </tbody><tfoot><tr class="tot"><td>Total</td><td>${fNum.format(hoje.r)}</td><td>${fNum.format(hoje.e)}</td><td>${fBRL0.format(hoje.f)}</td><td>${fBRL.format(tk(hoje))}</td><td>100%</td></tr></tfoot></table>
     </div>
     <div class="card">
-     <h3 class="card-tit">Convênios hoje</h3>
+     <h3 class="card-tit">Convênios ${lblDia}</h3>
      <div class="rank-conv-dia">
-     ${cTop.length?cTop.map(r=>`<div class="rc-row"><div class="rc-nome">${esc(r.nome)}</div><div class="rc-bar"><b style="width:${(r.o.f/cMax*100).toFixed(1)}%"></b></div><div class="rc-val">${fBRL0.format(r.o.f)} <span class="rc-n">· ${fNum.format(r.o.r)} atend.</span></div></div>`).join(''):'<p class="sub">Sem faturamento hoje ainda.</p>'}
+     ${cTop.length?cTop.map(r=>`<div class="rc-row"><div class="rc-nome">${esc(r.nome)}</div><div class="rc-bar"><b style="width:${(r.o.f/cMax*100).toFixed(1)}%"></b></div><div class="rc-val">${fBRL0.format(r.o.f)} <span class="rc-n">· ${fNum.format(r.o.r)} atend.</span></div></div>`).join(''):`<p class="sub">${ehUlt?'Sem faturamento hoje ainda.':'Sem faturamento nesse dia.'}</p>`}
      ${cRest.length?`<div class="rc-row rc-outros"><div class="rc-nome">Outros (${cRest.length} convênios)</div><div class="rc-bar"><b style="width:${(cOutrosF/cMax*100).toFixed(1)}%"></b></div><div class="rc-val">${fBRL0.format(cOutrosF)} <span class="rc-n">· ${fNum.format(cOutrosR)} atend.</span></div></div>`:''}
      </div>
     </div>
@@ -962,7 +969,11 @@ function viewGeral(){
   h+=`<h2>Faturamento líquido por mês<small>${PER.def?'últimos 12 meses':'período escolhido'}</small></h2><div class="card">${chartLine({w:estreito?380:900,h:estreito?280:300,maxLabels:estreito?6:16,labels:ym12.map(k=>ymLabel(k)+(PARCIAL&&k===ULTYM?'*':'')),series:[{name:'Faturamento líquido',color:'#1f63c6',values:ym12.map(k=>mon12.get(k).f)}],area:true,keyVals:true,allVals:!estreito,partialLast:PARCIAL&&ym12[ym12.length-1]===ULTYM,axis:v=>'R$ '+fCmp.format(v),tip:v=>fBRL.format(v),fmtVal:v=>fCmp.format(v),aria:'Faturamento líquido por mês'})}${PARCIAL&&ym12.includes(ULTYM)?`<p class="hint" style="margin:8px 0 0">* mês em andamento, dados até ${isoBR(ULT).slice(0,5)}</p>`:''}</div>`;
   return h;
 }
-function bindGeral(){const g=$('#gMeta');if(g)g.onchange=()=>{S_metaMes=g.value;go();};}
+function bindGeral(){
+  const g=$('#gMeta');if(g)g.onchange=()=>{S_metaMes=g.value;go();};
+  const d=$('#gDia');if(d)d.onchange=()=>{S.diaRef=d.value;go();};
+  const b=$('#gDiaHoje');if(b)b.onclick=()=>{S.diaRef='';go();};
+}
 
 /* ---------- comparativo anual ---------- */
 function viewAnual(){
